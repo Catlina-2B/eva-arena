@@ -1,0 +1,153 @@
+.chart-gui-wrapper,
+.price-axis,
+.chart-markup-table,
+.innerWrap-OhqNVIYA {
+  background-color: #000000;
+}
+
+html.theme-dark .chart-controls-bar {
+  background-color: #000000;
+}
+
+html.theme-dark {
+  background-color: #000000 !important;
+}
+
+html.theme-dark .chart-page {
+  background-color: #000000 !important;
+}
+
+html.theme-dark #drawing-toolbar {
+  background-color: #000000 !important;
+}
+
+html.theme-dark .chart-controls-bar {
+  background-color: #000000 !important;
+}
+
+/* 顶部工具栏和按钮 */
+.chart-page .chart-container .chart-controls-bar,
+.chart-page .chart-container .control-bar-wrapper,
+.chart-page .chart-container .control-bar,
+.tv-header,
+.tv-header__top-line,
+.tv-header-toolbar {
+  background-color: #000000 !important;
+  border-color: #151515 !important;
+}
+
+.tv-header__top-line,
+.tv-header-toolbar__content {
+  background-color: #000000 !important;
+}
+
+/* 按钮样式 */
+/* .chart-page .chart-container .chart-controls-bar .button,
+.tv-header .tv-header__top-line .tv-header__top-line-item,
+.apply-common-tooltip {
+  color: #c2c2c2 !important;
+} */
+
+/* 其他样式保持不变 */
+.chart-page .chart-container .chart-controls-bar .button:hover,
+.tv-header .tv-header__top-line .tv-header__top-line-item:hover {
+  background-color: #151515 !important;
+}
+
+/* 整体布局区域 */
+.layout__area--top,
+.layout__area--top .layout__area--left,
+.layout__area--top .layout__area--right,
+.layout__area--center {
+  background-color: #000000 !important;
+  border-color: #151515 !important;
+}
+
+/* 图表网格线 */
+html.theme-dark .chart-grid-line {
+  stroke: #151515 !important;
+}
+
+/* 图表价格轴 */
+html.theme-dark .chart-price-axis-label {
+  color: #c2c2c2 !important;
+}
+
+/* 浅色主题样式 */
+html.theme-light .chart-gui-wrapper,
+html.theme-light .price-axis,
+html.theme-light .chart-markup-table,
+html.theme-light .innerWrap-OhqNVIYA {
+  background-color: #f3f4f9;
+}
+
+html.theme-light .chart-controls-bar {
+  background-color: #f3f4f9;
+}
+
+html.theme-light {
+  background-color: #f3f4f9 !important;
+}
+
+html.theme-light .chart-page {
+  background-color: #f3f4f9 !important;
+}
+
+html.theme-light #drawing-toolbar {
+  background-color: #f3f4f9 !important;
+}
+
+html.theme-light .chart-controls-bar {
+  background-color: #f3f4f9 !important;
+}
+
+html.theme-light .chart-page .chart-container .chart-controls-bar,
+html.theme-light .chart-page .chart-container .control-bar-wrapper,
+html.theme-light .chart-page .chart-container .control-bar,
+html.theme-light .tv-header,
+html.theme-light .tv-header__top-line,
+html.theme-light .tv-header-toolbar {
+  background-color: #f3f4f9 !important;
+  border-color: #ffffff !important;
+}
+
+html.theme-light .tv-header__top-line,
+html.theme-light .tv-header-toolbar__content {
+  background-color: #f3f4f9 !important;
+}
+
+html.theme-light .chart-page .chart-container .chart-controls-bar .button,
+html.theme-light .tv-header .tv-header__top-line .tv-header__top-line-item,
+html.theme-light .apply-common-tooltip {
+  color: #1d1e1f !important;
+}
+
+html.theme-light .chart-page .chart-container .chart-controls-bar .button:hover,
+html.theme-light .tv-header .tv-header__top-line .tv-header__top-line-item:hover {
+  background-color: #e3e4e9 !important;
+}
+
+html.theme-light .layout__area--top,
+html.theme-light .layout__area--top .layout__area--left,
+html.theme-light .layout__area--top .layout__area--right,
+html.theme-light .layout__area--center {
+  background-color: #f3f4f9 !important;
+  border-color: #ffffff !important;
+}
+
+/* 上涨和下跌颜色 - 两种主题相同 */
+.up-color {
+  color: #00c087 !important;
+}
+
+.down-color {
+  color: #ff4b60 !important;
+}
+
+.up-background {
+  background-color: #00c087 !important;
+}
+
+.down-background {
+  background-color: #ff4b60 !important;
+}
