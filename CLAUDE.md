@@ -2,116 +2,79 @@
 
 这个文件为 Claude Code (claude.ai/code) 在此仓库中工作时提供指导。
 
-## 开发命令
+## 1. 目录结构约束 (Directory Constraints)
 
-### 构建和开发
-- `pnpm dev` - 启动开发服务器
-- `pnpm build` - 构建生产版本 (包含 TypeScript 编译)
-- `pnpm preview` - 预览构建结果
-- `pnpm lint` - 运行 ESLint 检查
+### 核心目录 (`src/`)
+- **`components/`**: UI 组件
+  - **`ui/`**: 基础原子组件 (shadcn/ui)，严禁包含业务逻辑。
+  - **`features/`**: 业务功能组件，按功能模块分组 (建议将现有散落组件迁移至此)。
+    - 例如: `game/`, `agent/`, `trading/`, `wallet/`
+  - **`layout/`**: 布局组件 (如 `Navigation`, `Sidebar`)。
+- **`hooks/`**: 自定义 React Hooks
+  - 文件名必须以 `use` 开头。
+  - 区分全局状态 (`useGameEngine`) 和功能性 Hook (`useLocalStorage`)。
+- **`pages/`**: 路由页面组件
+  - 仅包含页面级组合逻辑，不应包含复杂 UI 实现。
+- **`lib/`**: 工具函数和库配置
+  - **`utils.ts`**: 通用工具函数 (shadcn 依赖)。
+  - **`constants.ts`**: 全局常量。
+- **`types/`** (或 `types.ts`): 类型定义
+  - 通用类型放根目录，特定模块类型可放模块内。
 
-### 依赖管理
-- 使用 `pnpm` 作为包管理器
-- 使用 `yarn.lock` 和 `pnpm-lock.yaml` (项目历史原因)
+### 规则
+1. **就近原则**: 如果组件仅在某个页面或父组件中使用，且不通用，考虑放在同一目录下或子目录中。
+2. **禁止循环依赖**: 避免组件间的循环引用。
+3. **文件命名**: 
+   - 组件/页面: `PascalCase.tsx`
+   - Hooks/工具: `camelCase.ts`
 
-## 项目架构
+## 2. 代码规范 (Code Standards)
+
+### React & TypeScript
+- **组件定义**: 使用函数式组件 (`function` 或 `const` 均可，保持一致)。
+- **Props 类型**: 必须定义 Props 接口，推荐命名 `[ComponentName]Props` 或直接解构。
+- **导出**: 
+  - 组件: `export function` 或 `export const` (Named Export)。
+  - 页面: `export default` (便于 Lazy Load)。
+- **Hooks**: 必须遵循 Hooks 规则，顶层调用。
+
+### 样式 (Styling)
+- **Tailwind CSS**: 首选样式方案。
+- **Shadcn UI**: 使用 `components/ui` 中的组件作为构建块。
+- **CSS Modules**: 仅在 Tailwind 无法满足复杂动画或特定样式时使用。
+- **Glass Effect**: 使用 `.glass-card`, `.glass-border-subtle` 等预定义类。
+
+### 状态管理
+- **本地状态**: UI 交互状态 (`useState`, `useReducer`)。
+- **全局状态**: 游戏核心逻辑使用 `useGameEngine`。
+- **避免 Prop Drilling**: 超过 3 层传递考虑 Context 或组合模式。
+
+### 错误处理
+- 关键操作需有错误捕获 (try-catch)。
+- UI 层需有错误反馈 (Toast 或 Error Boundary)。
+
+## 3. 项目架构参考
 
 ### 技术栈
-- **前端框架**: React 19 + TypeScript + Vite
-- **样式**: Tailwind CSS v4 + shadcn/ui 组件
-- **图表库**: TradingView Charting Library
-- **状态管理**: React hooks (useGameEngine)
+- **核心**: React 19 + TypeScript + Vite
+- **样式**: Tailwind CSS v4 + shadcn/ui
+- **图表**: TradingView Charting Library
+- **状态**: React Hooks (Custom Game Engine)
 
-### 核心架构概念
+### 核心模块
+1.  **Game Engine (`useGameEngine.ts`)**
+    - 管理游戏生命周期: BIDDING -> TRADING -> LIQUIDATION -> ENDED
+    - 维护 AMM 状态和机器人逻辑
+2.  **TradingView集成**
+    - 位于 `public/charting_library/`
+    - 自定义 Datafeed 模拟数据
 
-#### 1. 游戏引擎 (useGameEngine)
-- **路径**: `src/hooks/useGameEngine.ts`
-- **职责**: 管理多个 "trenches" (游戏场次) 的状态和生命周期
-- **关键功能**:
-  - 创建和管理多个游戏实例
-  - 阶段转换: BIDDING → TRADING → LIQUIDATION → ENDED
-  - AMM (自动做市商) 逻辑实现
-  - 机器人行为模拟
-  - 每3分钟自动创建新的 trench
+## 4. 开发工作流
+1.  **添加组件**: 先检查 `ui` 目录是否有可用基础组件，再在 `features` 或 `components` 根目录创建业务组件。
+2.  **修改逻辑**: 涉及游戏规则修改 `useGameEngine.ts` 和 `types.ts`。
+3.  **运行测试**: 修改后运行 `pnpm dev` 验证。
 
-#### 2. 游戏状态模型
-- **Phase**: BIDDING (投标) | TRADING (交易) | LIQUIDATION (清算) | ENDED (结束)
-- **Agent Types**: USER | BOT_HOLDER | BOT_ARBITRAGE | BOT_SNIPER
-- **时间周期**:
-  - BIDDING: 3分钟 (180s)
-  - TRADING: 11分钟 (660s) 
-  - LIQUIDATION: 1分钟 (60s)
-
-#### 3. AMM 实现
-- **算法**: Constant Product AMM (x * y = k)
-- **手续费**: 0.25%
-- **初始化逻辑**:
-  - 20% 的投标金额作为 SOL 储备
-  - 50% 的代币作为初始储备
-  - 80% 的投标金额作为奖池
-
-#### 4. 组件架构
-- **布局**: 响应式设计，桌面端3列布局，移动端单列
-- **核心组件**:
-  - `TrenchList`: 侧边栏 trench 选择器
-  - `AMMVisual`: 包含 TradingView 图表的 AMM 池可视化
-  - `ActionPanel`: 用户交互面板 (存款/交易)
-  - `Leaderboard`: 排行榜显示
-  - `GameStatus`: 游戏状态显示
-
-#### 5. TradingView 集成
-- **路径**: `public/charting_library/`
-- **集成**: 自定义 datafeed 实现模拟 K 线数据
-- **主题**: 深色主题，与应用 UI 一致
-- **数据**: 实时生成模拟交易数据
-
-### UI 系统
-- **组件库**: shadcn/ui (基于 Radix UI)
-- **样式系统**: Tailwind CSS 定制类
-- **主题**: 暗色赛博朋克风格，使用 "glass" 效果
-- **自定义类**: 
-  - `.glass-card`, `.glass-border-subtle` - 玻璃效果
-  - `.neon-text`, `.neon-border` - 霓虹效果
-
-### 关键开发模式
-
-#### 1. 状态更新模式
-```typescript
-// 使用 updateTrench 函数更新特定 trench
-updateTrench(trenchId, (trench) => {
-    // 返回更新后的 trench 状态
-    return { ...trench, /* updates */ };
-});
-```
-
-#### 2. 组件 Props 模式
-- 使用 TypeScript 接口定义 props
-- 从 `types.ts` 导入共享类型
-- 组件解构 props 参数
-
-#### 3. Hook 使用模式
-- `useGameEngine` 提供游戏状态和操作
-- 自定义 hooks 如 `useLocalStorage` 用于持久化
-
-### 构建配置
-- **Vite**: 使用路径别名 `@` 指向 `src`
-- **TypeScript**: 复合项目配置 (app + node)
-- **ESLint**: React hooks 和 TypeScript 规则
-
-### 添加新功能指导
-
-#### 添加新的游戏机制
-1. 在 `types.ts` 中定义类型
-2. 在 `useGameEngine.ts` 中实现逻辑
-3. 创建对应的 UI 组件
-4. 集成到主 App 布局中
-
-#### 添加新的 UI 组件
-1. 使用 shadcn/ui CLI 添加基础组件: `npx shadcn-ui add [component]`
-2. 遵循现有的命名和文件结构
-3. 使用 Tailwind CSS 和现有的设计 tokens
-
-#### 扩展 TradingView 功能
-- 修改 `TradingViewChart.tsx` 中的配置
-- 更新模拟数据生成逻辑
-- 注意 TradingView 库的异步加载
+## 常用命令
+- `pnpm dev` - 启动开发服务器
+- `pnpm build` - 构建
+- `pnpm lint` - 检查代码
