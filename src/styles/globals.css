@@ -1,0 +1,148 @@
+@import "tailwindcss";
+
+@config "../../tailwind.config.js";
+
+/* Source Code Pro Font - Variable Weight */
+@font-face {
+  font-family: 'Source Code Pro';
+  src: url('/front/Source_Code_Pro/SourceCodePro-VariableFont_wght.ttf') format('truetype-variations');
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Source Code Pro';
+  src: url('/front/Source_Code_Pro/SourceCodePro-Italic-VariableFont_wght.ttf') format('truetype-variations');
+  font-weight: 200 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Ethnocentric Font - For Display Titles */
+@font-face {
+  font-family: 'Ethnocentric';
+  src: url('/front/Ethnocentric-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Base Styles */
+:root {
+  --eva-dark: #0a0a0f;
+  --eva-darker: #050508;
+  --eva-card: #12121a;
+  --eva-card-hover: #1a1a25;
+  --eva-border: #1e1e2e;
+  --eva-primary: #00ff88;
+  --eva-primary-dim: #00cc6a;
+  --eva-secondary: #a855f7;
+  --eva-secondary-dim: #8b5cf6;
+  --eva-accent: #06b6d4;
+  --eva-danger: #ef4444;
+  --eva-warning: #f59e0b;
+  --eva-success: #10b981;
+  --eva-muted: #6b7280;
+  --eva-text: #e5e7eb;
+  --eva-text-dim: #9ca3af;
+}
+
+/* Force dark mode */
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--eva-dark);
+  color: var(--eva-text);
+  font-family: 'Source Code Pro', 'SF Mono', 'Fira Code', monospace;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ethnocentric font only for H1 and H2 */
+h1, h2 {
+  font-family: 'Ethnocentric', 'Orbitron', 'SF Pro Display', sans-serif;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--eva-darker);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--eva-border);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--eva-muted);
+}
+
+/* Selection */
+::selection {
+  background-color: rgba(0, 255, 136, 0.3);
+  color: var(--eva-text);
+}
+
+/* Focus styles */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.5), 0 0 0 4px var(--eva-dark);
+}
+
+/* Animations */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.15); }
+  50% { box-shadow: 0 0 30px rgba(0, 255, 136, 0.3); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.eva-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}

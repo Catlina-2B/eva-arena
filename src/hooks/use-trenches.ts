@@ -1,0 +1,128 @@
+import type { TransactionType, TrenchStatus } from "@/types/api";
+
+import { useQuery } from "@tanstack/react-query";
+
+import { trenchApi } from "@/services/api";
+
+/**
+ * Query keys for trenches
+ */
+export const trenchKeys = {
+  all: ["trenches"] as const,
+  lists: () => [...trenchKeys.all, "list"] as const,
+  list: (params?: { status?: TrenchStatus; page?: number; limit?: number }) =>
+    [...trenchKeys.lists(), params] as const,
+  current: () => [...trenchKeys.all, "current"] as const,
+  details: () => [...trenchKeys.all, "detail"] as const,
+  detail: (id: number) => [...trenchKeys.details(), id] as const,
+  priceCurve: (id: number, unit?: string) =>
+    [...trenchKeys.detail(id), "priceCurve", unit] as const,
+  transactions: (id: number) =>
+    [...trenchKeys.detail(id), "transactions"] as const,
+  leaderboard: (id: number) =>
+    [...trenchKeys.detail(id), "leaderboard"] as const,
+  summary: (id: number, userAddress?: string) =>
+    [...trenchKeys.detail(id), "summary", userAddress] as const,
+};
+
+/**
+ * Hook for getting trench list with pagination
+ */
+export function useTrenchList(params?: {
+  status?: TrenchStatus;
+  page?: number;
+  limit?: number;
+}) {
+  return useQuery({
+    queryKey: trenchKeys.list(params),
+    queryFn: () => trenchApi.getTrenchList(params),
+  });
+}
+
+/**
+ * Hook for getting current active trench
+ */
+export function useCurrentTrench() {
+  return useQuery({
+    queryKey: trenchKeys.current(),
+    queryFn: () => trenchApi.getCurrentTrench(),
+    // Current trench should refresh frequently
+    staleTime: 5 * 1000, // 5 seconds
+    refetchInterval: 10 * 1000, // 10 seconds
+  });
+}
+
+/**
+ * Hook for getting trench detail
+ */
+export function useTrenchDetail(trenchId: number | undefined) {
+  return useQuery({
+    queryKey: trenchKeys.detail(trenchId!),
+    queryFn: () => trenchApi.getTrenchDetail(trenchId!),
+    enabled: !!trenchId,
+    staleTime: 10 * 1000, // 10 seconds
+  });
+}
+
+/**
+ * Hook for getting price curve data
+ */
+export function usePriceCurve(
+  trenchId: number | undefined,
+  unit?: "SOL" | "USDT",
+) {
+  return useQuery({
+    queryKey: trenchKeys.priceCurve(trenchId!, unit),
+    queryFn: () => trenchApi.getPriceCurve(trenchId!, unit),
+    enabled: !!trenchId,
+    staleTime: 5 * 1000, // 5 seconds
+    refetchInterval: 10 * 1000, // 10 seconds for real-time updates
+  });
+}
+
+/**
+ * Hook for getting trench transactions
+ */
+export function useTrenchTransactions(
+  trenchId: number | undefined,
+  params?: {
+    userAddress?: string;
+    txType?: TransactionType[];
+    page?: number;
+    limit?: number;
+  },
+) {
+  return useQuery({
+    queryKey: [...trenchKeys.transactions(trenchId!), params],
+    queryFn: () => trenchApi.getTransactions(trenchId!, params),
+    enabled: !!trenchId,
+    staleTime: 10 * 1000, // 10 seconds
+  });
+}
+
+/**
+ * Hook for getting leaderboard
+ */
+export function useLeaderboard(trenchId: number | undefined) {
+  return useQuery({
+    queryKey: trenchKeys.leaderboard(trenchId!),
+    queryFn: () => trenchApi.getLeaderboard(trenchId!),
+    enabled: !!trenchId,
+    staleTime: 5 * 1000, // 5 seconds
+    refetchInterval: 15 * 1000, // 15 seconds
+  });
+}
+
+/**
+ * Hook for getting user summary in a trench
+ */
+export function useTrenchSummary(
+  trenchId: number | undefined,
+  userAddress?: string,
+) {
+  return useQuery({
+    queryKey: trenchKeys.summary(trenchId!, userAddress),
+    queryFn: () => trenchApi.getSummary(trenchId!, userAddress),
+    enabled: !!trenchId,
+  });
+}
