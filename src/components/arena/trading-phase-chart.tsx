@@ -1,6 +1,8 @@
 import type { ArenaRound } from "@/types";
+import type { PriceUpdateEventDto } from "@/types/websocket";
+import type { UTCTimestamp } from "lightweight-charts";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import {
   createChart,
   type IChartApi,
@@ -8,8 +10,9 @@ import {
   ColorType,
   LineStyle,
   AreaSeries,
-  type UTCTimestamp,
 } from "lightweight-charts";
+
+import { usePriceCurve, useTrenchSocket } from "@/hooks";
 
 interface TradingPhaseChartProps {
   round: ArenaRound;
@@ -17,37 +20,115 @@ interface TradingPhaseChartProps {
 
 type TimeInterval = "1M" | "5M" | "15M";
 
-// Mock price data for demonstration
-function generateMockData(interval: TimeInterval) {
-  const now = Math.floor(Date.now() / 1000);
-  const intervalSeconds =
-    interval === "1M" ? 60 : interval === "5M" ? 300 : 900;
-  const dataPoints = 50;
-  const data: { time: UTCTimestamp; value: number }[] = [];
-
-  let price = 0.001;
-
-  for (let i = dataPoints; i >= 0; i--) {
-    const time = (now - i * intervalSeconds) as UTCTimestamp;
-
-    // Generate smooth upward trending price with some variation
-    price = price + (Math.random() - 0.4) * 0.0002;
-    price = Math.max(0.0005, price);
-    data.push({
-      time,
-      value: price,
-    });
-  }
-
-  return data;
-}
-
 export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Area"> | null>(null);
   const [selectedInterval, setSelectedInterval] = useState<TimeInterval>("5M");
+  const [realtimePrices, setRealtimePrices] = useState<
+    { time: UTCTimestamp; value: number }[]
+  >([]);
 
+  // Use database primary key ID for API calls
+  const trenchId = round.trenchDbId;
+
+  // Fetch price curve data from API
+  const { data: priceCurveData, isLoading } = usePriceCurve(trenchId, "SOL");
+
+  // Subscribe to WebSocket for real-time price updates
+  const handlePriceUpdate = useCallback((data: PriceUpdateEventDto) => {
+    const newPoint = {
+      time: Math.floor(data.timestamp / 1000) as UTCTimestamp,
+      value: parseFloat(data.priceSol),
+    };
+
+    setRealtimePrices((prev) => {
+      // Avoid duplicates
+      const lastPoint = prev[prev.length - 1];
+      if (lastPoint && lastPoint.time === newPoint.time) {
+        return prev;
+      }
+      return [...prev, newPoint];
+    });
+  }, []);
+
+  const { isConnected } = useTrenchSocket(trenchId, {
+    onPriceUpdate: handlePriceUpdate,
+    autoInvalidate: false, // We handle updates manually
+  });
+
+  // Convert API data to chart format
+  const apiChartData = useMemo(() => {
+    if (!priceCurveData?.pricePoints) return [];
+
+    return priceCurveData.pricePoints.map((point) => ({
+      time: Math.floor(point.timestamp / 1000) as UTCTimestamp,
+      value: parseFloat(point.price),
+    }));
+  }, [priceCurveData]);
+
+  // Merge API data with real-time updates
+  const chartData = useMemo(() => {
+    if (apiChartData.length === 0 && realtimePrices.length === 0) {
+      return [];
+    }
+
+    // Combine and deduplicate
+    const allPoints = [...apiChartData, ...realtimePrices];
+    const uniquePoints = new Map<number, { time: UTCTimestamp; value: number }>();
+
+    for (const point of allPoints) {
+      uniquePoints.set(point.time, point);
+    }
+
+    // Sort by time
+    return Array.from(uniquePoints.values()).sort((a, b) => a.time - b.time);
+  }, [apiChartData, realtimePrices]);
+
+  // Filter data based on selected interval
+  const filteredData = useMemo(() => {
+    if (chartData.length === 0) return [];
+
+    const now = Math.floor(Date.now() / 1000);
+    const intervalSeconds =
+      selectedInterval === "1M"
+        ? 60
+        : selectedInterval === "5M"
+          ? 300
+          : 900;
+
+    // Show last N minutes of data
+    const displayMinutes =
+      selectedInterval === "1M" ? 60 : selectedInterval === "5M" ? 30 : 60;
+    const cutoffTime = now - displayMinutes * 60;
+
+    // Filter and resample data
+    const filtered = chartData.filter((point) => point.time >= cutoffTime);
+
+    // Resample to interval
+    if (filtered.length <= 1) return filtered;
+
+    const resampled: { time: UTCTimestamp; value: number }[] = [];
+    let currentBucket = Math.floor(filtered[0].time / intervalSeconds) * intervalSeconds;
+
+    for (const point of filtered) {
+      const bucket = Math.floor(point.time / intervalSeconds) * intervalSeconds;
+      if (bucket !== currentBucket || resampled.length === 0) {
+        resampled.push({
+          time: bucket as UTCTimestamp,
+          value: point.value,
+        });
+        currentBucket = bucket;
+      } else {
+        // Update last point with latest value in bucket
+        resampled[resampled.length - 1].value = point.value;
+      }
+    }
+
+    return resampled;
+  }, [chartData, selectedInterval]);
+
+  // Initialize chart
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
@@ -107,9 +188,6 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
     chartRef.current = chart;
     seriesRef.current = series;
 
-    // Set initial data
-    series.setData(generateMockData(selectedInterval));
-
     // Handle resize
     const handleResize = () => {
       if (chartContainerRef.current) {
@@ -125,12 +203,20 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
     };
   }, []);
 
-  // Update data when interval changes
+  // Update chart data when filteredData changes
   useEffect(() => {
-    if (seriesRef.current) {
-      seriesRef.current.setData(generateMockData(selectedInterval));
+    if (seriesRef.current && filteredData.length > 0) {
+      seriesRef.current.setData(filteredData);
     }
-  }, [selectedInterval]);
+  }, [filteredData]);
+
+  // Get current price from latest data point or round
+  const currentPrice = useMemo(() => {
+    if (chartData.length > 0) {
+      return chartData[chartData.length - 1].value;
+    }
+    return round.tokenPrice;
+  }, [chartData, round.tokenPrice]);
 
   const intervals: TimeInterval[] = ["1M", "5M", "15M"];
 
@@ -191,8 +277,19 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
                 EVA/SOL
               </span>
               <span className="font-mono text-lg text-eva-primary font-semibold">
-                {round.tokenPrice.toFixed(6)}
+                {currentPrice.toFixed(6)}
               </span>
+              {/* Connection status indicator */}
+              <div className="flex items-center gap-1.5">
+                <div
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    isConnected ? "bg-eva-primary animate-pulse" : "bg-eva-danger"
+                  }`}
+                />
+                <span className="text-xs text-white/30 font-mono">
+                  {isConnected ? "LIVE" : "OFFLINE"}
+                </span>
+              </div>
             </div>
 
             {/* Time interval selector */}
@@ -215,7 +312,29 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
 
           {/* Chart container */}
           <div className="px-4 pb-4">
-            <div ref={chartContainerRef} className="w-full" />
+            {isLoading ? (
+              <div className="w-full h-[300px] flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-6 h-6 border-2 border-eva-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <span className="text-xs text-white/40 font-mono">
+                    LOADING CHART...
+                  </span>
+                </div>
+              </div>
+            ) : filteredData.length === 0 ? (
+              <div className="w-full h-[300px] flex items-center justify-center">
+                <div className="text-center">
+                  <span className="text-sm text-white/40 font-mono">
+                    NO PRICE DATA YET
+                  </span>
+                  <p className="text-xs text-white/20 mt-1">
+                    Waiting for trading activity...
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div ref={chartContainerRef} className="w-full" />
+            )}
           </div>
         </div>
       </div>

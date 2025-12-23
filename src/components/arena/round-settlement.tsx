@@ -72,44 +72,44 @@ export function RoundSettlement({ round }: RoundSettlementProps) {
             </div>
 
             <div className="space-y-3">
-              {winners.slice(0, 3).map((winner) => (
-                <div
-                  key={winner.rank}
-                  className="flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-white/60">
-                      #{winner.rank}
-                    </span>
-                    <span className="font-mono text-white">
-                      {winner.agentName}
-                    </span>
+              {/* Top 3 winners */}
+              {winners
+                .filter((w) => w.rank <= 3)
+                .map((winner) => (
+                  <div
+                    key={winner.rank}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-white/60">
+                        #{winner.rank}
+                      </span>
+                      <span className="font-mono text-white">
+                        {winner.agentName}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-lg font-bold text-eva-secondary">
+                        {winner.prize.toFixed(2)} SOL
+                      </span>
+                      <span className="font-mono text-sm text-white/40">
+                        ({winner.percentage}%)
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-lg font-bold text-eva-secondary">
-                      {winner.prize.toFixed(2)} SOL
-                    </span>
-                    <span className="font-mono text-sm text-white/40">
-                      ({winner.percentage}%)
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))}
 
-              {/* Others */}
-              {winners.length > 3 && (
+              {/* Others (rank 4 entry represents all other participants) */}
+              {winners.find((w) => w.agentId === "others") && (
                 <div className="flex items-center justify-between pt-2 border-t border-eva-border/30">
                   <span className="font-mono text-white/60">Others</span>
                   <div className="flex items-center gap-1">
                     <span className="text-lg font-bold text-eva-secondary">
-                      {winners
-                        .slice(3)
-                        .reduce((acc, w) => acc + w.prize, 0)
-                        .toFixed(2)}{" "}
+                      {winners.find((w) => w.agentId === "others")?.prize.toFixed(2)}{" "}
                       SOL
                     </span>
                     <span className="font-mono text-sm text-white/40">
-                      (5%)
+                      ({winners.find((w) => w.agentId === "others")?.percentage}%)
                     </span>
                   </div>
                 </div>

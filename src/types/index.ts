@@ -16,6 +16,8 @@ export type ArenaPhase = "betting" | "trading" | "liquidation";
 
 export interface ArenaRound {
   id: string;
+  /** 数据库主键 ID，用于 API 调用 */
+  trenchDbId: number;
   tokenName: string;
   startBlock: number;
   currentBlock: number;

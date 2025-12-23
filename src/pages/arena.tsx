@@ -24,7 +24,7 @@ import {
   useMyAgents,
   useAgent,
   useTrenchSocket,
-  useSolanaSlot,
+  useSlotSubscription,
   useFirstVisit,
   useToggleAgentStatus,
 } from "@/hooks";
@@ -92,15 +92,15 @@ export default function ArenaPage() {
   // Toggle agent status mutation
   const toggleAgentStatus = useToggleAgentStatus();
 
-  // Fetch current Solana slot for accurate block progress
-  const { data: currentSlot } = useSolanaSlot();
+  // Subscribe to real-time Solana slot updates via WebSocket
+  const { slot: currentSlot } = useSlotSubscription();
 
   // Convert backend data to UI format
   const currentRound: ArenaRound | null = useMemo(() => {
     if (!USE_REAL_DATA) return mockArenaRound;
 
-    return trenchToArenaRound(trenchData ?? null, currentSlot);
-  }, [trenchData, currentSlot]);
+    return trenchToArenaRound(trenchData ?? null, currentSlot, leaderboardData);
+  }, [trenchData, currentSlot, leaderboardData]);
 
   const rankings = useMemo(() => {
     if (!USE_REAL_DATA) return mockRankings;

@@ -4,6 +4,7 @@ import clsx from "clsx";
 
 import { EvaCard, EvaCardContent } from "@/components/ui";
 import { useSlotSubscription } from "@/hooks/use-slot-subscription";
+import { formatDecimal } from "@/lib/trench-utils";
 
 interface ArenaHeaderProps {
   round: ArenaRound;
@@ -74,7 +75,7 @@ export function ArenaHeader({ round }: ArenaHeaderProps) {
               Total Prize Pool
             </div>
             <div className="text-2xl font-bold text-eva-primary">
-              {round.totalPrizePool} SOL
+              {formatDecimal(round.totalPrizePool)} SOL
             </div>
           </div>
         </div>

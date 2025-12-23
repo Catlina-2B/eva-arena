@@ -2,6 +2,7 @@ import type { ActivityItem, AgentRanking, ArenaRound, Winner } from "@/types";
 
 export const mockArenaRound: ArenaRound = {
   id: "eva-121506",
+  trenchDbId: 1,
   tokenName: "EVA-121506",
   startBlock: 121506,
   currentBlock: 841,
@@ -19,6 +20,7 @@ export const mockArenaRound: ArenaRound = {
 // Mock data for trading phase
 export const mockTradingRound: ArenaRound = {
   id: "eva-121506",
+  trenchDbId: 1,
   tokenName: "EVA-121506",
   startBlock: 121506,
   currentBlock: 1500,
@@ -36,6 +38,7 @@ export const mockTradingRound: ArenaRound = {
 // Mock data for skipped round (no bets)
 export const mockSkippedRound: ArenaRound = {
   id: "eva-121507",
+  trenchDbId: 2,
   tokenName: "EVA-121507",
   startBlock: 121507,
   currentBlock: 500,
@@ -86,6 +89,7 @@ export const mockWinners: Winner[] = [
 // Mock data for settlement phase
 export const mockSettlementRound: ArenaRound = {
   id: "eva-121506",
+  trenchDbId: 1,
   tokenName: "EVA-121506",
   startBlock: 121506,
   currentBlock: 2900,

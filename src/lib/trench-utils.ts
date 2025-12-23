@@ -118,14 +118,26 @@ export function calculateBlockProgress(
 }
 
 /**
+ * Prize distribution percentages for winners
+ */
+const PRIZE_DISTRIBUTION = {
+  FIRST: 50,
+  SECOND: 30,
+  THIRD: 15,
+  OTHERS: 5,
+} as const;
+
+/**
  * Convert TrenchDetailDto to ArenaRound for UI components
  *
  * @param trench - Trench detail from API
  * @param currentSlot - Current Solana slot from RPC (optional)
+ * @param leaderboard - Leaderboard data for winners calculation (optional)
  */
 export function trenchToArenaRound(
   trench: TrenchDetailDto | null,
   currentSlot?: number,
+  leaderboard?: LeaderboardResponseDto,
 ): ArenaRound | null {
   if (!trench) return null;
 
@@ -143,11 +155,27 @@ export function trenchToArenaRound(
     ? parseFloat(trench.currentTokenPriceSol)
     : 0;
 
-  // Check if there are bets (participants > 0)
-  const hasBets = trench.participantCount > 0;
+  // Check if there are bets - use totalDepositedSol as the source of truth
+  // since participantCount might not be in sync with actual deposits
+  const hasBets =
+    parseFloat(trench.totalDepositedSol) > 0 || trench.participantCount > 0;
+
+  // Calculate winners from leaderboard data
+  const winners = calculateWinners(prizePool, leaderboard);
+
+  // Calculate next round countdown based on remaining blocks in liquidation phase
+  let nextRoundCountdown: number | undefined;
+  if (phase === "liquidation") {
+    const remainingBlocks = totalBlocks - currentBlock;
+    nextRoundCountdown = Math.max(
+      0,
+      Math.ceil((remainingBlocks * BLOCK_TIMING.MS_PER_BLOCK) / 1000),
+    );
+  }
 
   return {
     id: `eva-${trench.trenchId}`,
+    trenchDbId: trench.id,
     tokenName: trench.tokenSymbol || `EVA-${trench.trenchId}`,
     startBlock: parseInt(trench.biddingStartBlock),
     currentBlock,
@@ -160,9 +188,70 @@ export function trenchToArenaRound(
     lpAlloc: 20,
     prizeFund: 80,
     hasBets,
-    nextRoundCountdown: phase === "liquidation" ? 6 : undefined,
+    winners,
+    nextRoundCountdown,
   };
 }
+
+/**
+ * Calculate winners from leaderboard data with prize distribution
+ * - 1st place: 50%
+ * - 2nd place: 30%
+ * - 3rd place: 15%
+ * - Others: 5%
+ */
+function calculateWinners(
+  prizePool: number,
+  leaderboard?: LeaderboardResponseDto,
+): import("@/types").Winner[] | undefined {
+  if (!leaderboard || leaderboard.topThree.length === 0) {
+    return undefined;
+  }
+
+  const winners: import("@/types").Winner[] = [];
+  const topThree = leaderboard.topThree;
+
+  // Distribution percentages for each rank
+  const percentages = [
+    PRIZE_DISTRIBUTION.FIRST,
+    PRIZE_DISTRIBUTION.SECOND,
+    PRIZE_DISTRIBUTION.THIRD,
+  ];
+
+  for (let i = 0; i < Math.min(3, topThree.length); i++) {
+    const participant = topThree[i];
+    const percentage = percentages[i];
+    const prize = (prizePool * percentage) / 100;
+
+    winners.push({
+      rank: i + 1,
+      agentId: participant.agentId || participant.userAddress,
+      agentName:
+        participant.agentName || `Agent ${participant.userAddress.slice(0, 8)}`,
+      prize,
+      percentage,
+    });
+  }
+
+  // Add "Others" entry if there are more participants
+  if (leaderboard.totalParticipants > 3) {
+    const othersPrize = (prizePool * PRIZE_DISTRIBUTION.OTHERS) / 100;
+    winners.push({
+      rank: 4,
+      agentId: "others",
+      agentName: "Others",
+      prize: othersPrize,
+      percentage: PRIZE_DISTRIBUTION.OTHERS,
+    });
+  }
+
+  return winners;
+}
+
+/**
+ * Total token supply for percentage calculation (1 billion tokens)
+ */
+const TOTAL_TOKEN_SUPPLY = 1_000_000_000;
 
 /**
  * Convert LeaderboardResponseDto to AgentRanking array
@@ -177,28 +266,34 @@ export function leaderboardToRankings(
 
   // Add top three
   for (const item of leaderboard.topThree) {
+    const tokenAmount = parseInt(item.tokenBalance) / 1e6; // Adjust decimals
+    const supplyPercentage = (tokenAmount / TOTAL_TOKEN_SUPPLY) * 100;
+
     rankings.push({
       rank: item.rank,
       agentId: item.agentId || item.userAddress,
       agentName: item.agentName || `Agent ${item.userAddress.slice(0, 8)}`,
       agentAvatar: undefined,
-      tokenAmount: parseInt(item.tokenBalance) / 1e6, // Adjust decimals
+      tokenAmount,
       solValue: parseFloat(item.depositedSol) / 1e9,
-      supplyPercentage: 0, // Would need total supply to calculate
+      supplyPercentage,
       isOwned: item.isCurrentUser || item.userAddress === currentUserAddress,
     });
   }
 
   // Add current user if not in top three
   if (leaderboard.currentUser && leaderboard.currentUser.rank > 3) {
+    const tokenAmount = parseInt(leaderboard.currentUser.tokenBalance) / 1e6;
+    const supplyPercentage = (tokenAmount / TOTAL_TOKEN_SUPPLY) * 100;
+
     rankings.push({
       rank: leaderboard.currentUser.rank,
       agentId:
         leaderboard.currentUser.agentId || leaderboard.currentUser.userAddress,
       agentName: leaderboard.currentUser.agentName || "My Agent",
-      tokenAmount: parseInt(leaderboard.currentUser.tokenBalance) / 1e6,
+      tokenAmount,
       solValue: parseFloat(leaderboard.currentUser.depositedSol) / 1e9,
-      supplyPercentage: 0,
+      supplyPercentage,
       isOwned: true,
     });
   }
@@ -249,4 +344,17 @@ export function formatCompactNumber(num: number): string {
   if (num >= 1e3) return `${(num / 1e3).toFixed(2)}K`;
 
   return num.toFixed(2);
+}
+
+/**
+ * Format number with fixed decimal places, avoiding scientific notation
+ * @param num - Number to format
+ * @param decimals - Number of decimal places (default: 6)
+ */
+export function formatDecimal(num: number, decimals: number = 6): string {
+  // Handle edge cases
+  if (!Number.isFinite(num)) return "0";
+
+  // Use toFixed to ensure fixed decimal places and avoid scientific notation
+  return num.toFixed(decimals);
 }
