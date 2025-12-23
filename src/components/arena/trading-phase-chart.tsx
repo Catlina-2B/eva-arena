@@ -13,19 +13,16 @@ import {
 } from "lightweight-charts";
 
 import { usePriceCurve, useTrenchSocket } from "@/hooks";
-import { formatPrice } from "@/lib/trench-utils";
+import { formatPrice, formatSmallNumber } from "@/lib/trench-utils";
 
 interface TradingPhaseChartProps {
   round: ArenaRound;
 }
 
-type TimeInterval = "1M" | "5M" | "15M";
-
 export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Area"> | null>(null);
-  const [selectedInterval, setSelectedInterval] = useState<TimeInterval>("5M");
   const [realtimePrices, setRealtimePrices] = useState<
     { time: UTCTimestamp; value: number }[]
   >([]);
@@ -86,48 +83,9 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
     return Array.from(uniquePoints.values()).sort((a, b) => a.time - b.time);
   }, [apiChartData, realtimePrices]);
 
-  // Filter data based on selected interval
-  const filteredData = useMemo(() => {
-    if (chartData.length === 0) return [];
-
-    const now = Math.floor(Date.now() / 1000);
-    const intervalSeconds =
-      selectedInterval === "1M"
-        ? 60
-        : selectedInterval === "5M"
-          ? 300
-          : 900;
-
-    // Show last N minutes of data
-    const displayMinutes =
-      selectedInterval === "1M" ? 60 : selectedInterval === "5M" ? 30 : 60;
-    const cutoffTime = now - displayMinutes * 60;
-
-    // Filter and resample data
-    const filtered = chartData.filter((point) => point.time >= cutoffTime);
-
-    // Resample to interval
-    if (filtered.length <= 1) return filtered;
-
-    const resampled: { time: UTCTimestamp; value: number }[] = [];
-    let currentBucket = Math.floor(filtered[0].time / intervalSeconds) * intervalSeconds;
-
-    for (const point of filtered) {
-      const bucket = Math.floor(point.time / intervalSeconds) * intervalSeconds;
-      if (bucket !== currentBucket || resampled.length === 0) {
-        resampled.push({
-          time: bucket as UTCTimestamp,
-          value: point.value,
-        });
-        currentBucket = bucket;
-      } else {
-        // Update last point with latest value in bucket
-        resampled[resampled.length - 1].value = point.value;
-      }
-    }
-
-    return resampled;
-  }, [chartData, selectedInterval]);
+  // Use chart data directly without resampling
+  // Just display all available data points as-is
+  const filteredData = chartData;
 
   // Initialize chart
   useEffect(() => {
@@ -148,6 +106,9 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
           color: "rgba(0, 255, 136, 0.05)",
           style: LineStyle.Dotted,
         },
+      },
+      localization: {
+        priceFormatter: (price: number) => formatSmallNumber(price, 4, 4, true),
       },
       width: chartContainerRef.current.clientWidth,
       height: 300,
@@ -218,8 +179,6 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
     }
     return round.tokenPrice;
   }, [chartData, round.tokenPrice]);
-
-  const intervals: TimeInterval[] = ["1M", "5M", "15M"];
 
   return (
     <div className="relative">
@@ -292,50 +251,44 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
                 </span>
               </div>
             </div>
-
-            {/* Time interval selector */}
-            <div className="flex gap-1">
-              {intervals.map((interval) => (
-                <button
-                  key={interval}
-                  className={`px-3 py-1.5 text-xs font-mono tracking-wider transition-all ${
-                    selectedInterval === interval
-                      ? "bg-eva-secondary text-white"
-                      : "bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/70"
-                  }`}
-                  onClick={() => setSelectedInterval(interval)}
-                >
-                  {interval}
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Chart container */}
           <div className="px-4 pb-4">
-            {isLoading ? (
-              <div className="w-full h-[300px] flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-6 h-6 border-2 border-eva-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                  <span className="text-xs text-white/40 font-mono">
-                    LOADING CHART...
-                  </span>
+            <div className="relative">
+              {/* Always render chart container for proper initialization */}
+              <div 
+                ref={chartContainerRef} 
+                className="w-full"
+                style={{ height: 300, visibility: (isLoading || filteredData.length === 0) ? 'hidden' : 'visible' }}
+              />
+              
+              {/* Loading overlay */}
+              {isLoading && (
+                <div className="absolute inset-0 w-full h-[300px] flex items-center justify-center bg-eva-dark">
+                  <div className="text-center">
+                    <div className="w-6 h-6 border-2 border-eva-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                    <span className="text-xs text-white/40 font-mono">
+                      LOADING CHART...
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ) : filteredData.length === 0 ? (
-              <div className="w-full h-[300px] flex items-center justify-center">
-                <div className="text-center">
-                  <span className="text-sm text-white/40 font-mono">
-                    NO PRICE DATA YET
-                  </span>
-                  <p className="text-xs text-white/20 mt-1">
-                    Waiting for trading activity...
-                  </p>
+              )}
+              
+              {/* Empty data overlay */}
+              {!isLoading && filteredData.length === 0 && (
+                <div className="absolute inset-0 w-full h-[300px] flex items-center justify-center bg-eva-dark">
+                  <div className="text-center">
+                    <span className="text-sm text-white/40 font-mono">
+                      NO PRICE DATA YET
+                    </span>
+                    <p className="text-xs text-white/20 mt-1">
+                      Waiting for trading activity...
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div ref={chartContainerRef} className="w-full" />
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
