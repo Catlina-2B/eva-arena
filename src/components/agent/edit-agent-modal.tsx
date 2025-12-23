@@ -1,7 +1,49 @@
 import type { AgentDetailDto, UpdateAgentDto } from "@/types/api";
 
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
+
+// Avatar item component with skeleton loading
+function AvatarItem({
+  url,
+  index,
+  isSelected,
+  onSelect,
+}: {
+  url: string;
+  index: number;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const handleLoad = useCallback(() => {
+    setIsLoaded(true);
+  }, []);
+
+  return (
+    <button
+      className={`w-12 h-12 rounded-lg overflow-hidden transition-all duration-200 ${
+        isSelected
+          ? "ring-2 ring-eva-primary ring-offset-2 ring-offset-eva-card scale-105"
+          : "hover:scale-105 hover:ring-1 hover:ring-eva-border"
+      }`}
+      title={`Avatar ${index + 1}`}
+      type="button"
+      onClick={onSelect}
+    >
+      {!isLoaded && (
+        <div className="w-full h-full bg-eva-border/50 animate-pulse" />
+      )}
+      <img
+        alt={`Avatar ${index + 1}`}
+        className={`w-full h-full object-cover transition-opacity duration-200 ${isLoaded ? "opacity-100" : "opacity-0 absolute"}`}
+        src={url}
+        onLoad={handleLoad}
+      />
+    </button>
+  );
+}
 
 import { useAgentLogos, useUpdateAgent } from "@/hooks/use-agents";
 
@@ -184,91 +226,46 @@ export function EditAgentModal({
                 Select Avatar
               </label>
               {isLoadingLogos ? (
-                <div className="flex items-center gap-2 text-eva-text-dim">
-                  <div className="w-4 h-4 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm font-mono">Loading avatars...</span>
+                <div className="grid grid-cols-7 gap-2">
+                  {/* Skeleton placeholders */}
+                  {Array.from({ length: 14 }).map((_, index) => (
+                    <div
+                      key={`skeleton-${index}`}
+                      className="w-12 h-12 rounded-lg bg-eva-border/50 animate-pulse"
+                    />
+                  ))}
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {/* Mecha Logos */}
-                  {logosData?.mecha && logosData.mecha.length > 0 && (
-                    <div>
-                      <span className="text-xs font-mono text-eva-muted uppercase tracking-wider mb-2 block">
-                        Mecha Class
-                      </span>
-                      <div className="grid grid-cols-7 gap-2">
-                        {logosData.mecha.map((url, index) => (
-                          <button
-                            key={`mecha-${index}`}
-                            className={`w-12 h-12 rounded-lg overflow-hidden transition-all duration-200 ${
-                              selectedLogo === url
-                                ? "ring-2 ring-eva-primary ring-offset-2 ring-offset-eva-card scale-105"
-                                : "hover:scale-105 hover:ring-1 hover:ring-eva-border"
-                            }`}
-                            title={`Mecha ${index + 1}`}
-                            type="button"
-                            onClick={() => setSelectedLogo(url)}
-                          >
-                            <img
-                              alt={`Mecha ${index + 1}`}
-                              className="w-full h-full object-cover"
-                              src={url}
-                            />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Pilot Logos */}
-                  {logosData?.pilot && logosData.pilot.length > 0 && (
-                    <div>
-                      <span className="text-xs font-mono text-eva-muted uppercase tracking-wider mb-2 block">
-                        Pilot Class
-                      </span>
-                      <div className="grid grid-cols-7 gap-2">
-                        {logosData.pilot.map((url, index) => (
-                          <button
-                            key={`pilot-${index}`}
-                            className={`w-12 h-12 rounded-lg overflow-hidden transition-all duration-200 ${
-                              selectedLogo === url
-                                ? "ring-2 ring-eva-primary ring-offset-2 ring-offset-eva-card scale-105"
-                                : "hover:scale-105 hover:ring-1 hover:ring-eva-border"
-                            }`}
-                            title={`Pilot ${index + 1}`}
-                            type="button"
-                            onClick={() => setSelectedLogo(url)}
-                          >
-                            <img
-                              alt={`Pilot ${index + 1}`}
-                              className="w-full h-full object-cover"
-                              src={url}
-                            />
-                          </button>
-                        ))}
-                        {/* Custom upload placeholder */}
-                        <button
-                          className="w-12 h-12 rounded-lg border-2 border-dashed border-eva-border flex items-center justify-center text-eva-text-dim hover:border-eva-primary hover:text-eva-primary transition-colors"
-                          title="Upload custom avatar (coming soon)"
-                          type="button"
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              d="M12 4v16m8-8H4"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                <div className="grid grid-cols-7 gap-2">
+                  {logosData?.map((url, index) => (
+                    <AvatarItem
+                      key={`avatar-${index}`}
+                      index={index}
+                      isSelected={selectedLogo === url}
+                      url={url}
+                      onSelect={() => setSelectedLogo(url)}
+                    />
+                  ))}
+                  {/* Custom upload placeholder */}
+                  <button
+                    className="w-12 h-12 rounded-lg border-2 border-dashed border-eva-border flex items-center justify-center text-eva-text-dim hover:border-eva-primary hover:text-eva-primary transition-colors"
+                    title="Upload custom avatar (coming soon)"
+                    type="button"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        d="M12 4v16m8-8H4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                      />
+                    </svg>
+                  </button>
                 </div>
               )}
             </div>

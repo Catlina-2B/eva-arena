@@ -1,10 +1,51 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 import DefaultLayout from "@/layouts/default";
 import { EvaButton } from "@/components/ui";
 import { useAgentLogos, useCreateAgent } from "@/hooks/use-agents";
 import { useAuthStore } from "@/stores/auth";
+
+// Avatar item component with skeleton loading
+function AvatarItem({
+  url,
+  index,
+  isSelected,
+  onSelect,
+}: {
+  url: string;
+  index: number;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  const handleLoad = useCallback(() => {
+    setIsLoaded(true);
+  }, []);
+
+  return (
+    <button
+      className={`w-12 h-12 rounded-lg overflow-hidden transition-all duration-200 ${
+        isSelected
+          ? "ring-2 ring-eva-primary ring-offset-2 ring-offset-eva-dark scale-105"
+          : "hover:scale-105 hover:ring-1 hover:ring-eva-border"
+      }`}
+      title={`Avatar ${index + 1}`}
+      onClick={onSelect}
+    >
+      {!isLoaded && (
+        <div className="w-full h-full bg-eva-border/50 animate-pulse" />
+      )}
+      <img
+        alt={`Avatar ${index + 1}`}
+        className={`w-full h-full object-cover transition-opacity duration-200 ${isLoaded ? "opacity-100" : "opacity-0 absolute"}`}
+        src={url}
+        onLoad={handleLoad}
+      />
+    </button>
+  );
+}
 
 // Default filter config for agent creation
 const DEFAULT_FILTER_CONFIG = {
@@ -26,32 +67,12 @@ export default function CreateAgentPage() {
   const [agentName, setAgentName] = useState("");
   const [bettingStrategy, setBettingStrategy] = useState("");
 
-  // Combine all logos into a flat array with category labels
-  const allLogos = useMemo(() => {
-    if (!logosData) return [];
-    const logos: { url: string; category: "mecha" | "pilot" }[] = [];
-
-    logosData.mecha?.forEach((url) => {
-      logos.push({ url, category: "mecha" });
-    });
-    logosData.pilot?.forEach((url) => {
-      logos.push({ url, category: "pilot" });
-    });
-
-    return logos;
-  }, [logosData]);
-
   // Set default selected logo when data loads
   useMemo(() => {
-    if (allLogos.length > 0 && !selectedLogoUrl) {
-      setSelectedLogoUrl(allLogos[0].url);
+    if (logosData && logosData.length > 0 && !selectedLogoUrl) {
+      setSelectedLogoUrl(logosData[0]);
     }
-  }, [allLogos, selectedLogoUrl]);
-
-  // Get selected logo for preview
-  const selectedLogo = useMemo(() => {
-    return allLogos.find((logo) => logo.url === selectedLogoUrl);
-  }, [allLogos, selectedLogoUrl]);
+  }, [logosData, selectedLogoUrl]);
 
   const handleCreateAgent = async () => {
     if (!agentName.trim() || !selectedLogoUrl || !bettingStrategy.trim()) {
@@ -149,10 +170,10 @@ export default function CreateAgentPage() {
                       CONNECT WALLET
                     </span>
                   </div>
-                ) : selectedLogo ? (
+                ) : selectedLogoUrl ? (
                   <div className="w-full py-3 px-4 bg-eva-dark/80 border border-eva-primary/50 rounded-lg backdrop-blur-sm">
                     <span className="font-mono text-sm text-eva-primary uppercase tracking-widest flex items-center justify-center gap-2">
-                      {selectedLogo.category.toUpperCase()} CLASS
+                      AVATAR SELECTED
                     </span>
                   </div>
                 ) : null}
@@ -168,69 +189,26 @@ export default function CreateAgentPage() {
                 Select Avatar
               </label>
               {isLoadingLogos ? (
-                <div className="flex items-center gap-2 text-eva-text-dim">
-                  <div className="w-4 h-4 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm font-mono">Loading avatars...</span>
+                <div className="grid grid-cols-7 gap-2">
+                  {/* Skeleton placeholders */}
+                  {Array.from({ length: 14 }).map((_, index) => (
+                    <div
+                      key={`skeleton-${index}`}
+                      className="w-12 h-12 rounded-lg bg-eva-border/50 animate-pulse"
+                    />
+                  ))}
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {/* Mecha Logos */}
-                  {logosData?.mecha && logosData.mecha.length > 0 && (
-                    <div>
-                      <span className="text-xs font-mono text-eva-muted uppercase tracking-wider mb-2 block">
-                        Mecha Class
-                      </span>
-                      <div className="grid grid-cols-7 gap-2">
-                        {logosData.mecha.map((url, index) => (
-                          <button
-                            key={`mecha-${index}`}
-                            className={`w-12 h-12 rounded-lg overflow-hidden transition-all duration-200 ${
-                              selectedLogoUrl === url
-                                ? "ring-2 ring-eva-primary ring-offset-2 ring-offset-eva-dark scale-105"
-                                : "hover:scale-105 hover:ring-1 hover:ring-eva-border"
-                            }`}
-                            title={`Mecha ${index + 1}`}
-                            onClick={() => setSelectedLogoUrl(url)}
-                          >
-                            <img
-                              alt={`Mecha ${index + 1}`}
-                              className="w-full h-full object-cover"
-                              src={url}
-                            />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Pilot Logos */}
-                  {logosData?.pilot && logosData.pilot.length > 0 && (
-                    <div>
-                      <span className="text-xs font-mono text-eva-muted uppercase tracking-wider mb-2 block">
-                        Pilot Class
-                      </span>
-                      <div className="grid grid-cols-7 gap-2">
-                        {logosData.pilot.map((url, index) => (
-                          <button
-                            key={`pilot-${index}`}
-                            className={`w-12 h-12 rounded-lg overflow-hidden transition-all duration-200 ${
-                              selectedLogoUrl === url
-                                ? "ring-2 ring-eva-primary ring-offset-2 ring-offset-eva-dark scale-105"
-                                : "hover:scale-105 hover:ring-1 hover:ring-eva-border"
-                            }`}
-                            title={`Pilot ${index + 1}`}
-                            onClick={() => setSelectedLogoUrl(url)}
-                          >
-                            <img
-                              alt={`Pilot ${index + 1}`}
-                              className="w-full h-full object-cover"
-                              src={url}
-                            />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                <div className="grid grid-cols-7 gap-2">
+                  {logosData?.map((url, index) => (
+                    <AvatarItem
+                      key={`avatar-${index}`}
+                      index={index}
+                      isSelected={selectedLogoUrl === url}
+                      url={url}
+                      onSelect={() => setSelectedLogoUrl(url)}
+                    />
+                  ))}
                 </div>
               )}
             </div>

@@ -211,10 +211,8 @@ export interface AgentWithdrawResponseDto {
   error?: string;
 }
 
-export interface AgentLogosResponseDto {
-  mecha: string[];
-  pilot: string[];
-}
+// AgentLogosResponseDto is now a simple string array
+export type AgentLogosResponseDto = string[];
 
 // ============== Trench Types ==============
 

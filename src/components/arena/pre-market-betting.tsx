@@ -1,7 +1,7 @@
 import type { ArenaRound } from "@/types";
 
 import { EvaBadge } from "@/components/ui";
-import { formatDecimal } from "@/lib/trench-utils";
+import { formatDecimal, formatPrice } from "@/lib/trench-utils";
 
 interface PreMarketBettingProps {
   round: ArenaRound;
@@ -123,11 +123,11 @@ export function PreMarketBetting({ round }: PreMarketBettingProps) {
               <div className="grid grid-cols-3 divide-x divide-eva-border">
                 <PoolStat
                   label="Total Pool"
-                  value={formatDecimal(round.totalPrizePool)}
+                  value={formatDecimal(round.totalSol)}
                 />
                 <PoolStat
                   label="Token Price"
-                  value={formatDecimal(round.totalPrizePool / 5e8)}
+                  value={formatPrice(round.totalSol / 5e8)}
                 />
                 <PoolStat
                   label="Active Agents"

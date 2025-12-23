@@ -181,6 +181,7 @@ export function trenchToArenaRound(
     currentBlock,
     totalBlocks,
     phase,
+    totalSol: totalDepositedSol,
     totalPrizePool: prizePool,
     tokenPrice,
     activeAgents: trench.activeAgentsCount,
@@ -357,4 +358,112 @@ export function formatDecimal(num: number, decimals: number = 6): string {
 
   // Use toFixed to ensure fixed decimal places and avoid scientific notation
   return num.toFixed(decimals);
+}
+
+/**
+ * Format small numbers with subscript notation for leading zeros
+ * e.g., 0.00001234 -> 0.0₄1234
+ *
+ * @param num - Number to format (string or number)
+ * @param threshold - Number of leading zeros to trigger subscript (default: 4)
+ * @param significantDigits - Number of significant digits to show (default: 6)
+ * @param trimTrailingZeros - Whether to remove trailing zeros (default: true)
+ */
+export function formatSmallNumber(
+  num: string | number,
+  threshold: number = 4,
+  significantDigits: number = 6,
+  trimTrailingZeros: boolean = true,
+): string {
+  // Handle edge cases
+  if (num === 0 || num === "0") return "0";
+
+  // Convert to string, avoiding scientific notation
+  const numStr = typeof num === "number" ? num.toFixed(20) : num;
+
+  if (!numStr.includes(".")) return numStr;
+
+  const [intPart, decimalPart] = numStr.split(".");
+
+  // Count leading zeros in decimal part
+  let zeroCount = 0;
+  for (let i = 0; i < decimalPart.length; i++) {
+    if (decimalPart[i] === "0") {
+      zeroCount++;
+    } else {
+      break;
+    }
+  }
+
+  // If leading zeros >= threshold, use subscript format
+  if (zeroCount >= threshold) {
+    const subscript = zeroCount
+      .toString()
+      .split("")
+      .map((n) => "₀₁₂₃₄₅₆₇₈₉"[parseInt(n)])
+      .join("");
+    const remainingPart = decimalPart.slice(zeroCount);
+
+    // Take specified significant digits
+    let formattedRemaining = remainingPart.slice(0, significantDigits);
+
+    // Trim or pad zeros
+    if (trimTrailingZeros) {
+      formattedRemaining = formattedRemaining.replace(/0+$/, "");
+    } else {
+      formattedRemaining = formattedRemaining.padEnd(significantDigits, "0");
+    }
+
+    // If remaining is empty after trimming, show 0
+    if (formattedRemaining === "") {
+      return `${intPart}.0${subscript}`;
+    }
+
+    return `${intPart}.0${subscript}${formattedRemaining}`;
+  }
+
+  // Otherwise, format normally from first non-zero digit
+  const firstNonZeroIndex = decimalPart.search(/[1-9]/);
+  if (firstNonZeroIndex === -1) {
+    // All zeros in decimal part
+    return trimTrailingZeros ? intPart : `${intPart}.${decimalPart}`;
+  }
+
+  let formattedDecimal = decimalPart.slice(
+    0,
+    firstNonZeroIndex + significantDigits,
+  );
+
+  if (trimTrailingZeros) {
+    formattedDecimal = formattedDecimal.replace(/0+$/, "");
+    if (formattedDecimal === "" || formattedDecimal.match(/^0+$/)) {
+      return intPart;
+    }
+  }
+
+  return `${intPart}.${formattedDecimal}`;
+}
+
+/**
+ * Format price with smart formatting - uses subscript for very small numbers,
+ * K/M/B for large numbers
+ */
+export function formatPrice(num: number): string {
+  if (!Number.isFinite(num) || num === 0) return "0";
+
+  const absNum = Math.abs(num);
+
+  // Large numbers: use K/M/B format
+  if (absNum >= 1000) {
+    return formatCompactNumber(num);
+  }
+
+  // Normal numbers (>= 0.0001): use fixed decimals
+  if (absNum >= 0.0001) {
+    const decimals = absNum >= 1 ? 4 : 6;
+    return num.toFixed(decimals).replace(/\.?0+$/, "");
+  }
+
+  // Very small numbers: use subscript notation
+  return formatSmallNumber(num, 4, 4, true);
 }

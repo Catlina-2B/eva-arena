@@ -23,6 +23,8 @@ export interface ArenaRound {
   currentBlock: number;
   totalBlocks: number;
   phase: ArenaPhase;
+  /** 总投入 SOL 数量 */
+  totalSol: number;
   totalPrizePool: number;
   tokenPrice: number;
   activeAgents: number;

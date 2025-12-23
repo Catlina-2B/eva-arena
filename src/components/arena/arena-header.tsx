@@ -74,7 +74,7 @@ export function ArenaHeader({ round }: ArenaHeaderProps) {
             <div className="text-xs text-eva-text-dim uppercase tracking-wider mb-1">
               Total Prize Pool
             </div>
-            <div className="text-2xl font-bold text-eva-primary">
+            <div className="text-2xl font-bold text-eva-primary whitespace-nowrap">
               {formatDecimal(round.totalPrizePool)} SOL
             </div>
           </div>

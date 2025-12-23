@@ -13,6 +13,7 @@ import {
 } from "lightweight-charts";
 
 import { usePriceCurve, useTrenchSocket } from "@/hooks";
+import { formatPrice } from "@/lib/trench-utils";
 
 interface TradingPhaseChartProps {
   round: ArenaRound;
@@ -277,7 +278,7 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
                 EVA/SOL
               </span>
               <span className="font-mono text-lg text-eva-primary font-semibold">
-                {currentPrice.toFixed(6)}
+                {formatPrice(currentPrice)}
               </span>
               {/* Connection status indicator */}
               <div className="flex items-center gap-1.5">
