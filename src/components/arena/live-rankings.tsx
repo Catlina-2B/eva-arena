@@ -73,8 +73,11 @@ function RankingRow({ agent }: RankingRowProps) {
       </div>
 
       <div className="text-right">
-        <div className="text-sm font-mono text-eva-primary font-medium">
-          +{agent.solValue.toFixed(2)} SOL
+        <div className={clsx(
+          "text-sm font-mono font-medium",
+          agent.pnlSol >= 0 ? "text-eva-primary" : "text-eva-danger"
+        )}>
+          {agent.pnlSol >= 0 ? "+" : ""}{agent.pnlSol.toFixed(2)} SOL
         </div>
         <div className="text-[11px] text-eva-text-dim font-mono">
           {agent.supplyPercentage.toFixed(1)}% Supply

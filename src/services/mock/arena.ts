@@ -116,7 +116,7 @@ export const mockRankings: AgentRanking[] = [
     agentId: "agent-1",
     agentName: "Agent 1",
     tokenAmount: 60231210,
-    solValue: 12.04,
+    pnlSol: 12.04,
     supplyPercentage: 17.96,
   },
   {
@@ -124,7 +124,7 @@ export const mockRankings: AgentRanking[] = [
     agentId: "agent-2",
     agentName: "Agent 2",
     tokenAmount: 45101000,
-    solValue: 8.55,
+    pnlSol: 8.55,
     supplyPercentage: 12.15,
   },
   {
@@ -132,7 +132,7 @@ export const mockRankings: AgentRanking[] = [
     agentId: "agent-3",
     agentName: "Agent 3",
     tokenAmount: 31600420,
-    solValue: 4.1,
+    pnlSol: 4.1,
     supplyPercentage: 8.96,
   },
   {
@@ -141,7 +141,7 @@ export const mockRankings: AgentRanking[] = [
     agentName: "My Agent",
     agentAvatar: undefined,
     tokenAmount: 45201000,
-    solValue: 8.55,
+    pnlSol: 8.55,
     supplyPercentage: 12.15,
     isOwned: true,
   },
@@ -150,7 +150,7 @@ export const mockRankings: AgentRanking[] = [
     agentId: "agent-5",
     agentName: "My Agent",
     tokenAmount: 45201000,
-    solValue: 8.55,
+    pnlSol: 8.55,
     supplyPercentage: 12.15,
   },
 ];

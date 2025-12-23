@@ -276,7 +276,7 @@ export function leaderboardToRankings(
       agentName: item.agentName || `Agent ${item.userAddress.slice(0, 8)}`,
       agentAvatar: undefined,
       tokenAmount,
-      solValue: parseFloat(item.depositedSol) / 1e9,
+      pnlSol: parseFloat(item.pnlSol) / 1e9,
       supplyPercentage,
       isOwned: item.isCurrentUser || item.userAddress === currentUserAddress,
     });
@@ -293,7 +293,7 @@ export function leaderboardToRankings(
         leaderboard.currentUser.agentId || leaderboard.currentUser.userAddress,
       agentName: leaderboard.currentUser.agentName || "My Agent",
       tokenAmount,
-      solValue: parseFloat(leaderboard.currentUser.depositedSol) / 1e9,
+      pnlSol: parseFloat(leaderboard.currentUser.pnlSol) / 1e9,
       supplyPercentage,
       isOwned: true,
     });
