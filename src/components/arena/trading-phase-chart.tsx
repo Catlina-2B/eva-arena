@@ -9,6 +9,7 @@ import {
   type ISeriesApi,
   ColorType,
   LineStyle,
+  LineType,
   AreaSeries,
 } from "lightweight-charts";
 
@@ -135,12 +136,13 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
       },
     });
 
-    // Create area series with gradient (v5 API)
+    // Create area series with smooth curve and gradient shadow (v5 API)
     const series = chart.addSeries(AreaSeries, {
       lineColor: "#00ff88",
       lineWidth: 2,
-      topColor: "rgba(0, 255, 136, 0.4)",
-      bottomColor: "rgba(0, 255, 136, 0.0)",
+      lineType: LineType.Curved, // Smooth curved line
+      topColor: "rgba(0, 255, 136, 0.5)", // Stronger gradient at top
+      bottomColor: "rgba(0, 255, 136, 0.0)", // Fade to transparent
       crosshairMarkerVisible: true,
       crosshairMarkerRadius: 4,
       crosshairMarkerBorderColor: "#00ff88",
