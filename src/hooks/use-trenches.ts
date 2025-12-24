@@ -67,7 +67,7 @@ export function useTrenchDetail(trenchId: number | undefined) {
 /**
  * Hook for getting price curve data
  *
- * Updates are pushed via WebSocket (useTrenchSocket with autoInvalidate)
+ * Polls every 500ms for real-time updates
  */
 export function usePriceCurve(
   trenchId: number | undefined,
@@ -77,7 +77,8 @@ export function usePriceCurve(
     queryKey: trenchKeys.priceCurve(trenchId!, unit),
     queryFn: () => trenchApi.getPriceCurve(trenchId!, unit),
     enabled: !!trenchId,
-    staleTime: 30 * 1000, // 30 seconds - WebSocket handles real-time updates
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 500, // Poll every 0.5 seconds
   });
 }
 
