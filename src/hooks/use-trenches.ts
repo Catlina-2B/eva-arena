@@ -42,13 +42,14 @@ export function useTrenchList(params?: {
 /**
  * Hook for getting current active trench
  *
- * Updates are pushed via WebSocket (useTrenchSocket with autoInvalidate)
+ * Polls every 500ms for real-time updates
  */
 export function useCurrentTrench() {
   return useQuery({
     queryKey: trenchKeys.current(),
     queryFn: () => trenchApi.getCurrentTrench(),
-    staleTime: 30 * 1000, // 30 seconds - WebSocket handles real-time updates
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 500, // Poll every 0.5 seconds
   });
 }
 
@@ -84,6 +85,8 @@ export function usePriceCurve(
 
 /**
  * Hook for getting trench transactions
+ *
+ * Polls every 500ms for real-time updates
  */
 export function useTrenchTransactions(
   trenchId: number | undefined,
@@ -98,21 +101,23 @@ export function useTrenchTransactions(
     queryKey: [...trenchKeys.transactions(trenchId!), params],
     queryFn: () => trenchApi.getTransactions(trenchId!, params),
     enabled: !!trenchId,
-    staleTime: 10 * 1000, // 10 seconds
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 500, // Poll every 0.5 seconds
   });
 }
 
 /**
  * Hook for getting leaderboard
  *
- * Updates are pushed via WebSocket (useTrenchSocket with autoInvalidate)
+ * Polls every 500ms for real-time updates
  */
 export function useLeaderboard(trenchId: number | undefined) {
   return useQuery({
     queryKey: trenchKeys.leaderboard(trenchId!),
     queryFn: () => trenchApi.getLeaderboard(trenchId!),
     enabled: !!trenchId,
-    staleTime: 30 * 1000, // 30 seconds - WebSocket handles real-time updates
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: 500, // Poll every 0.5 seconds
   });
 }
 
