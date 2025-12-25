@@ -25,10 +25,6 @@ const config = createConfig({
 
   walletConnectors: [
     solanaWalletConnectors(), // Solana 钱包连接器
-    authWalletConnectors({
-      // 支持的社交登录类型
-      authTypes: ["email", "google", "twitter", "github", "discord"],
-    }),
   ],
 
   plugins: [
