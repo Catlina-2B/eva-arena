@@ -8,7 +8,7 @@ import { EvaCard, EvaCardContent, EvaBadge, EvaButton } from "@/components/ui";
 import { useUserTransactions } from "@/hooks";
 
 // Execution log entry type
-interface ExecutionLogEntry {
+export interface ExecutionLogEntry {
   id: string;
   txType: TransactionType;
   action: string;
