@@ -48,12 +48,37 @@ export function statusToPhase(status: string): ArenaPhase {
 }
 
 /**
+ * Determine phase based on current block number
+ *
+ * Phase boundaries:
+ * - betting: 0 - 299 (前 300 区块)
+ * - trading: 300 - 2699 (中间 2400 区块)
+ * - liquidation: 2700 - 3000 (最后 300 区块)
+ */
+function blockToPhase(currentBlock: number): ArenaPhase {
+  if (currentBlock < BLOCK_TIMING.BIDDING_BLOCKS) {
+    return "betting";
+  } else if (
+    currentBlock <
+    BLOCK_TIMING.BIDDING_BLOCKS + BLOCK_TIMING.TRADING_BLOCKS
+  ) {
+    return "trading";
+  } else {
+    return "liquidation";
+  }
+}
+
+/**
  * Calculate current block progress within a trench using Solana slot
  *
- * Uses backend status directly to determine phase:
- * - BIDDING: 竞价阶段 (前 300 区块)
- * - TRADING: 交易阶段 (300-2700 区块)
- * - ENDED: 清算阶段 (2700-3000 区块)
+ * Phase determination:
+ * - When currentSlot is available, use block-based phase calculation for real-time accuracy
+ * - Otherwise, fall back to backend status
+ *
+ * Block boundaries:
+ * - BIDDING/betting: 0-299 (前 300 区块)
+ * - TRADING/trading: 300-2699 (中间 2400 区块)
+ * - ENDED/liquidation: 2700-3000 (最后 300 区块)
  *
  * @param trench - Trench detail from API
  * @param currentSlot - Current Solana slot from RPC (optional, falls back to time-based estimate)
@@ -71,20 +96,25 @@ export function calculateBlockProgress(
   // Total blocks includes all phases: betting (300) + trading (2400) + liquidation (300) = 3000
   const totalBlocks = BLOCK_TIMING.TOTAL_BLOCKS;
 
-  // Use backend status directly for phase
-  const phase = statusToPhase(trench.status);
-
   // Calculate current block using Solana slot
   let currentBlock = 0;
+  let phase: ArenaPhase;
 
   if (currentSlot !== undefined) {
     // Use actual Solana slot: currentBlock = currentSlot - biddingStartBlock
     currentBlock = Math.max(0, currentSlot - biddingStart);
     currentBlock = Math.min(currentBlock, totalBlocks);
+
+    // When we have real-time slot data, determine phase based on block number
+    // This ensures UI shows correct phase even if backend status is delayed
+    phase = blockToPhase(currentBlock);
   } else {
     // Fallback: estimate based on time (less accurate)
     const biddingEnd = parseInt(trench.biddingEndBlock);
     const biddingDuration = biddingEnd - biddingStart;
+
+    // Use backend status for phase when no real-time slot data
+    phase = statusToPhase(trench.status);
 
     if (trench.status === "BIDDING") {
       if (trench.startTime) {

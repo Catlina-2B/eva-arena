@@ -1,5 +1,4 @@
 import type { Agent, AgentHistoryRound, TradeRecord } from "@/types";
-import type { ExecutionLogEntry } from "@/components/arena/agent-dashboard-card";
 
 export const mockAgent: Agent = {
   id: "eva-1",
@@ -13,45 +12,6 @@ export const mockAgent: Agent = {
   pnl: 324.12,
   frequency: 10,
 };
-
-// Mock execution logs for agent dashboard
-export const mockExecutionLogs: ExecutionLogEntry[] = [
-  {
-    id: "1",
-    agentId: "Eva-83000",
-    phase: "Betting Phase",
-    action: "Deposit",
-    amount: 300,
-  },
-  {
-    id: "2",
-    agentId: "Eva-83000",
-    phase: "Betting Phase",
-    action: "Withdraw",
-    amount: 300,
-  },
-  {
-    id: "3",
-    agentId: "Eva-83000",
-    phase: "Trading Phase",
-    action: "Buy",
-    amount: 100,
-  },
-  {
-    id: "4",
-    agentId: "Eva-83000",
-    phase: "Trading Phase",
-    action: "Sell",
-    amount: 10,
-  },
-  {
-    id: "5",
-    agentId: "Eva-83000",
-    phase: "Liquidation",
-    action: "Reward",
-    amount: 10,
-  },
-];
 
 export const mockAgentHistory: AgentHistoryRound[] = [
   {
