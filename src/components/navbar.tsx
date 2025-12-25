@@ -34,7 +34,7 @@ export function Navbar() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-eva-darker/80 backdrop-blur-md border-b border-eva-border">
-      <div className="container mx-auto max-w-7xl px-6">
+      <div className="container mx-auto px-3">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link className="flex items-center gap-2" to="/">
