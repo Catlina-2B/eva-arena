@@ -46,6 +46,7 @@ export {
   useTrenchDetail,
   usePriceCurve,
   useTrenchTransactions,
+  useUserTransactions,
   useLeaderboard,
   useTrenchSummary,
   trenchKeys,

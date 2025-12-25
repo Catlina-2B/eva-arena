@@ -58,6 +58,14 @@ export interface AgentRanking {
   isOwned?: boolean;
 }
 
+/** AI 推理过程 */
+export interface ActivityReason {
+  id: number;
+  content: string;
+  action: string;
+  createdAt: string;
+}
+
 export interface ActivityItem {
   id: string;
   type: "deposit" | "withdraw" | "buy" | "sell";
@@ -66,6 +74,8 @@ export interface ActivityItem {
   tokenAmount: number;
   solAmount: number;
   timestamp: Date;
+  /** AI 推理过程 */
+  reason?: ActivityReason;
 }
 
 // Agent Types

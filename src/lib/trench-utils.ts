@@ -324,6 +324,14 @@ export function transactionsToActivities(
       tokenAmount: tx.tokenAmount ? parseInt(tx.tokenAmount) / 1e6 : 0,
       solAmount: tx.solAmount ? parseFloat(tx.solAmount) / 1e9 : 0,
       timestamp: new Date(tx.createdAt),
+      reason: tx.reason
+        ? {
+            id: tx.reason.id,
+            content: tx.reason.content,
+            action: tx.reason.action,
+            createdAt: tx.reason.createdAt,
+          }
+        : undefined,
     }));
 }
 

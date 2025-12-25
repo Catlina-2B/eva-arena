@@ -1,10 +1,17 @@
+import { startTransition } from "react";
+import { useModal } from "@particle-network/connectkit";
+
 import { EvaCard, EvaCardContent, EvaButton } from "@/components/ui";
 
-interface WelcomeCardProps {
-  onConnect?: () => void;
-}
+export function WelcomeCard() {
+  const { setOpen } = useModal();
 
-export function WelcomeCard({ onConnect }: WelcomeCardProps) {
+  // 打开连接弹窗 - 使用 startTransition 避免 Suspense 错误
+  const handleConnect = () => {
+    startTransition(() => {
+      setOpen(true);
+    });
+  };
   return (
     <EvaCard className="text-center">
       <EvaCardContent className="py-8">
@@ -55,7 +62,7 @@ export function WelcomeCard({ onConnect }: WelcomeCardProps) {
             </svg>
           }
           variant="primary"
-          onClick={onConnect}
+          onClick={handleConnect}
         >
           Connect Wallet
         </EvaButton>

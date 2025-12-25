@@ -17,7 +17,7 @@ import {
   useAgent,
   useAgentPanel,
   useAgentTrenches,
-  useAgentTransactions,
+  useUserTransactions,
   useToggleAgentStatus,
   useAgentWithdraw,
 } from "@/hooks";
@@ -342,21 +342,19 @@ function TradeHistoryTable({
 function HistoryRow({
   round,
   trenchId,
-  agentId,
   isExpanded,
   onToggle,
 }: {
   round: AgentHistoryRound;
   trenchId: number;
-  agentId: string;
   isExpanded: boolean;
   onToggle: () => void;
 }) {
-  // Fetch transactions only when expanded
+  // Fetch user's transactions only when expanded
   const { data: transactionsData, isLoading: isTransactionsLoading } =
-    useAgentTransactions(
-      isExpanded ? agentId : undefined,
-      isExpanded ? { trenchId, limit: 50 } : undefined,
+    useUserTransactions(
+      isExpanded ? trenchId : undefined,
+      isExpanded ? { limit: 50 } : undefined,
     );
 
   return (
@@ -876,7 +874,6 @@ export default function MyAgentPage() {
               {historyRounds.map((round) => (
                 <EvaCard key={round.roundId}>
                   <HistoryRow
-                    agentId={primaryAgent.id}
                     isExpanded={expandedRound === round.roundId}
                     round={round}
                     trenchId={round.trenchDbId}

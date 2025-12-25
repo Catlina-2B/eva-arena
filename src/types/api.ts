@@ -299,6 +299,14 @@ export interface PriceCurveResponseDto {
   totalTrades: number;
 }
 
+/** 交易推理详情 */
+export interface TransactionReasonDto {
+  id: number;
+  content: string;
+  action: string;
+  createdAt: string;
+}
+
 export interface TransactionDto {
   id: number;
   trenchId: number;
@@ -310,8 +318,13 @@ export interface TransactionDto {
   signature: string;
   slot: number;
   blockTime: number | null;
+  reasonId?: number;
+  reason?: TransactionReasonDto;
+  /** @deprecated 使用 reason.content */
   reasoningChain?: string;
+  /** @deprecated 使用 reason.content */
   reasoningOutput?: string;
+  /** @deprecated 使用 reason.action */
   reasoningAction?: string;
   createdAt: string;
 }

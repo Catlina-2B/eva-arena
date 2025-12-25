@@ -1,16 +1,19 @@
 import type { Agent } from "@/types";
+import type { TransactionDto, TransactionType } from "@/types/api";
 
 import clsx from "clsx";
+import { useMemo } from "react";
 
 import { EvaCard, EvaCardContent, EvaBadge, EvaButton } from "@/components/ui";
+import { useUserTransactions } from "@/hooks";
 
 // Execution log entry type
 interface ExecutionLogEntry {
   id: string;
-  agentId: string;
-  phase: "Betting Phase" | "Trading Phase" | "Liquidation";
+  txType: TransactionType;
   action: string;
   amount: number;
+  userAddress: string;
 }
 
 interface AgentDashboardCardProps {
@@ -20,7 +23,8 @@ interface AgentDashboardCardProps {
   solBalance: number;
   totalPnl: number;
   roundPnl: number;
-  executionLogs: ExecutionLogEntry[];
+  /** Current trench ID for fetching user transactions */
+  trenchId?: number;
   /** Whether the toggle operation is in progress */
   isToggling?: boolean;
   onStartSystem?: () => void;
@@ -28,16 +32,51 @@ interface AgentDashboardCardProps {
   onEditName?: () => void;
 }
 
-// Phase badge component
-function PhaseBadge({ phase }: { phase: ExecutionLogEntry["phase"] }) {
-  const getPhaseStyle = () => {
-    switch (phase) {
-      case "Betting Phase":
-        return "bg-eva-secondary/20 text-eva-secondary border-eva-secondary/30";
-      case "Trading Phase":
+// Convert transaction type to display action
+function txTypeToAction(txType: TransactionType): string {
+  switch (txType) {
+    case "BUY":
+      return "BUY";
+    case "SELL":
+      return "SELL";
+    case "DEPOSIT":
+      return "DEPOSIT";
+    case "WITHDRAW":
+      return "WITHDRAW";
+    case "CLAIM":
+      return "CLAIM";
+    default:
+      return txType;
+  }
+}
+
+// Convert TransactionDto to ExecutionLogEntry
+function transactionToLogEntry(tx: TransactionDto): ExecutionLogEntry {
+  const solAmount = tx.solAmount ? parseFloat(tx.solAmount) / 1e9 : 0;
+
+  return {
+    id: tx.id.toString(),
+    txType: tx.txType,
+    action: txTypeToAction(tx.txType),
+    amount: solAmount,
+    userAddress: tx.userAddress,
+  };
+}
+
+// Transaction type badge component
+function TxTypeBadge({ txType }: { txType: TransactionType }) {
+  const getTypeStyle = () => {
+    switch (txType) {
+      case "BUY":
         return "bg-eva-primary/20 text-eva-primary border-eva-primary/30";
-      case "Liquidation":
+      case "SELL":
         return "bg-eva-danger/20 text-eva-danger border-eva-danger/30";
+      case "DEPOSIT":
+        return "bg-eva-secondary/20 text-eva-secondary border-eva-secondary/30";
+      case "WITHDRAW":
+        return "bg-eva-warning/20 text-eva-warning border-eva-warning/30";
+      case "CLAIM":
+        return "bg-eva-success/20 text-eva-success border-eva-success/30";
       default:
         return "bg-eva-card text-eva-text-dim border-eva-border";
     }
@@ -47,10 +86,10 @@ function PhaseBadge({ phase }: { phase: ExecutionLogEntry["phase"] }) {
     <span
       className={clsx(
         "inline-flex items-center px-2 py-0.5 text-[10px] rounded border font-medium",
-        getPhaseStyle(),
+        getTypeStyle(),
       )}
     >
-      {phase}
+      {txType}
     </span>
   );
 }
@@ -203,7 +242,7 @@ export function AgentDashboardCard({
   solBalance,
   totalPnl,
   roundPnl,
-  executionLogs,
+  trenchId,
   isToggling = false,
   onStartSystem,
   onPauseSystem,
@@ -212,11 +251,22 @@ export function AgentDashboardCard({
   const isRunning = agent.status === "running";
   const isPaused = agent.status === "paused";
 
+  // Fetch user's transactions for this trench
+  const { data: transactionsData, isLoading: isTransactionsLoading } =
+    useUserTransactions(trenchId, { limit: 10 });
+
+  // Convert transactions to execution log entries
+  const executionLogs = useMemo(() => {
+    if (!transactionsData?.transactions) return [];
+
+    return transactionsData.transactions.map(transactionToLogEntry);
+  }, [transactionsData]);
+
   // Format number with commas
   const formatNumber = (num: number) => {
     return num.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: 4,
+      maximumFractionDigits: 6,
     });
   };
 
@@ -226,6 +276,13 @@ export function AgentDashboardCard({
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
+  };
+
+  // Format short address
+  const formatShortAddress = (address: string) => {
+    if (!address) return "";
+
+    return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
 
   return (
@@ -351,28 +408,35 @@ export function AgentDashboardCard({
             EXECUTION LOGS
           </div>
           <div className="space-y-1.5 max-h-40 overflow-y-auto">
-            {executionLogs.map((log) => (
-              <div
-                key={log.id}
-                className="flex items-center justify-between text-xs py-1"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-eva-text-dim">
-                    {log.agentId}
-                  </span>
-                  <PhaseBadge phase={log.phase} />
-                </div>
-                <span className="font-mono text-eva-text-dim">
-                  {log.action} {log.amount} SOL
-                </span>
+            {isTransactionsLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="w-4 h-4 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
               </div>
-            ))}
+            ) : executionLogs.length === 0 ? (
+              <div className="text-xs text-eva-text-dim text-center py-4">
+                No transactions yet
+              </div>
+            ) : (
+              executionLogs.map((log) => (
+                <div
+                  key={log.id}
+                  className="flex items-center justify-between text-xs py-1"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-eva-text-dim">
+                      {formatShortAddress(log.userAddress)}
+                    </span>
+                    <TxTypeBadge txType={log.txType} />
+                  </div>
+                  <span className="font-mono text-eva-text-dim">
+                    {log.action} {log.amount.toFixed(4)} SOL
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </EvaCardContent>
     </EvaCard>
   );
 }
-
-// Export execution log entry type for external use
-export type { ExecutionLogEntry };

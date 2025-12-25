@@ -3,6 +3,7 @@ import type { TransactionType, TrenchStatus } from "@/types/api";
 import { useQuery } from "@tanstack/react-query";
 
 import { trenchApi } from "@/services/api";
+import { useAuthStore } from "@/stores/auth";
 
 /**
  * Polling configuration
@@ -138,5 +139,32 @@ export function useTrenchSummary(
     queryKey: trenchKeys.summary(trenchId!, userAddress),
     queryFn: () => trenchApi.getSummary(trenchId!, userAddress),
     enabled: !!trenchId,
+  });
+}
+
+/**
+ * Hook for getting current user's transactions in a trench
+ *
+ * Automatically uses the logged-in user's wallet address.
+ * Polls every 500ms for real-time updates.
+ */
+export function useUserTransactions(
+  trenchId: number | undefined,
+  params?: {
+    txType?: TransactionType[];
+    page?: number;
+    limit?: number;
+  },
+) {
+  const { user } = useAuthStore();
+  const userAddress = user?.walletAddress;
+
+  return useQuery({
+    queryKey: [...trenchKeys.transactions(trenchId!), "user", userAddress, params],
+    queryFn: () =>
+      trenchApi.getTransactions(trenchId!, { ...params, userAddress }),
+    enabled: !!trenchId && !!userAddress,
+    staleTime: 0, // Always fetch fresh data
+    refetchInterval: POLLING_INTERVAL,
   });
 }

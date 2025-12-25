@@ -1,3 +1,5 @@
+import { useNavigate } from "react-router-dom";
+
 import { EvaCard, EvaCardContent, EvaButton } from "@/components/ui";
 
 interface CreateAgentCardProps {
@@ -5,6 +7,15 @@ interface CreateAgentCardProps {
 }
 
 export function CreateAgentCard({ onCreate }: CreateAgentCardProps) {
+  const navigate = useNavigate();
+
+  const handleCreate = () => {
+    if (onCreate) {
+      onCreate();
+    } else {
+      navigate("/create-agent");
+    }
+  };
   return (
     <EvaCard className="text-center">
       <EvaCardContent className="py-8">
@@ -68,7 +79,7 @@ export function CreateAgentCard({ onCreate }: CreateAgentCardProps) {
           fullWidth
           className="tracking-wider uppercase"
           variant="primary"
-          onClick={onCreate}
+          onClick={handleCreate}
         >
           Create Agent
         </EvaButton>

@@ -22,7 +22,6 @@ const phaseConfig: Record<
 export function ArenaHeader({ round }: ArenaHeaderProps) {
   // Get current phase config
   const currentPhaseConfig = phaseConfig[round.phase];
-  const [phaseStart, phaseEnd] = currentPhaseConfig.blocks;
 
   // Subscribe to real-time slot updates via WebSocket
   const { slot } = useSlotSubscription();
@@ -33,12 +32,11 @@ export function ArenaHeader({ round }: ArenaHeaderProps) {
       ? Math.min(Math.max(0, slot - round.startBlock), round.totalBlocks)
       : round.currentBlock;
 
-  // Calculate progress percentage based on current phase's start and end blocks
-  const phaseBlocks = phaseEnd - phaseStart;
-  const currentPhaseProgress = currentBlock - phaseStart;
+  // Calculate progress percentage based on total round progress (0-3000 blocks)
+  // Progress is continuous across all phases, not reset per phase
   const percentage = Math.min(
     100,
-    Math.max(0, (currentPhaseProgress / phaseBlocks) * 100),
+    Math.max(0, (currentBlock / round.totalBlocks) * 100),
   );
 
   return (

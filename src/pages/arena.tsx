@@ -38,7 +38,6 @@ import {
   mockArenaRound,
   mockRankings,
   mockActivities,
-  mockExecutionLogs,
 } from "@/services/mock";
 
 // Feature flag for using real API data
@@ -275,13 +274,13 @@ export default function ArenaPage() {
                   pnl: primaryAgent.totalPnl,
                   frequency: parseInt(primaryAgent.frequency) || 10,
                 }}
-                executionLogs={mockExecutionLogs}
                 isToggling={toggleAgentStatus.isPending}
                 roundPnl={0}
                 solBalance={primaryAgent.currentBalance}
                 tokenBalance={0}
                 tokenChangePercent={0}
                 totalPnl={primaryAgent.totalPnl}
+                trenchId={trenchId}
                 onEditName={() => setIsEditModalOpen(true)}
                 onPauseSystem={() => toggleAgentStatus.mutate(primaryAgent.id)}
                 onStartSystem={() => toggleAgentStatus.mutate(primaryAgent.id)}
