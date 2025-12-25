@@ -110,6 +110,10 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
       },
       localization: {
         priceFormatter: (price: number) => formatSmallNumber(price, 4, 4, true),
+        timeFormatter: (timestamp: number) => {
+          const date = new Date(timestamp * 1000);
+          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        },
       },
       width: chartContainerRef.current.clientWidth,
       height: 300,
@@ -121,6 +125,10 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
         borderColor: "rgba(0, 255, 136, 0.2)",
         timeVisible: true,
         secondsVisible: false,
+        tickMarkFormatter: (time: number) => {
+          const date = new Date(time * 1000);
+          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        },
       },
       crosshair: {
         vertLine: {
