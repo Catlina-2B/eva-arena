@@ -41,7 +41,7 @@ export function WalletInterfaceModal({
 
   const handleCopyAddress = async () => {
     try {
-      await navigator.clipboard.writeText(address);
+      await navigator.clipboard.writeText(turnkeyAddress);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -118,7 +118,7 @@ export function WalletInterfaceModal({
               <div className="flex items-center justify-between mt-3">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-eva-text-dim font-mono">
-                    {shortenAddress(address)}
+                    {shortenAddress(turnkeyAddress)}
                   </span>
                   <button
                     className="p-1 text-eva-text-dim hover:text-eva-primary transition-colors"
