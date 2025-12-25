@@ -33,30 +33,6 @@ export function LiveActivity({ activities }: LiveActivityProps) {
               Live Activity
             </h3>
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              className={clsx(
-                "px-3 py-1 text-xs font-medium rounded transition-colors",
-                activeTab === "live"
-                  ? "bg-eva-card-hover text-eva-text"
-                  : "text-eva-text-dim hover:text-eva-text",
-              )}
-              onClick={() => setActiveTab("live")}
-            >
-              Live
-            </button>
-            <button
-              className={clsx(
-                "px-3 py-1 text-xs font-medium rounded transition-colors",
-                activeTab === "history"
-                  ? "bg-eva-card-hover text-eva-text"
-                  : "text-eva-text-dim hover:text-eva-text",
-              )}
-              onClick={() => setActiveTab("history")}
-            >
-              History
-            </button>
-          </div>
         </div>
 
         {/* Activity list */}
