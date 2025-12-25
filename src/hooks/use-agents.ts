@@ -29,6 +29,7 @@ export const agentKeys = {
   transactions: (id: string) =>
     [...agentKeys.detail(id), "transactions"] as const,
   logos: () => [...agentKeys.all, "logos"] as const,
+  promptTemplate: () => [...agentKeys.all, "promptTemplate"] as const,
 };
 
 /**
@@ -256,5 +257,16 @@ export function useAgentLogos() {
     queryFn: () => agentApi.getAgentLogos(),
     enabled: isAuthenticated,
     staleTime: 60 * 60 * 1000, // 1 hour - logos don't change often
+  });
+}
+
+/**
+ * Hook for getting the default prompt template
+ */
+export function usePromptTemplate() {
+  return useQuery({
+    queryKey: agentKeys.promptTemplate(),
+    queryFn: () => agentApi.getPromptTemplate(),
+    staleTime: 60 * 60 * 1000, // 1 hour - template doesn't change often
   });
 }

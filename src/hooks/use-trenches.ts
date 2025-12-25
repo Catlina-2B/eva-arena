@@ -5,6 +5,12 @@ import { useQuery } from "@tanstack/react-query";
 import { trenchApi } from "@/services/api";
 
 /**
+ * Polling configuration
+ * Change this value to adjust the polling interval for all trench-related queries
+ */
+export const POLLING_INTERVAL = 500; // milliseconds
+
+/**
  * Query keys for trenches
  */
 export const trenchKeys = {
@@ -49,7 +55,7 @@ export function useCurrentTrench() {
     queryKey: trenchKeys.current(),
     queryFn: () => trenchApi.getCurrentTrench(),
     staleTime: 0, // Always fetch fresh data
-    refetchInterval: 500, // Poll every 0.5 seconds
+    refetchInterval: POLLING_INTERVAL,
   });
 }
 
@@ -79,7 +85,7 @@ export function usePriceCurve(
     queryFn: () => trenchApi.getPriceCurve(trenchId!, unit),
     enabled: !!trenchId,
     staleTime: 0, // Always fetch fresh data
-    refetchInterval: 500, // Poll every 0.5 seconds
+    refetchInterval: POLLING_INTERVAL,
   });
 }
 
@@ -102,7 +108,7 @@ export function useTrenchTransactions(
     queryFn: () => trenchApi.getTransactions(trenchId!, params),
     enabled: !!trenchId,
     staleTime: 0, // Always fetch fresh data
-    refetchInterval: 500, // Poll every 0.5 seconds
+    refetchInterval: POLLING_INTERVAL,
   });
 }
 
@@ -117,7 +123,7 @@ export function useLeaderboard(trenchId: number | undefined) {
     queryFn: () => trenchApi.getLeaderboard(trenchId!),
     enabled: !!trenchId,
     staleTime: 0, // Always fetch fresh data
-    refetchInterval: 500, // Poll every 0.5 seconds
+    refetchInterval: POLLING_INTERVAL,
   });
 }
 

@@ -10,6 +10,7 @@ import type {
   AgentWithdrawDto,
   AgentWithdrawResponseDto,
   CreateAgentDto,
+  PromptTemplateResponseDto,
   TransactionListResponseDto,
   TransactionType,
   UpdateAgentDto,
@@ -195,6 +196,17 @@ export const agentApi = {
   getAgentLogos: async (): Promise<AgentLogosResponseDto> => {
     const response =
       await apiClient.get<AgentLogosResponseDto>("/api/agents/logos");
+
+    return response.data;
+  },
+
+  /**
+   * Get the default prompt template for agents
+   */
+  getPromptTemplate: async (): Promise<PromptTemplateResponseDto> => {
+    const response = await apiClient.get<PromptTemplateResponseDto>(
+      "/api/agents/prompt-template",
+    );
 
     return response.data;
   },

@@ -1,9 +1,13 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import DefaultLayout from "@/layouts/default";
 import { EvaButton } from "@/components/ui";
-import { useAgentLogos, useCreateAgent } from "@/hooks/use-agents";
+import {
+  useAgentLogos,
+  useCreateAgent,
+  usePromptTemplate,
+} from "@/hooks/use-agents";
 import { useAuthStore } from "@/stores/auth";
 
 // Avatar item component with skeleton loading
@@ -59,6 +63,10 @@ export default function CreateAgentPage() {
   // Fetch logos from backend
   const { data: logosData, isLoading: isLoadingLogos } = useAgentLogos();
 
+  // Fetch prompt template from backend
+  const { data: promptTemplateData, isLoading: isLoadingTemplate } =
+    usePromptTemplate();
+
   // Create agent mutation
   const createAgentMutation = useCreateAgent();
 
@@ -66,6 +74,19 @@ export default function CreateAgentPage() {
   const [selectedLogoUrl, setSelectedLogoUrl] = useState<string | null>(null);
   const [agentName, setAgentName] = useState("");
   const [bettingStrategy, setBettingStrategy] = useState("");
+  const [tradingStrategy, setTradingStrategy] = useState("");
+  const [hasUserEditedBetting, setHasUserEditedBetting] = useState(false);
+  const [hasUserEditedTrading, setHasUserEditedTrading] = useState(false);
+
+  // Pre-fill strategies with templates when loaded
+  useEffect(() => {
+    if (promptTemplateData?.bettingStrategyTemplate && !hasUserEditedBetting) {
+      setBettingStrategy(promptTemplateData.bettingStrategyTemplate);
+    }
+    if (promptTemplateData?.tradingStrategyTemplate && !hasUserEditedTrading) {
+      setTradingStrategy(promptTemplateData.tradingStrategyTemplate);
+    }
+  }, [promptTemplateData, hasUserEditedBetting, hasUserEditedTrading]);
 
   // Set default selected logo when data loads
   useMemo(() => {
@@ -75,7 +96,7 @@ export default function CreateAgentPage() {
   }, [logosData, selectedLogoUrl]);
 
   const handleCreateAgent = async () => {
-    if (!agentName.trim() || !selectedLogoUrl || !bettingStrategy.trim()) {
+    if (!agentName.trim() || !selectedLogoUrl || !bettingStrategy.trim() || !tradingStrategy.trim()) {
       return;
     }
 
@@ -89,6 +110,7 @@ export default function CreateAgentPage() {
         logo: selectedLogoUrl,
         pdaAddress,
         bettingStrategyPrompt: bettingStrategy.trim(),
+        tradingStrategyPrompt: tradingStrategy.trim(),
         filterConfig: DEFAULT_FILTER_CONFIG,
       });
 
@@ -100,7 +122,7 @@ export default function CreateAgentPage() {
   };
 
   const isFormValid =
-    agentName.trim() && selectedLogoUrl && bettingStrategy.trim();
+    agentName.trim() && selectedLogoUrl && bettingStrategy.trim() && tradingStrategy.trim();
   const isSubmitting = createAgentMutation.isPending;
 
   return (
@@ -231,16 +253,55 @@ export default function CreateAgentPage() {
               </span>
             </div>
 
-            {/* Betting Strategy Prompt */}
+            {/* Betting Strategy Prompt - Betting Phase */}
             <div>
               <label className="block text-xs font-mono text-eva-text-dim uppercase tracking-widest mb-3">
-                Betting Strategy Prompt <span className="text-red-400">*</span>
+                Betting Phase Strategy <span className="text-red-400">*</span>
+                {isLoadingTemplate && (
+                  <span className="ml-2 text-eva-muted">(Loading...)</span>
+                )}
               </label>
+              <p className="text-xs text-eva-muted mb-2">
+                Strategy for bidding phase (Block 0-300)
+              </p>
               <textarea
-                className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono placeholder:text-eva-muted focus:outline-none focus:border-eva-primary transition-colors resize-none h-32"
-                placeholder="// Enter logic for wager sizing and entry/exit execution..."
+                className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono placeholder:text-eva-muted focus:outline-none focus:border-eva-primary transition-colors resize-none h-36 text-sm"
+                placeholder={
+                  isLoadingTemplate
+                    ? "Loading default template..."
+                    : "Describe your betting phase strategy..."
+                }
                 value={bettingStrategy}
-                onChange={(e) => setBettingStrategy(e.target.value)}
+                onChange={(e) => {
+                  setBettingStrategy(e.target.value);
+                  setHasUserEditedBetting(true);
+                }}
+              />
+            </div>
+
+            {/* Trading Strategy Prompt - Trading Phase */}
+            <div>
+              <label className="block text-xs font-mono text-eva-text-dim uppercase tracking-widest mb-3">
+                Trading Phase Strategy <span className="text-red-400">*</span>
+                {isLoadingTemplate && (
+                  <span className="ml-2 text-eva-muted">(Loading...)</span>
+                )}
+              </label>
+              <p className="text-xs text-eva-muted mb-2">
+                Strategy for trading phase (Block 300-2700)
+              </p>
+              <textarea
+                className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono placeholder:text-eva-muted focus:outline-none focus:border-eva-primary transition-colors resize-none h-36 text-sm"
+                placeholder={
+                  isLoadingTemplate
+                    ? "Loading default template..."
+                    : "Describe your trading phase strategy..."
+                }
+                value={tradingStrategy}
+                onChange={(e) => {
+                  setTradingStrategy(e.target.value);
+                  setHasUserEditedTrading(true);
+                }}
               />
             </div>
 

@@ -35,6 +35,7 @@ export {
   useAgentTrenches,
   useAgentTransactions,
   useAgentLogos,
+  usePromptTemplate,
   agentKeys,
 } from "./use-agents";
 

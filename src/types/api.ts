@@ -167,6 +167,7 @@ export interface CreateAgentDto {
   llmTemperature?: number;
   llmMaxTokens?: number;
   bettingStrategyPrompt: string;
+  tradingStrategyPrompt?: string;
   notificationConfig?: NotificationConfig;
   autoPauseEnabled?: boolean;
   autoPauseThreshold?: number;
@@ -188,6 +189,7 @@ export interface UpdateAgentDto {
   llmTemperature?: number;
   llmMaxTokens?: number;
   bettingStrategyPrompt?: string;
+  tradingStrategyPrompt?: string;
   notificationConfig?: NotificationConfig;
   autoPauseEnabled?: boolean;
   autoPauseThreshold?: number;
@@ -213,6 +215,12 @@ export interface AgentWithdrawResponseDto {
 
 // AgentLogosResponseDto is now a simple string array
 export type AgentLogosResponseDto = string[];
+
+// Prompt template response
+export interface PromptTemplateResponseDto {
+  bettingStrategyTemplate: string;
+  tradingStrategyTemplate: string;
+}
 
 // ============== Trench Types ==============
 
