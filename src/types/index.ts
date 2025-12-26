@@ -74,6 +74,8 @@ export interface ActivityItem {
   tokenAmount: number;
   solAmount: number;
   timestamp: Date;
+  /** 交易签名，用于跳转区块链浏览器 */
+  signature?: string;
   /** AI 推理过程 */
   reason?: ActivityReason;
 }

@@ -12,7 +12,8 @@ import { Link } from "react-router-dom";
 
 import DefaultLayout from "@/layouts/default";
 import { EvaCard, EvaCardContent, EvaButton, EvaBadge } from "@/components/ui";
-import { DepositModal, EditAgentModal, WithdrawModal } from "@/components/agent";
+import { DepositModal, EditAgentModal, StartTimingModal, WithdrawModal } from "@/components/agent";
+import { ConnectWalletPrompt } from "@/components/wallet/connect-wallet-prompt";
 import {
   useMyAgents,
   useAgent,
@@ -512,6 +513,38 @@ function historyItemToRound(item: TrenchHistoryItemDto): ExtendedHistoryRound {
   };
 }
 
+// Play icon component
+function PlayIcon() {
+  return (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      viewBox="0 0 21 20"
+    >
+      <path 
+        d="M16.1466 10.3468L7.31442 16.2349C7.12295 16.3625 6.86425 16.3108 6.7366 16.1194C6.69098 16.0509 6.66663 15.9705 6.66663 15.8882V4.11198C6.66663 3.88185 6.85318 3.69531 7.08329 3.69531C7.16555 3.69531 7.24598 3.71966 7.31442 3.76529L16.1466 9.65337C16.338 9.78104 16.3898 10.0398 16.2621 10.2312C16.2316 10.277 16.1924 10.3163 16.1466 10.3468Z" 
+        fill="#D357E0"
+      />
+    </svg>
+  );
+}
+
+// Pause icon component
+function PauseIcon() {
+  return (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      viewBox="0 0 21 20"
+    >
+      <path 
+        d="M6.66689 4.1665H8.88905L8.88884 15.8332H6.66669L6.66689 4.1665ZM11.1112 4.1665H13.3334L13.3331 15.8332H11.111L11.1112 4.1665Z" 
+        fill="#6CE182"
+      />
+    </svg>
+  );
+}
+
 // Agent Info Component
 function AgentInfo({
   agent,
@@ -524,6 +557,8 @@ function AgentInfo({
   onEdit: () => void;
   isToggling?: boolean;
 }) {
+  const isActive = agent.status === "ACTIVE";
+
   const formatDate = (dateStr: string) => {
     return new Date(dateStr)
       .toLocaleString("en-US", {
@@ -624,23 +659,32 @@ function AgentInfo({
           </div>
 
           {/* Status Toggle Button */}
-          <EvaButton
+          <button
             disabled={isToggling}
-            size="sm"
-            variant={agent.status === "ACTIVE" ? "danger" : "primary"}
+            className={`h-[44px] min-w-[240px] px-8 text-sm font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 ${
+              isActive 
+                ? "text-black bg-eva-primary hover:bg-eva-primary-dim"
+                : "text-black bg-[#D357E0] hover:bg-[#C045CF]"
+            }`}
+            style={{
+              clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)"
+            }}
             onClick={onToggleStatus}
           >
             {isToggling ? (
-              <span className="flex items-center gap-2">
-                <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                {agent.status === "ACTIVE" ? "PAUSING..." : "ACTIVATING..."}
-              </span>
-            ) : agent.status === "ACTIVE" ? (
-              "PAUSE AGENT"
+              <>
+                <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                {isActive ? "PAUSING..." : "STARTING..."}
+              </>
             ) : (
-              "ACTIVATE AGENT"
+              <>
+                <div className="bg-black px-[1px] py-[1px]">
+                  {isActive ? <PauseIcon /> : <PlayIcon />}
+                </div>
+                {isActive ? "PAUSE" : "START"}
+              </>
             )}
-          </EvaButton>
+          </button>
         </div>
       </div>
     </div>
@@ -652,6 +696,7 @@ export default function MyAgentPage() {
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isStartTimingModalOpen, setIsStartTimingModalOpen] = useState(false);
 
   // Auth state
   const { isAuthenticated } = useIsAuthenticated();
@@ -726,15 +771,8 @@ export default function MyAgentPage() {
   if (!isAuthenticated) {
     return (
       <DefaultLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <p className="text-eva-text font-mono text-lg mb-2">
-              CONNECT WALLET
-            </p>
-            <p className="text-eva-text-dim text-sm">
-              Please connect your wallet to view your agent.
-            </p>
-          </div>
+        <div className="flex items-center justify-center min-h-[500px]">
+          <ConnectWalletPrompt />
         </div>
       </DefaultLayout>
     );
@@ -793,7 +831,14 @@ export default function MyAgentPage() {
           agent={displayAgent}
           isToggling={toggleStatusMutation.isPending}
           onEdit={() => setIsEditModalOpen(true)}
-          onToggleStatus={() => toggleStatusMutation.mutate(displayAgent.id)}
+          onToggleStatus={() => {
+            // Show timing modal when activating, directly pause when deactivating
+            if (displayAgent.status === "ACTIVE") {
+              toggleStatusMutation.mutate(displayAgent.id);
+            } else {
+              setIsStartTimingModalOpen(true);
+            }
+          }}
         />
 
         {/* Funds & PnL - Two Column Layout */}
@@ -999,6 +1044,19 @@ export default function MyAgentPage() {
           refetchAgentDetail();
           refetchPanel();
         }}
+      />
+
+      {/* Start Timing Modal */}
+      <StartTimingModal
+        isOpen={isStartTimingModalOpen}
+        onClose={() => setIsStartTimingModalOpen(false)}
+        onSelectTiming={(timing) => {
+          // TODO: Handle timing selection - for now, just activate the agent
+          console.log("Start timing selected:", timing);
+          toggleStatusMutation.mutate(displayAgent.id);
+          setIsStartTimingModalOpen(false);
+        }}
+        isLoading={toggleStatusMutation.isPending}
       />
     </DefaultLayout>
   );

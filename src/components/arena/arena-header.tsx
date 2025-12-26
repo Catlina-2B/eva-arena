@@ -36,7 +36,7 @@ export function ArenaHeader({ round }: ArenaHeaderProps) {
   // Progress is continuous across all phases, not reset per phase
   const percentage = Math.min(
     100,
-    Math.max(0, (currentBlock / round.totalBlocks) * 100),
+    Math.max(0, (currentBlock / round.totalBlocks) * 100)
   );
 
   return (
@@ -46,15 +46,17 @@ export function ArenaHeader({ round }: ArenaHeaderProps) {
         <div className="flex items-center justify-between gap-6 flex-1 lg:flex-[2] pb-4 lg:pb-0 lg:pr-6 lg:border-r border-b lg:border-b-0 border-eva-border">
           <div className="flex items-center gap-4">
             {/* Token Avatar */}
-            <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-eva-secondary/30 to-eva-primary/30 flex items-center justify-center border border-eva-border overflow-hidden">
-              <div className="w-12 h-12 rounded bg-eva-secondary/20 flex items-center justify-center">
-                <span className="text-2xl">🎯</span>
-              </div>
+            <div className="w-16 h-16 rounded-lg bg-gradient-to-br flex-shrink-0 from-eva-secondary/30 to-eva-primary/30 flex items-center justify-center border border-eva-border overflow-hidden">
+              <img
+                src="/images/trench.png"
+                alt="Trench"
+                className="w-full h-full object-cover"
+              />
             </div>
 
             {/* Token Details */}
             <div>
-              <div className="text-xs text-eva-secondary font-medium uppercase tracking-wider mb-1">
+              <div className="text-xs text-eva-secondary font-bold uppercase tracking-wider mb-1">
                 Target
               </div>
               <div className="text-xl font-bold text-eva-text tracking-wide">
@@ -110,7 +112,7 @@ export function ArenaHeader({ round }: ArenaHeaderProps) {
                     key={i}
                     className={clsx(
                       "flex-1 h-1.5 transition-colors",
-                      isFilled ? "bg-eva-primary" : "bg-eva-border/50",
+                      isFilled ? "bg-eva-primary" : "bg-eva-border/50"
                     )}
                   />
                 );

@@ -33,7 +33,11 @@ export function ReasoningModal({
   if (!isOpen || !activity) return null;
 
   const actionLabel = getActionLabel(activity.type);
-  const actionText = `${actionLabel} ${activity.tokenAmount.toLocaleString()} Token for ${formatSmallNumber(activity.solAmount)} SOL @${formatSmallNumber(activity.solAmount)} SOL`;
+  const isDepositOrWithdraw =
+    activity.type === "deposit" || activity.type === "withdraw";
+  const actionText = isDepositOrWithdraw
+    ? `${actionLabel} ${formatSmallNumber(activity.solAmount)} SOL`
+    : `${actionLabel} ${activity.tokenAmount.toLocaleString()} Token for ${formatSmallNumber(activity.solAmount)} SOL @${formatSmallNumber(activity.solAmount)} SOL`;
 
   // 使用 reason.action 如果存在，否则用默认格式
   const displayAction = activity.reason?.action || actionText;

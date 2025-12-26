@@ -16,7 +16,7 @@ import {
   AgentDashboardCard,
   WelcomeOnboardingModal,
 } from "@/components/arena";
-import { EditAgentModal } from "@/components/agent";
+import { EditAgentModal, StartTimingModal } from "@/components/agent";
 import {
   useCurrentTrench,
   useLeaderboard,
@@ -88,6 +88,9 @@ export default function ArenaPage() {
 
   // Edit modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
+  // Start timing modal state
+  const [isStartTimingModalOpen, setIsStartTimingModalOpen] = useState(false);
 
   // Toggle agent status mutation
   const toggleAgentStatus = useToggleAgentStatus();
@@ -254,7 +257,10 @@ export default function ArenaPage() {
 
           {/* Right column: Rankings + Welcome/Agent */}
           <div className="space-y-4">
-            <LiveRankings rankings={rankings} />
+            <LiveRankings 
+              rankings={rankings} 
+              isSkipped={currentRound.phase === "trading" && !currentRound.hasBets}
+            />
             {!isAuthenticated && <WelcomeCard />}
             {isAuthenticated && !hasAgent && <CreateAgentCard />}
             {isAuthenticated && hasAgent && primaryAgent && (
@@ -281,7 +287,7 @@ export default function ArenaPage() {
                 trenchId={trenchId}
                 onEditName={() => setIsEditModalOpen(true)}
                 onPauseSystem={() => toggleAgentStatus.mutate(primaryAgent.id)}
-                onStartSystem={() => toggleAgentStatus.mutate(primaryAgent.id)}
+                onStartSystem={() => setIsStartTimingModalOpen(true)}
               />
             )}
           </div>
@@ -298,6 +304,21 @@ export default function ArenaPage() {
           refetchAgentDetail();
         }}
       />
+
+      {/* Start Timing Modal */}
+      {primaryAgent && (
+        <StartTimingModal
+          isOpen={isStartTimingModalOpen}
+          onClose={() => setIsStartTimingModalOpen(false)}
+          onSelectTiming={(timing) => {
+            // TODO: Handle timing selection - for now, just activate the agent
+            console.log("Start timing selected:", timing);
+            toggleAgentStatus.mutate(primaryAgent.id);
+            setIsStartTimingModalOpen(false);
+          }}
+          isLoading={toggleAgentStatus.isPending}
+        />
+      )}
     </DefaultLayout>
   );
 }

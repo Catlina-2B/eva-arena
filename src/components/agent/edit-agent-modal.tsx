@@ -217,9 +217,6 @@ export function EditAgentModal({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
-              <span className="text-xs font-mono text-eva-muted mt-1 block">
-                {name.length}/20 characters
-              </span>
             </div>
 
             {/* Avatar Selection */}
@@ -274,12 +271,9 @@ export function EditAgentModal({
 
             {/* Betting Strategy Prompt - Betting Phase */}
             <div>
-              <label className="block text-xs font-mono text-eva-text-dim uppercase tracking-widest mb-1">
+              <label className="block text-xs font-mono text-eva-text-dim uppercase tracking-widest mb-2">
                 Betting Phase Strategy
               </label>
-              <p className="text-xs text-eva-muted mb-2">
-                Strategy for bidding phase (Block 0-300)
-              </p>
               <textarea
                 className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono placeholder:text-eva-muted focus:outline-none focus:border-eva-primary transition-colors resize-none h-28 text-sm"
                 placeholder="Describe your betting phase strategy..."
@@ -290,27 +284,15 @@ export function EditAgentModal({
 
             {/* Trading Strategy Prompt - Trading Phase */}
             <div>
-              <label className="block text-xs font-mono text-eva-text-dim uppercase tracking-widest mb-1">
+              <label className="block text-xs font-mono text-eva-text-dim uppercase tracking-widest mb-2">
                 Trading Phase Strategy
               </label>
-              <p className="text-xs text-eva-muted mb-2">
-                Strategy for trading phase (Block 300-2700)
-              </p>
               <textarea
                 className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono placeholder:text-eva-muted focus:outline-none focus:border-eva-primary transition-colors resize-none h-28 text-sm"
                 placeholder="Describe your trading phase strategy..."
                 value={tradingStrategyPrompt}
                 onChange={(e) => setTradingStrategyPrompt(e.target.value)}
               />
-            </div>
-
-            {/* Notice */}
-            <div className="text-center py-2 border-t border-eva-border/50">
-              <p className="text-xs font-mono text-eva-muted uppercase tracking-wider leading-relaxed">
-                Changes will apply in the next round. Currently
-                <br />
-                active strategies cannot be modified mid-round.
-              </p>
             </div>
 
             {/* Error Message */}

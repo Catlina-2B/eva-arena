@@ -118,10 +118,13 @@ function PlayIcon({ className }: { className?: string }) {
   return (
     <svg
       className={clsx("w-5 h-5", className)}
-      fill="currentColor"
-      viewBox="0 0 24 24"
+      fill="none"
+      viewBox="0 0 21 20"
     >
-      <path d="M8 5v14l11-7z" />
+      <path 
+        d="M16.1466 10.3468L7.31442 16.2349C7.12295 16.3625 6.86425 16.3108 6.7366 16.1194C6.69098 16.0509 6.66663 15.9705 6.66663 15.8882V4.11198C6.66663 3.88185 6.85318 3.69531 7.08329 3.69531C7.16555 3.69531 7.24598 3.71966 7.31442 3.76529L16.1466 9.65337C16.338 9.78104 16.3898 10.0398 16.2621 10.2312C16.2316 10.277 16.1924 10.3163 16.1466 10.3468Z" 
+        fill="#D357E0"
+      />
     </svg>
   );
 }
@@ -131,10 +134,13 @@ function PauseIcon({ className }: { className?: string }) {
   return (
     <svg
       className={clsx("w-5 h-5", className)}
-      fill="currentColor"
-      viewBox="0 0 24 24"
+      fill="none"
+      viewBox="0 0 21 20"
     >
-      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+      <path 
+        d="M6.66689 4.1665H8.88905L8.88884 15.8332H6.66669L6.66689 4.1665ZM11.1112 4.1665H13.3334L13.3331 15.8332H11.111L11.1112 4.1665Z" 
+        fill="#6CE182"
+      />
     </svg>
   );
 }
@@ -263,7 +269,9 @@ export function AgentDashboardCard({
   }, [transactionsData]);
 
   // Format number with commas
-  const formatNumber = (num: number) => {
+  const formatNumber = (num: number | undefined | null) => {
+    if (num == null) return "0.0000";
+
     return num.toLocaleString("en-US", {
       minimumFractionDigits: 4,
       maximumFractionDigits: 6,
@@ -271,7 +279,9 @@ export function AgentDashboardCard({
   };
 
   // Format token number (no decimals for large numbers)
-  const formatTokenNumber = (num: number) => {
+  const formatTokenNumber = (num: number | undefined | null) => {
+    if (num == null) return "0";
+
     return num.toLocaleString("en-US", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
@@ -378,29 +388,40 @@ export function AgentDashboardCard({
         </div>
 
         {/* Action Button */}
-        <EvaButton
-          fullWidth
-          className="mb-4 tracking-wider"
+        <button
+          className={clsx(
+            "w-full h-[44px] mb-4 text-sm font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3",
+            isPaused 
+              ? "text-black bg-[#D357E0] hover:bg-[#C045CF]"
+              : "text-black bg-eva-primary hover:bg-eva-primary-dim"
+          )}
+          style={{
+            clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)"
+          }}
           disabled={isToggling}
-          leftIcon={
-            isToggling ? (
-              <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            ) : isPaused ? (
-              <PlayIcon />
-            ) : (
-              <PauseIcon />
-            )
-          }
-          size="lg"
-          variant={isPaused ? "secondary" : "outline"}
           onClick={isPaused ? onStartSystem : onPauseSystem}
         >
-          {isToggling
-            ? "UPDATING..."
-            : isPaused
-              ? "START SYSTEM"
-              : "PAUSE SYSTEM"}
-        </EvaButton>
+          {isToggling ? (
+            <>
+              <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              UPDATING...
+            </>
+          ) : isPaused ? (
+            <>
+              <div className="bg-black px-[1px] py-[1px]">
+                <PlayIcon />
+              </div>
+              START
+            </>
+          ) : (
+            <>
+              <div className="bg-black px-[1px] py-[1px]">
+                <PauseIcon />
+              </div>
+              PAUSE
+            </>
+          )}
+        </button>
 
         {/* Execution Logs */}
         <div>

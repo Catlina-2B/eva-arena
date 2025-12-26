@@ -43,8 +43,8 @@ const LinkIcon = () => (
 
 const ClockIcon = () => (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-    <circle cx="6" cy="6" r="5" stroke="#6ce182" strokeWidth="1.2" />
-    <path d="M6 3V6L8 8" stroke="#6ce182" strokeWidth="1.2" strokeLinecap="round" />
+    <circle cx="6" cy="6" r="5" stroke="#4B5563" strokeWidth="1.2" />
+    <path d="M6 3V6L8 8" stroke="#4B5563" strokeWidth="1.2" strokeLinecap="round" />
   </svg>
 );
 
@@ -61,6 +61,35 @@ const SolanaIcon = () => (
     <path
       d="M2.25 6L3.75 4.5H9.75L8.25 6H2.25Z"
       fill="white"
+    />
+  </svg>
+);
+
+const CreationFeeIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <path
+      d="M1 4C1 5.65575 2.34425 7 4 7C5.65575 7 7 5.65575 7 4C7 2.34425 5.65575 1 4 1C2.34425 1 1 2.34425 1 4V4"
+      stroke="#D357E0"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M9.04498 5.18506C10.3477 5.67075 11.1461 6.98792 10.9739 8.36756C10.8017 9.74721 9.70416 10.8278 8.322 10.9784C6.93984 11.129 5.63529 10.3102 5.16998 9.00006"
+      stroke="#D357E0"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M3.5 3H4V5"
+      stroke="#D357E0"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M8.35498 6.93994L8.70498 7.29494L7.29498 8.70494"
+      stroke="#D357E0"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
   </svg>
 );
@@ -416,7 +445,7 @@ export default function CreateAgentPage() {
                 <span className="text-sm font-semibold text-white">
                     0.1 SOL
                   </span>
-                <SolanaIcon />
+                <CreationFeeIcon />
               </div>
               </div>
 

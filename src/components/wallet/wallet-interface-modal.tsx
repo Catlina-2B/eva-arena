@@ -5,6 +5,7 @@ import { useDisconnect } from "@particle-network/connectkit";
 import { EvaButton } from "@/components/ui";
 import { DepositModal, WithdrawModal } from "@/components/agent";
 import { useAgentPanel, useMyAgents, useAgentWithdraw } from "@/hooks";
+import { useTurnkeyBalanceStore } from "@/stores/turnkey-balance";
 
 interface WalletInterfaceModalProps {
   isOpen: boolean;
@@ -26,17 +27,18 @@ export function WalletInterfaceModal({
   const { data: agentsData } = useMyAgents();
   const primaryAgent = agentsData?.agents?.[0];
 
-  // Fetch agent panel data for balance
-  const { data: panelData, refetch: refetchPanel } = useAgentPanel(
-    primaryAgent?.id,
-  );
+  // Fetch agent panel data (for withdraw functionality)
+  const { refetch: refetchPanel } = useAgentPanel(primaryAgent?.id);
+
+  // Get balance from global store (updated via WebSocket subscription)
+  const { balance: turnkeyBalance } = useTurnkeyBalanceStore();
 
   // Withdraw mutation
   const withdrawMutation = useAgentWithdraw();
 
   if (!isOpen) return null;
 
-  const balance = panelData?.currentBalance ?? 0;
+  const balance = turnkeyBalance;
   const turnkeyAddress = primaryAgent?.turnkeyAddress ?? "";
 
   const handleCopyAddress = async () => {

@@ -5,11 +5,22 @@ import clsx from "clsx";
 import { RankBadge } from "@/components/ui";
 import { HeartFilledIcon } from "@/components/icons";
 
+// System Idle icon for empty state
+const SystemIdleIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 6V18" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" />
+    <path d="M8 10V18" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" />
+    <path d="M16 8V18" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
 interface LiveRankingsProps {
   rankings: AgentRanking[];
+  /** Whether the current round is skipped (no bets placed) */
+  isSkipped?: boolean;
 }
 
-export function LiveRankings({ rankings }: LiveRankingsProps) {
+export function LiveRankings({ rankings, isSkipped = false }: LiveRankingsProps) {
   return (
     <div className="border border-eva-border overflow-hidden relative">
       {/* Header badge */}
@@ -19,22 +30,41 @@ export function LiveRankings({ rankings }: LiveRankingsProps) {
         </span>
       </div>
 
-      {/* Rankings list */}
-      <div className="p-3 pt-8 space-y-2">
-        {rankings.map((agent) => (
-          <RankingRow key={agent.agentId} agent={agent} />
-        ))}
-      </div>
-
-      {/* Footer note */}
-      <div className="px-3 pb-3">
-        <div className="px-3 py-3 border border-eva-border text-xs text-eva-text-dim flex items-start gap-2 bg-eva-darker/50">
-          <span className="text-eva-text-dim">ℹ️</span>
-          <span className="font-mono">
-            After betting phase ends, 80% to Prize, 20% to Bonding Curve.
-          </span>
+      {isSkipped ? (
+        // Empty state when round is skipped
+        <div className="p-3 pt-8">
+          <div className="border border-dashed border-eva-border flex flex-col items-center justify-center py-8 px-4">
+            <div className="w-12 h-12 rounded-full bg-eva-darker flex items-center justify-center mb-4">
+              <SystemIdleIcon />
+            </div>
+            <h3 className="text-sm font-semibold text-white tracking-wider mb-2">
+              SYSTEM IDLE
+            </h3>
+            <p className="text-xs text-eva-text-dim text-center max-w-[240px] leading-relaxed">
+              Due to no bets being placed during the free betting phase, the current round is skipped.
+            </p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Rankings list */}
+          <div className="p-3 pt-8 space-y-2">
+            {rankings.map((agent) => (
+              <RankingRow key={agent.agentId} agent={agent} />
+            ))}
+          </div>
+
+          {/* Footer note */}
+          <div className="px-3 pb-3">
+            <div className="px-3 py-3 border border-eva-border text-xs text-eva-text-dim flex items-start gap-2 bg-eva-darker/50">
+              <span className="text-eva-text-dim">ℹ️</span>
+              <span className="font-mono">
+                After betting phase ends, 80% to Prize, 20% to Bonding Curve.
+              </span>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
