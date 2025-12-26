@@ -197,7 +197,7 @@ function TradeHistoryTable({
 
   const formatTokenAmount = (amount: string | null) => {
     if (!amount) return "-";
-    const value = parseFloat(amount) / 1e9; // Convert from lamports
+    const value = parseFloat(amount) / 1e6; // Convert from lamports
 
     return value.toFixed(2);
   };
