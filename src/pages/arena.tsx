@@ -27,6 +27,7 @@ import {
   useSlotSubscription,
   useFirstVisit,
   useToggleAgentStatus,
+  useTurnkeyBalance,
 } from "@/hooks";
 import { useIsAuthenticated } from "@/hooks/use-auth";
 import {
@@ -91,6 +92,9 @@ export default function ArenaPage() {
   // Toggle agent status mutation
   const toggleAgentStatus = useToggleAgentStatus();
 
+  // Subscribe to Turnkey wallet balance updates via WebSocket
+  const { balance: turnkeyBalance } = useTurnkeyBalance(primaryAgent?.turnkeyAddress);
+
   // Subscribe to real-time Solana slot updates via WebSocket
   const { slot: currentSlot } = useSlotSubscription();
 
@@ -109,23 +113,30 @@ export default function ArenaPage() {
 
   const activities = useMemo(() => {
     if (!USE_REAL_DATA) return mockActivities;
-    // Combine real-time and fetched transactions
-    const allTransactions = [
-      ...realtimeTransactions.map((tx) => ({
-        id: tx.id,
-        trenchId: tx.trenchId,
-        txType: tx.txType as "DEPOSIT" | "WITHDRAW" | "BUY" | "SELL" | "CLAIM",
-        userAddress: tx.userAddress,
-        solAmount: tx.solAmount,
-        tokenAmount: tx.tokenAmount,
-        totalDeposited: tx.totalDeposited,
-        signature: tx.signature,
-        slot: tx.slot,
-        blockTime: tx.blockTime,
-        createdAt: tx.createdAt,
-      })),
-      ...(transactionsData?.transactions ?? []),
-    ];
+    // Combine real-time and fetched transactions, deduplicating by ID
+    const realtimeTxs = realtimeTransactions.map((tx) => ({
+      id: tx.id,
+      trenchId: tx.trenchId,
+      txType: tx.txType as "DEPOSIT" | "WITHDRAW" | "BUY" | "SELL" | "CLAIM",
+      userAddress: tx.userAddress,
+      solAmount: tx.solAmount,
+      tokenAmount: tx.tokenAmount,
+      totalDeposited: tx.totalDeposited,
+      signature: tx.signature,
+      slot: tx.slot,
+      blockTime: tx.blockTime,
+      createdAt: tx.createdAt,
+    }));
+
+    // Get IDs from realtime transactions to filter duplicates
+    const realtimeIds = new Set(realtimeTxs.map((tx) => tx.id));
+
+    // Filter out transactions that are already in realtime (prioritize realtime)
+    const fetchedTxs = (transactionsData?.transactions ?? []).filter(
+      (tx) => !realtimeIds.has(tx.id),
+    );
+
+    const allTransactions = [...realtimeTxs, ...fetchedTxs];
 
     return transactionsToActivities(allTransactions);
   }, [transactionsData, realtimeTransactions]);
@@ -219,19 +230,6 @@ export default function ArenaPage() {
       <WelcomeOnboardingModal isOpen={isFirstVisit} onClose={markVisited} />
 
       <div className="space-y-4">
-        {/* Connection Status Indicator */}
-        {USE_REAL_DATA && (
-          <div className="flex items-center gap-2 text-xs font-mono">
-            <div
-              className={`w-2 h-2 rounded-full ${
-                isConnected ? "bg-eva-primary" : "bg-eva-danger"
-              }`}
-            />
-            <span className="text-eva-text-dim">
-              {isConnected ? "LIVE" : "CONNECTING..."}
-            </span>
-          </div>
-        )}
 
         {/* Development Mode Indicator */}
         {!USE_REAL_DATA && (
@@ -268,7 +266,7 @@ export default function ArenaPage() {
                   createdAt: new Date(primaryAgent.createdAt),
                   status:
                     primaryAgent.status === "ACTIVE" ? "running" : "paused",
-                  balance: primaryAgent.currentBalance,
+                  balance: turnkeyBalance || primaryAgent.currentBalance,
                   totalDeposit: 0, // Would need to fetch from panel
                   totalWithdraw: 0,
                   pnl: primaryAgent.totalPnl,
@@ -276,7 +274,7 @@ export default function ArenaPage() {
                 }}
                 isToggling={toggleAgentStatus.isPending}
                 roundPnl={0}
-                solBalance={primaryAgent.currentBalance}
+                solBalance={turnkeyBalance || primaryAgent.currentBalance}
                 tokenBalance={0}
                 tokenChangePercent={0}
                 totalPnl={primaryAgent.totalPnl}

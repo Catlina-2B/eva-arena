@@ -30,6 +30,9 @@ export const trenchKeys = {
     [...trenchKeys.detail(id), "leaderboard"] as const,
   summary: (id: number, userAddress?: string) =>
     [...trenchKeys.detail(id), "summary", userAddress] as const,
+  pnlTimeline: () => [...trenchKeys.all, "pnlTimeline"] as const,
+  history: (params?: { page?: number; limit?: number }) =>
+    [...trenchKeys.all, "history", params] as const,
 };
 
 /**
@@ -93,7 +96,10 @@ export function usePriceCurve(
 /**
  * Hook for getting trench transactions
  *
- * Polls every 500ms for real-time updates
+ * @param trenchId - The trench ID
+ * @param params - Query parameters
+ * @param options - Additional options
+ * @param options.polling - Whether to poll for updates (default: true)
  */
 export function useTrenchTransactions(
   trenchId: number | undefined,
@@ -103,13 +109,18 @@ export function useTrenchTransactions(
     page?: number;
     limit?: number;
   },
+  options?: {
+    polling?: boolean;
+  },
 ) {
+  const polling = options?.polling ?? true;
+
   return useQuery({
     queryKey: [...trenchKeys.transactions(trenchId!), params],
     queryFn: () => trenchApi.getTransactions(trenchId!, params),
     enabled: !!trenchId,
-    staleTime: 0, // Always fetch fresh data
-    refetchInterval: POLLING_INTERVAL,
+    staleTime: polling ? 0 : undefined,
+    refetchInterval: polling ? POLLING_INTERVAL : false,
   });
 }
 
@@ -146,7 +157,11 @@ export function useTrenchSummary(
  * Hook for getting current user's transactions in a trench
  *
  * Automatically uses the logged-in user's wallet address.
- * Polls every 500ms for real-time updates.
+ *
+ * @param trenchId - The trench ID
+ * @param params - Query parameters
+ * @param options - Additional options
+ * @param options.polling - Whether to poll for updates (default: true)
  */
 export function useUserTransactions(
   trenchId: number | undefined,
@@ -155,16 +170,53 @@ export function useUserTransactions(
     page?: number;
     limit?: number;
   },
+  options?: {
+    polling?: boolean;
+  },
 ) {
   const { user } = useAuthStore();
   const userAddress = user?.walletAddress;
+  const polling = options?.polling ?? true;
 
   return useQuery({
     queryKey: [...trenchKeys.transactions(trenchId!), "user", userAddress, params],
     queryFn: () =>
       trenchApi.getTransactions(trenchId!, { ...params, userAddress }),
     enabled: !!trenchId && !!userAddress,
-    staleTime: 0, // Always fetch fresh data
-    refetchInterval: POLLING_INTERVAL,
+    staleTime: polling ? 0 : undefined,
+    refetchInterval: polling ? POLLING_INTERVAL : false,
+  });
+}
+
+/**
+ * Hook for getting user's PNL timeline
+ *
+ * Returns PNL data points ordered by time ascending.
+ * Only fetches when user is authenticated.
+ */
+export function useUserPnlTimeline() {
+  const { user } = useAuthStore();
+
+  return useQuery({
+    queryKey: trenchKeys.pnlTimeline(),
+    queryFn: () => trenchApi.getUserPnlTimeline(),
+    enabled: !!user,
+    staleTime: 60 * 1000, // 1 minute
+  });
+}
+
+/**
+ * Hook for getting user's trench participation history
+ *
+ * Returns history ordered by time descending.
+ * Only fetches when user is authenticated.
+ */
+export function useTrenchHistory(params?: { page?: number; limit?: number }) {
+  const { isAuthenticated } = useAuthStore();
+
+  return useQuery({
+    queryKey: trenchKeys.history(params),
+    queryFn: () => trenchApi.getTrenchHistory(params),
+    enabled: isAuthenticated,
   });
 }

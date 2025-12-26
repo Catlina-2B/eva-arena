@@ -10,16 +10,85 @@ import {
 } from "@/hooks/use-agents";
 import { useAuthStore } from "@/stores/auth";
 
+// Avatar background colors - matching Figma design
+const AVATAR_COLORS = [
+  "#f02424", // Red
+  "#f7de40", // Yellow
+  "#6cabad", // Teal
+  "#375dde", // Blue
+  "#8148dd", // Purple
+  "#ffcfe9", // Pink
+  "#ae7cff", // Light Purple
+];
+
+// SVG Icons
+const LinkIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <path
+      d="M7.58333 3.79167L8.75 2.625C9.07082 2.30418 9.5 2.125 9.94792 2.125C10.3958 2.125 10.825 2.30418 11.1458 2.625C11.4667 2.94582 11.6458 3.375 11.6458 3.82292C11.6458 4.27083 11.4667 4.7 11.1458 5.02083L8.8125 7.35417C8.49168 7.67499 8.0625 7.85417 7.61458 7.85417C7.16667 7.85417 6.7375 7.67499 6.41667 7.35417"
+      stroke="#6ce182"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M6.41667 10.2083L5.25 11.375C4.92918 11.6958 4.5 11.875 4.05208 11.875C3.60417 11.875 3.175 11.6958 2.85417 11.375C2.53335 11.0542 2.35417 10.625 2.35417 10.1771C2.35417 9.72917 2.53335 9.3 2.85417 8.97917L5.1875 6.64583C5.50832 6.32501 5.9375 6.14583 6.38542 6.14583C6.83333 6.14583 7.2625 6.32501 7.58333 6.64583"
+      stroke="#6ce182"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const ClockIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <circle cx="6" cy="6" r="5" stroke="#6ce182" strokeWidth="1.2" />
+    <path d="M6 3V6L8 8" stroke="#6ce182" strokeWidth="1.2" strokeLinecap="round" />
+  </svg>
+);
+
+const SolanaIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <path
+      d="M2.25 8.25L3.75 6.75H9.75L8.25 8.25H2.25Z"
+      fill="white"
+    />
+    <path
+      d="M2.25 3.75L3.75 5.25H9.75L8.25 3.75H2.25Z"
+      fill="white"
+    />
+    <path
+      d="M2.25 6L3.75 4.5H9.75L8.25 6H2.25Z"
+      fill="white"
+    />
+  </svg>
+);
+
+const ChevronDownIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <path d="M3 4.5L6 7.5L9 4.5" stroke="#6ce182" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <path d="M12 5V19M5 12H19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 // Avatar item component with skeleton loading
 function AvatarItem({
   url,
   index,
   isSelected,
+  bgColor,
   onSelect,
 }: {
   url: string;
   index: number;
   isSelected: boolean;
+  bgColor: string;
   onSelect: () => void;
 }) {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -30,23 +99,51 @@ function AvatarItem({
 
   return (
     <button
-      className={`w-12 h-12 rounded-lg overflow-hidden transition-all duration-200 ${
+      type="button"
+      className={`aspect-square w-full overflow-hidden transition-all duration-200 relative ${
         isSelected
-          ? "ring-2 ring-eva-primary ring-offset-2 ring-offset-eva-dark scale-105"
-          : "hover:scale-105 hover:ring-1 hover:ring-eva-border"
+          ? "border-2 border-[#6ce182]"
+          : "border border-white/10 hover:border-white/30"
       }`}
+      style={{ backgroundColor: bgColor }}
       title={`Avatar ${index + 1}`}
       onClick={onSelect}
     >
       {!isLoaded && (
-        <div className="w-full h-full bg-eva-border/50 animate-pulse" />
+        <div className="absolute inset-0 bg-eva-border/50 animate-pulse" />
       )}
       <img
         alt={`Avatar ${index + 1}`}
-        className={`w-full h-full object-cover transition-opacity duration-200 ${isLoaded ? "opacity-100" : "opacity-0 absolute"}`}
+        className={`w-full h-full object-cover object-top transition-opacity duration-200 ${isLoaded ? "opacity-100" : "opacity-0"}`}
         src={url}
         onLoad={handleLoad}
       />
+    </button>
+  );
+}
+
+// Add Avatar Button
+function AddAvatarButton() {
+  return (
+    <button
+      type="button"
+      className="aspect-square w-full bg-[#080a12] border border-white/10 flex items-center justify-center hover:border-white/30 transition-colors"
+    >
+      <PlusIcon />
+    </button>
+  );
+}
+
+// AI Generated Button Component
+function AIGeneratedButton({ onClick }: { onClick?: () => void }) {
+  return (
+    <button
+      type="button"
+      className="flex items-center gap-1 h-8 px-4 border border-[#6ce182] rounded text-[#6ce182] text-xs font-semibold uppercase tracking-wider hover:bg-[#6ce182]/10 transition-colors"
+      onClick={onClick}
+    >
+      <LinkIcon />
+      <span>AI-GENERATED</span>
     </button>
   );
 }
@@ -101,8 +198,6 @@ export default function CreateAgentPage() {
     }
 
     try {
-      // TODO: Generate pdaAddress - this needs to be handled properly
-      // For now, using a placeholder that should be replaced with actual PDA generation
       const pdaAddress = `pda_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
       await createAgentMutation.mutateAsync({
@@ -114,7 +209,6 @@ export default function CreateAgentPage() {
         filterConfig: DEFAULT_FILTER_CONFIG,
       });
 
-      // Navigate to my-agent page on success
       navigate("/my-agent");
     } catch (error) {
       console.error("Failed to create agent:", error);
@@ -125,152 +219,140 @@ export default function CreateAgentPage() {
     agentName.trim() && selectedLogoUrl && bettingStrategy.trim() && tradingStrategy.trim();
   const isSubmitting = createAgentMutation.isPending;
 
+  // Get selected avatar index for background color
+  const selectedIndex = logosData?.findIndex(url => url === selectedLogoUrl) ?? 0;
+  const selectedBgColor = AVATAR_COLORS[selectedIndex % AVATAR_COLORS.length];
+
   return (
     <DefaultLayout>
-      <div className="space-y-8">
-        {/* Page Header */}
-        <div>
-          <h1 className="text-4xl font-bold tracking-wider uppercase text-eva-text italic">
-            CREATE AGENT
-          </h1>
-          <p className="mt-2 text-sm font-mono text-eva-text-dim uppercase tracking-widest">
-            Initialize New Autonomous Trading Unit
-          </p>
-        </div>
-
-        {/* Main Content - Two Column Layout */}
-        <div className="flex gap-8">
-          {/* Left Column - Avatar Preview */}
-          <div className="flex-shrink-0">
-            <div className="relative w-[360px] h-[500px] bg-eva-darker rounded-lg border border-eva-border overflow-hidden">
-              {/* Large Avatar Preview */}
-              {selectedLogoUrl ? (
-                <img
-                  alt="Selected avatar"
-                  className="absolute inset-0 w-full h-full object-cover"
-                  src={selectedLogoUrl}
-                />
-              ) : (
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    background:
-                      "linear-gradient(180deg, #c9b8ff 0%, #8b7ab8 50%, #1a1a2e 100%)",
-                  }}
-                >
-                  {/* Character silhouette placeholder */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <svg
-                      className="w-64 h-64 text-white/20"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
-                    </svg>
-                  </div>
-                </div>
-              )}
-
-              {/* Status Badge */}
-              <div className="absolute bottom-0 left-0 right-0 p-4">
-                {!isAuthenticated ? (
-                  <div className="w-full py-3 px-4 bg-eva-dark/80 border border-red-500/50 rounded-lg backdrop-blur-sm">
-                    <span className="font-mono text-sm text-red-400 uppercase tracking-widest flex items-center justify-center gap-2">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          d="M12 15v2m0 0v2m0-2h2m-2 0H10m11-5V9a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h14a2 2 0 002-2z"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                        />
-                      </svg>
-                      CONNECT WALLET
-                    </span>
-                  </div>
-                ) : selectedLogoUrl ? (
-                  <div className="w-full py-3 px-4 bg-eva-dark/80 border border-eva-primary/50 rounded-lg backdrop-blur-sm">
-                    <span className="font-mono text-sm text-eva-primary uppercase tracking-widest flex items-center justify-center gap-2">
-                      AVATAR SELECTED
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            </div>
+      <div className="flex gap-6 items-stretch p-0">
+        {/* Left Column - Header + Avatar Preview */}
+        <div className="flex flex-col gap-6 shrink-0 w-[400px]">
+          {/* Header */}
+          <div className="flex flex-col gap-2">
+            <h1 className="text-[32px] font-display text-white tracking-wider">
+              Create Agent
+            </h1>
+            <p className="text-xs font-semibold text-[#6b7280] uppercase tracking-wider">
+              Initialize new autonomous trading unit
+            </p>
           </div>
 
-          {/* Right Column - Form */}
-          <div className="flex-1 space-y-6">
+          {/* Avatar Preview Card */}
+          <div className="relative flex-1 min-h-[400px]">
+            <div 
+              className="absolute inset-0 border border-[#6ce182] overflow-hidden"
+              style={{
+                background: `linear-gradient(to bottom, #02120a 0%, ${selectedBgColor}40 50%, #544273 100%)`,
+              }}
+            >
+              {/* Selected Avatar Image */}
+              {selectedLogoUrl && (
+                <img
+                  alt="Selected avatar"
+                  className="absolute inset-0 w-full h-full object-cover object-center"
+                  src={selectedLogoUrl}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column - Form */}
+        <div className="flex-1 flex flex-col gap-6 min-w-0">
             {/* Avatar Selection */}
-            <div>
-              <label className="block text-xs font-mono text-eva-text-dim uppercase tracking-widest mb-3">
+          <div className="flex flex-col gap-3">
+            <label className="text-xs font-medium text-[#9ca3af] uppercase tracking-wider">
                 Select Avatar
               </label>
+            
+            {/* Avatar Grid */}
+            <div className="flex flex-col gap-3">
               {isLoadingLogos ? (
-                <div className="grid grid-cols-7 gap-2">
-                  {/* Skeleton placeholders */}
-                  {Array.from({ length: 14 }).map((_, index) => (
-                    <div
-                      key={`skeleton-${index}`}
-                      className="w-12 h-12 rounded-lg bg-eva-border/50 animate-pulse"
+                <>
+                  <div className="grid grid-cols-7 gap-3">
+                    {Array.from({ length: 7 }).map((_, index) => (
+                      <div
+                        key={`skeleton-1-${index}`}
+                        className="aspect-square bg-eva-border/50 animate-pulse"
+                      />
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7 gap-3">
+                    {Array.from({ length: 7 }).map((_, index) => (
+                      <div
+                        key={`skeleton-2-${index}`}
+                        className="aspect-square bg-eva-border/50 animate-pulse"
                     />
                   ))}
                 </div>
+                </>
               ) : (
-                <div className="grid grid-cols-7 gap-2">
-                  {logosData?.map((url, index) => (
+                <>
+                  {/* First Row - Avatars 1-7 */}
+                  <div className="grid grid-cols-7 gap-3">
+                    {logosData?.slice(0, 7).map((url, index) => (
                     <AvatarItem
-                      key={`avatar-${index}`}
+                        key={`avatar-row1-${index}`}
                       index={index}
                       isSelected={selectedLogoUrl === url}
+                        bgColor={AVATAR_COLORS[index % AVATAR_COLORS.length]}
                       url={url}
                       onSelect={() => setSelectedLogoUrl(url)}
                     />
                   ))}
                 </div>
+                  {/* Second Row - Avatars 8-13 + Add Button */}
+                  <div className="grid grid-cols-7 gap-3">
+                    {logosData?.slice(7, 13).map((url, index) => (
+                      <AvatarItem
+                        key={`avatar-row2-${index}`}
+                        index={index + 7}
+                        isSelected={selectedLogoUrl === url}
+                        bgColor={AVATAR_COLORS[(index + 7) % AVATAR_COLORS.length]}
+                        url={url}
+                        onSelect={() => setSelectedLogoUrl(url)}
+                      />
+                    ))}
+                    <AddAvatarButton />
+                  </div>
+                </>
               )}
+            </div>
             </div>
 
             {/* Agent Name */}
-            <div>
-              <label className="block text-xs font-mono text-eva-text-dim uppercase tracking-widest mb-3">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider">
                 Agent Name
               </label>
+              <AIGeneratedButton />
+            </div>
+            <div className="bg-black border border-[#374151]">
               <input
-                className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono placeholder:text-eva-muted focus:outline-none focus:border-eva-primary transition-colors"
-                maxLength={20}
-                placeholder="e.g. Eva.1"
                 type="text"
+                className="w-full px-[17px] py-[19px] bg-transparent text-sm font-medium text-white placeholder:text-[#4b5563] focus:outline-none"
+                placeholder="e.g. Eva.1"
+                maxLength={20}
                 value={agentName}
                 onChange={(e) => setAgentName(e.target.value)}
               />
-              <span className="text-xs font-mono text-eva-muted mt-1 block">
-                {agentName.length}/20 characters
-              </span>
+            </div>
             </div>
 
-            {/* Betting Strategy Prompt - Betting Phase */}
-            <div>
-              <label className="block text-xs font-mono text-eva-text-dim uppercase tracking-widest mb-3">
-                Betting Phase Strategy <span className="text-red-400">*</span>
-                {isLoadingTemplate && (
-                  <span className="ml-2 text-eva-muted">(Loading...)</span>
-                )}
+          {/* Betting Strategy Prompt */}
+          <div className="flex flex-col gap-2 flex-1 min-h-0">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider">
+                Betting Strategy Prompt
               </label>
-              <p className="text-xs text-eva-muted mb-2">
-                Strategy for bidding phase (Block 0-300)
-              </p>
+              <AIGeneratedButton />
+            </div>
+            <div className="flex-1 min-h-[100px] bg-black border border-[#374151]">
               <textarea
-                className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono placeholder:text-eva-muted focus:outline-none focus:border-eva-primary transition-colors resize-none h-36 text-sm"
-                placeholder={
-                  isLoadingTemplate
-                    ? "Loading default template..."
-                    : "Describe your betting phase strategy..."
-                }
+                className="w-full h-full px-[17px] py-[17px] bg-transparent text-sm font-medium text-white placeholder:text-[#374151] focus:outline-none resize-none"
+                placeholder="// Enter logic for wager sizing..."
                 value={bettingStrategy}
                 onChange={(e) => {
                   setBettingStrategy(e.target.value);
@@ -278,25 +360,20 @@ export default function CreateAgentPage() {
                 }}
               />
             </div>
+            </div>
 
-            {/* Trading Strategy Prompt - Trading Phase */}
-            <div>
-              <label className="block text-xs font-mono text-eva-text-dim uppercase tracking-widest mb-3">
-                Trading Phase Strategy <span className="text-red-400">*</span>
-                {isLoadingTemplate && (
-                  <span className="ml-2 text-eva-muted">(Loading...)</span>
-                )}
+          {/* Trading Strategy Prompt */}
+          <div className="flex flex-col gap-2 flex-1 min-h-0">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider">
+                Trading Strategy Prompt
               </label>
-              <p className="text-xs text-eva-muted mb-2">
-                Strategy for trading phase (Block 300-2700)
-              </p>
+              <AIGeneratedButton />
+            </div>
+            <div className="flex-1 min-h-[100px] bg-black border border-[#374151]">
               <textarea
-                className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono placeholder:text-eva-muted focus:outline-none focus:border-eva-primary transition-colors resize-none h-36 text-sm"
-                placeholder={
-                  isLoadingTemplate
-                    ? "Loading default template..."
-                    : "Describe your trading phase strategy..."
-                }
+                className="w-full h-full px-[17px] py-[17px] bg-transparent text-sm font-medium text-white placeholder:text-[#374151] focus:outline-none resize-none"
+                placeholder="// Enter logic for entry/exit execution..."
                 value={tradingStrategy}
                 onChange={(e) => {
                   setTradingStrategy(e.target.value);
@@ -304,10 +381,11 @@ export default function CreateAgentPage() {
                 }}
               />
             </div>
+            </div>
 
             {/* Error Message */}
             {createAgentMutation.isError && (
-              <div className="p-4 bg-red-500/10 border border-red-500/50 rounded-lg">
+            <div className="p-4 bg-red-500/10 border border-red-500/50">
                 <span className="text-sm font-mono text-red-400">
                   Failed to create agent. Please try again.
                 </span>
@@ -315,66 +393,44 @@ export default function CreateAgentPage() {
             )}
 
             {/* Bottom Bar - Info & Action */}
-            <div className="flex items-center justify-between pt-4 border-t border-eva-border">
-              {/* Info Badges */}
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3 px-4 py-2 bg-eva-darker rounded-lg border border-eva-border">
-                  <span className="text-xs font-mono text-eva-text-dim uppercase tracking-wider">
+            {/* Frequency */}
+            <div className="flex-1 h-[54px] bg-[#15171e] border border-[#1f2937] px-[17px] flex items-center justify-between">
+              <span className="text-xs font-medium text-[#6b7280] uppercase tracking-wider">
                     Frequency
                   </span>
-                  <span className="flex items-center gap-1.5 text-sm font-mono text-eva-primary">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-[#6ce182]">
                     10s Tick
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                      />
-                    </svg>
                   </span>
+                <ClockIcon />
+              </div>
                 </div>
 
-                <div className="flex items-center gap-3 px-4 py-2 bg-eva-darker rounded-lg border border-eva-border">
-                  <span className="text-xs font-mono text-eva-text-dim uppercase tracking-wider">
+            {/* Creation Fee */}
+            <div className="flex-1 h-[54px] bg-[#15171e] border border-[#1f2937] px-[17px] flex items-center justify-between">
+              <span className="text-xs font-medium text-[#6b7280] uppercase tracking-wider">
                     Creation Fee
                   </span>
-                  <span className="flex items-center gap-1.5 text-sm font-mono text-eva-primary">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-white">
                     0.1 SOL
-                    <svg
-                      className="w-4 h-4"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                    </svg>
                   </span>
-                </div>
+                <SolanaIcon />
+              </div>
               </div>
 
-              {/* Create Button */}
-              <EvaButton
-                className="px-8 py-3 text-sm font-semibold uppercase tracking-wider"
+            {/* Create Agent Button */}
+            <button
+              type="button"
+              className="flex-1 h-[54px] bg-[#6ce182] border border-[#6ce182] rounded flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#5bd174] transition-colors"
                 disabled={!isFormValid || isSubmitting || !isAuthenticated}
-                size="lg"
-                variant="primary"
                 onClick={handleCreateAgent}
               >
-                {isSubmitting ? (
-                  <span className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Creating...
+              <span className="font-semibold text-sm text-black uppercase tracking-wider">
+                {isSubmitting ? "CREATING..." : "CREATE AGENT"}
                   </span>
-                ) : (
-                  "Create Agent"
-                )}
-              </EvaButton>
-            </div>
+            </button>
           </div>
         </div>
       </div>

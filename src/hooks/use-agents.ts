@@ -95,8 +95,11 @@ export function useCreateAgent() {
 
   return useMutation({
     mutationFn: (data: CreateAgentDto) => agentApi.createAgent(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: agentKeys.lists() });
+    onSuccess: async () => {
+      // Wait for the agents list to be refetched before continuing
+      // This ensures navigation to /my-agent works correctly
+      await queryClient.invalidateQueries({ queryKey: agentKeys.lists() });
+      await queryClient.refetchQueries({ queryKey: agentKeys.lists() });
     },
   });
 }
@@ -248,14 +251,12 @@ export function useAgentTransactions(
 
 /**
  * Hook for getting agent logos
+ * Note: This is a public API that doesn't require authentication
  */
 export function useAgentLogos() {
-  const { isAuthenticated } = useAuthStore();
-
   return useQuery({
     queryKey: agentKeys.logos(),
     queryFn: () => agentApi.getAgentLogos(),
-    enabled: isAuthenticated,
     staleTime: 60 * 60 * 1000, // 1 hour - logos don't change often
   });
 }

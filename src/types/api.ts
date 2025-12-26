@@ -428,3 +428,67 @@ export interface AgentTrenchListResponseDto {
 export interface AgentTrenchDetailResponseDto extends AgentTrenchDto {
   transactions: TransactionDto[];
 }
+
+// ============== Trench History Types ==============
+
+export interface TrenchHistoryItemDto {
+  /** 参与记录 ID */
+  id: number;
+  /** Trench 数据库 ID */
+  trenchId: number;
+  /** Trench 状态 */
+  trenchStatus: TrenchStatus;
+  /** Token 符号 */
+  tokenSymbol: string | null;
+  /** 用户地址 (turnkey 地址) */
+  userAddress: string;
+  /** 存入 SOL (lamports) */
+  depositedSol: string;
+  /** 提现 SOL (lamports) */
+  totalWithdrawnSol: string;
+  /** 持有代币数量 */
+  tokenBalance: string;
+  /** 总买入 SOL (lamports) */
+  totalBuySol: string;
+  /** 总卖出 SOL (lamports) */
+  totalSellSol: string;
+  /** 盈亏 SOL (lamports) */
+  pnlSol: string;
+  /** 排名 (结算后有值) */
+  rank: number | null;
+  /** 奖励金额 (lamports) */
+  prizeAmount: string;
+  /** 奖励是否已结算 */
+  isPrizeSettled: boolean;
+  /** Trench 开始时间 */
+  trenchStartTime: string | null;
+  /** Trench 结束时间 */
+  trenchEndTime: string | null;
+  /** 参与创建时间 */
+  createdAt: string;
+}
+
+export interface TrenchHistoryResponseDto {
+  /** Trench 参与历史 */
+  history: TrenchHistoryItemDto[];
+  /** 总数 */
+  total: number;
+  /** 当前页 */
+  page: number;
+  /** 每页数量 */
+  limit: number;
+}
+
+// ============== PNL Timeline Types ==============
+
+export interface PnlTimelineItemDto {
+  /** PNL 值 (lamports) */
+  pnl: string;
+  /** 时间戳 */
+  timestamp: string;
+}
+
+export interface UserPnlTimelineResponseDto {
+  /** PNL 时间线数据（按时间升序） */
+  timeline: PnlTimelineItemDto[];
+}

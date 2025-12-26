@@ -55,7 +55,7 @@ function transactionToLogEntry(tx: TransactionDto): ExecutionLogEntry {
   const solAmount = tx.solAmount ? parseFloat(tx.solAmount) / 1e9 : 0;
 
   return {
-    id: tx.id.toString(),
+    id: tx.signature,
     txType: tx.txType,
     action: txTypeToAction(tx.txType),
     amount: solAmount,

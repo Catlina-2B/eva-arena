@@ -4,8 +4,10 @@ import type {
   TransactionListResponseDto,
   TransactionType,
   TrenchDetailDto,
+  TrenchHistoryResponseDto,
   TrenchListResponseDto,
   TrenchStatus,
+  UserPnlTimelineResponseDto,
 } from "@/types/api";
 
 import { apiClient } from "./client";
@@ -128,6 +130,34 @@ export const trenchApi = {
   getLeaderboard: async (trenchId: number): Promise<LeaderboardResponseDto> => {
     const response = await apiClient.get<LeaderboardResponseDto>(
       `/api/trenches/${trenchId}/leaderboard`,
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Get user PNL timeline
+   * Returns PNL data points ordered by time ascending
+   */
+  getUserPnlTimeline: async (): Promise<UserPnlTimelineResponseDto> => {
+    const response = await apiClient.get<UserPnlTimelineResponseDto>(
+      "/api/trenches/pnl/timeline",
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Get user's trench participation history
+   * Returns history ordered by time descending
+   */
+  getTrenchHistory: async (params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<TrenchHistoryResponseDto> => {
+    const response = await apiClient.get<TrenchHistoryResponseDto>(
+      "/api/trenches/history",
+      { params },
     );
 
     return response.data;

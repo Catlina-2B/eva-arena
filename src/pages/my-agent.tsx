@@ -1,9 +1,10 @@
 import type { AgentHistoryRound } from "@/types";
 import type {
   AgentItemDto,
-  AgentTrenchDto,
+  PnlTimelineItemDto,
   TransactionDto,
   TransactionType,
+  TrenchHistoryItemDto,
 } from "@/types/api";
 
 import { useState, useMemo } from "react";
@@ -16,10 +17,12 @@ import {
   useMyAgents,
   useAgent,
   useAgentPanel,
-  useAgentTrenches,
+  useTrenchHistory,
   useUserTransactions,
   useToggleAgentStatus,
   useAgentWithdraw,
+  useUserPnlTimeline,
+  useTurnkeyBalance,
 } from "@/hooks";
 import { useIsAuthenticated } from "@/hooks/use-auth";
 
@@ -48,21 +51,72 @@ function CornerDecoration({ position }: CornerDecorationProps) {
 }
 
 // PNL Chart Component - Simple SVG line chart
-function PnlChart() {
-  // Mock data points for the chart
-  const dataPoints = [20, 35, 28, 45, 42, 55, 48, 65, 72, 85, 78, 95];
-  const maxValue = Math.max(...dataPoints);
-  const minValue = Math.min(...dataPoints);
-  const range = maxValue - minValue;
+interface PnlChartProps {
+  timeline?: PnlTimelineItemDto[];
+  isLoading?: boolean;
+}
+
+function PnlChart({ timeline, isLoading }: PnlChartProps) {
+  // Convert timeline data to chart points (convert lamports to SOL)
+  const dataPoints = useMemo(() => {
+    if (!timeline || timeline.length === 0) {
+      return [];
+    }
+
+    return timeline.map((item) => parseFloat(item.pnl) / 1e9);
+  }, [timeline]);
 
   // Generate SVG path
   const width = 280;
   const height = 140;
   const padding = 10;
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Empty state - show flat line
+  if (dataPoints.length === 0) {
+    return (
+      <svg
+        className="w-full h-full"
+        preserveAspectRatio="none"
+        viewBox={`0 0 ${width} ${height}`}
+      >
+        <line
+          stroke="#00ff88"
+          strokeOpacity="0.3"
+          strokeWidth="2"
+          x1={padding}
+          x2={width - padding}
+          y1={height / 2}
+          y2={height / 2}
+        />
+        <text
+          className="text-[10px]"
+          fill="#666"
+          textAnchor="middle"
+          x={width / 2}
+          y={height / 2 + 20}
+        >
+          No PNL data
+        </text>
+      </svg>
+    );
+  }
+
+  const maxValue = Math.max(...dataPoints);
+  const minValue = Math.min(...dataPoints);
+  const range = maxValue - minValue || 1; // Avoid division by zero
+
   const points = dataPoints.map((value, index) => {
     const x =
-      padding + (index / (dataPoints.length - 1)) * (width - 2 * padding);
+      padding + (index / (dataPoints.length - 1 || 1)) * (width - 2 * padding);
     const y =
       height - padding - ((value - minValue) / range) * (height - 2 * padding);
 
@@ -74,6 +128,10 @@ function PnlChart() {
   // Create gradient fill area
   const areaD = `M ${padding},${height - padding} L ${pathD.slice(2)} L ${width - padding},${height - padding} Z`;
 
+  // Determine color based on overall PNL trend (last value vs first value)
+  const isPositive = dataPoints[dataPoints.length - 1] >= dataPoints[0];
+  const strokeColor = isPositive ? "#00ff88" : "#ff4444";
+
   return (
     <svg
       className="w-full h-full"
@@ -82,12 +140,12 @@ function PnlChart() {
     >
       <defs>
         <linearGradient id="chartGradient" x1="0%" x2="0%" y1="0%" y2="100%">
-          <stop offset="0%" stopColor="#00ff88" stopOpacity="0.3" />
-          <stop offset="100%" stopColor="#00ff88" stopOpacity="0" />
+          <stop offset="0%" stopColor={strokeColor} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
         </linearGradient>
       </defs>
       <path d={areaD} fill="url(#chartGradient)" />
-      <path d={pathD} fill="none" stroke="#00ff88" strokeWidth="2" />
+      <path d={pathD} fill="none" stroke={strokeColor} strokeWidth="2" />
     </svg>
   );
 }
@@ -95,7 +153,7 @@ function PnlChart() {
 // Trade Type Badge Component
 function TradeTypeBadge({ type }: { type: TransactionType }) {
   const config: Record<
-    TransactionType,
+    string,
     {
       variant: "primary" | "success" | "danger" | "warning" | "default";
       label: string;
@@ -108,7 +166,7 @@ function TradeTypeBadge({ type }: { type: TransactionType }) {
     DEPOSIT: { variant: "default", label: "DEPOSIT" },
   };
 
-  const { variant, label } = config[type];
+  const { variant, label } = config[type] ?? { variant: "default" as const, label: type };
 
   return <EvaBadge variant={variant}>{label}</EvaBadge>;
 }
@@ -213,7 +271,7 @@ function TradeHistoryTable({
           <tbody>
             {transactions.map((tx) => (
               <tr
-                key={tx.id}
+                key={tx.signature}
                 className="border-b border-eva-border/50 hover:bg-eva-card-hover transition-colors"
               >
                 <td className="px-4 py-3 font-mono text-eva-text">
@@ -350,11 +408,13 @@ function HistoryRow({
   isExpanded: boolean;
   onToggle: () => void;
 }) {
-  // Fetch user's transactions only when expanded
+  // Fetch user's transactions only when expanded (no polling for history)
+  // Use logged-in user's wallet address (not turnkey address)
   const { data: transactionsData, isLoading: isTransactionsLoading } =
     useUserTransactions(
       isExpanded ? trenchId : undefined,
       isExpanded ? { limit: 50 } : undefined,
+      { polling: false },
     );
 
   return (
@@ -436,20 +496,19 @@ interface ExtendedHistoryRound extends AgentHistoryRound {
   trenchDbId: number;
 }
 
-// Convert API agent trench to history round format
-function trenchToHistoryRound(trench: AgentTrenchDto): ExtendedHistoryRound {
-  const pnlSol = parseFloat(trench.pnlSol) / 1e9;
+// Convert API trench history item to history round format
+function historyItemToRound(item: TrenchHistoryItemDto): ExtendedHistoryRound {
+  const pnlSol = parseFloat(item.pnlSol) / 1e9;
+  const prizeSol = parseFloat(item.prizeAmount) / 1e9;
 
   return {
-    roundId: `eva-${trench.trenchId}`,
-    tokenName: trench.tokenMint
-      ? `${trench.tokenMint.slice(0, 8)}...`
-      : `Round ${trench.trenchId}`,
-    rank: 0, // Would need to fetch from leaderboard
+    roundId: `eva-${item.trenchId}`,
+    tokenName: item.tokenSymbol || `Round ${item.trenchId}`,
+    rank: item.rank ?? 0,
     pnl: pnlSol,
-    prize: pnlSol > 0 ? pnlSol : 0,
-    trades: trench.transactionCount,
-    trenchDbId: trench.id,
+    prize: prizeSol,
+    trades: 0, // Not available in TrenchHistoryItemDto, could be calculated from transactions
+    trenchDbId: item.trenchId,
   };
 }
 
@@ -619,19 +678,26 @@ export default function MyAgentPage() {
   // Withdraw mutation
   const withdrawMutation = useAgentWithdraw();
 
-  // Fetch agent trenches history
+  // Subscribe to Turnkey wallet balance updates via WebSocket
+  const { balance: turnkeyBalance } = useTurnkeyBalance(primaryAgent?.turnkeyAddress);
+
+  // Fetch user trench history
   const {
-    data: trenchesData,
-    isLoading: isTrenchesLoading,
-    error: trenchesError,
-  } = useAgentTrenches(primaryAgent?.id, { limit: 10 });
+    data: historyData,
+    isLoading: isHistoryLoading,
+    error: historyError,
+  } = useTrenchHistory({ limit: 10 });
 
-  // Convert trenches to history rounds
+  // Fetch user PNL timeline
+  const { data: pnlTimelineData, isLoading: isPnlTimelineLoading } =
+    useUserPnlTimeline();
+
+  // Convert history items to history rounds
   const historyRounds = useMemo(() => {
-    if (!trenchesData?.trenches) return [];
+    if (!historyData?.history) return [];
 
-    return trenchesData.trenches.map(trenchToHistoryRound);
-  }, [trenchesData]);
+    return historyData.history.map(historyItemToRound);
+  }, [historyData]);
 
   // Set first round as expanded by default
   useMemo(() => {
@@ -695,9 +761,10 @@ export default function MyAgentPage() {
     );
   }
 
-  // Use real API data
+  // Use real API data with Turnkey balance WebSocket subscription
   const displayAgent = primaryAgent;
-  const balance = panelData?.currentBalance ?? 0;
+  // Prefer Turnkey balance (real-time WebSocket) over panel balance (API polling)
+  const balance = turnkeyBalance || panelData?.currentBalance || 0;
   const totalDeposit = panelData?.totalDeposited ?? 0;
   const totalWithdraw = panelData?.totalWithdrawn ?? 0;
   const pnl = panelData?.totalPnl ?? 0;
@@ -844,7 +911,10 @@ export default function MyAgentPage() {
 
                 {/* Chart - Full Width */}
                 <div className="absolute inset-x-0 bottom-0 top-8">
-                  <PnlChart />
+                  <PnlChart
+                    isLoading={isPnlTimelineLoading}
+                    timeline={pnlTimelineData?.timeline}
+                  />
                 </div>
               </div>
             </EvaCardContent>
@@ -857,12 +927,12 @@ export default function MyAgentPage() {
             <h3 className="text-xs font-mono text-eva-text-dim uppercase tracking-wider">
               <span className="text-eva-primary">{`///`}</span> History
             </h3>
-            {isTrenchesLoading && (
+            {isHistoryLoading && (
               <div className="w-4 h-4 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
             )}
           </div>
 
-          {trenchesError ? (
+          {historyError ? (
             <div className="text-center py-8">
               <p className="text-eva-danger text-sm">Failed to load history</p>
               <p className="text-eva-text-dim text-xs mt-1">
@@ -885,7 +955,7 @@ export default function MyAgentPage() {
                   />
                 </EvaCard>
               ))}
-              {!isTrenchesLoading && historyRounds.length === 0 && (
+              {!isHistoryLoading && historyRounds.length === 0 && (
                 <div className="text-center py-8 text-eva-text-dim">
                   No round history yet. Start trading to see your history here.
                 </div>
