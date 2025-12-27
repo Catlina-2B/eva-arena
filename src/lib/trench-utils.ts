@@ -177,7 +177,7 @@ export function trenchToArenaRound(
   );
 
   // Calculate prize pool from deposited SOL (80% goes to prize pool)
-  const totalDepositedSol = parseFloat(trench.totalDepositedSol) / 1e9; // lamports to SOL
+  const totalDepositedSol = parseFloat(trench.prizePoolReserves) / 1e9; // lamports to SOL
   const prizePool = totalDepositedSol * 0.8;
 
   // Get token price
@@ -285,7 +285,7 @@ function calculateWinners(
 const TOTAL_TOKEN_SUPPLY = 1_000_000_000;
 
 /**
- * Convert LeaderboardResponseDto to AgentRanking array
+ * Convert LeaderboardResponseDto to AgentRanking array (top 3 only)
  */
 export function leaderboardToRankings(
   leaderboard: LeaderboardResponseDto | undefined,
@@ -295,7 +295,7 @@ export function leaderboardToRankings(
 
   const rankings: AgentRanking[] = [];
 
-  // Add top three
+  // Add top three only
   for (const item of leaderboard.topThree) {
     const tokenAmount = parseInt(item.tokenBalance) / 1e6; // Adjust decimals
     const supplyPercentage = (tokenAmount / TOTAL_TOKEN_SUPPLY) * 100;
@@ -307,29 +307,54 @@ export function leaderboardToRankings(
       agentAvatar: undefined,
       tokenAmount,
       pnlSol: parseFloat(item.pnlSol) / 1e9,
+      prizeAmount: parseFloat(item.prizeAmount) / 1e9,
       supplyPercentage,
       isOwned: item.isCurrentUser || item.userAddress === currentUserAddress,
     });
   }
 
-  // Add current user if not in top three
-  if (leaderboard.currentUser && leaderboard.currentUser.rank > 3) {
-    const tokenAmount = parseInt(leaderboard.currentUser.tokenBalance) / 1e6;
-    const supplyPercentage = (tokenAmount / TOTAL_TOKEN_SUPPLY) * 100;
-
-    rankings.push({
-      rank: leaderboard.currentUser.rank,
-      agentId:
-        leaderboard.currentUser.agentId || leaderboard.currentUser.userAddress,
-      agentName: leaderboard.currentUser.agentName || "My Agent",
-      tokenAmount,
-      pnlSol: parseFloat(leaderboard.currentUser.pnlSol) / 1e9,
-      supplyPercentage,
-      isOwned: true,
-    });
-  }
-
   return rankings;
+}
+
+/**
+ * Get current user ranking info (when not in top 3)
+ */
+export function getCurrentUserRanking(
+  leaderboard: LeaderboardResponseDto | undefined,
+): AgentRanking | null {
+  if (!leaderboard?.currentUser) return null;
+  
+  // Only return if user is not in top 3
+  if (leaderboard.currentUser.rank <= 3) return null;
+
+  const tokenAmount = parseInt(leaderboard.currentUser.tokenBalance) / 1e6;
+  const supplyPercentage = (tokenAmount / TOTAL_TOKEN_SUPPLY) * 100;
+
+  return {
+    rank: leaderboard.currentUser.rank,
+    agentId:
+      leaderboard.currentUser.agentId || leaderboard.currentUser.userAddress,
+    agentName: leaderboard.currentUser.agentName || "My Agent",
+    tokenAmount,
+    pnlSol: parseFloat(leaderboard.currentUser.pnlSol) / 1e9,
+    prizeAmount: parseFloat(leaderboard.currentUser.prizeAmount) / 1e9,
+    supplyPercentage,
+    isOwned: true,
+  };
+}
+
+/**
+ * Get 3rd place token amount for gap calculation
+ */
+export function getThirdPlaceTokenAmount(
+  leaderboard: LeaderboardResponseDto | undefined,
+): number {
+  if (!leaderboard?.topThree?.length) return 0;
+  
+  const thirdPlace = leaderboard.topThree.find(item => item.rank === 3);
+  if (!thirdPlace) return 0;
+  
+  return parseInt(thirdPlace.tokenBalance) / 1e6;
 }
 
 /**

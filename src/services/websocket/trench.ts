@@ -5,7 +5,6 @@ import type {
   TransactionEventDto,
   TrenchUpdateEventDto,
   WsErrorEventDto,
-  WsMessage,
 } from "@/types/websocket";
 
 import { trenchSocketClient } from "./client";
@@ -25,39 +24,44 @@ export interface TrenchEventHandlers {
 
 /**
  * Subscribe to a trench for real-time updates
+ *
+ * @param trenchId - On-chain trench ID (string) for subscription
+ * @param handlers - Event handlers for various trench events
  */
 export function subscribeTrench(
-  trenchId: number,
+  trenchId: string,
   handlers: TrenchEventHandlers,
 ): () => void {
+  console.log(`[TrenchSocket] subscribeTrench called with trenchId: ${trenchId}`);
   const socket = trenchSocketClient.getSocket();
 
   // Connect if not connected
   if (!socket.connected) {
+    console.log("[TrenchSocket] Socket not connected, connecting...");
     trenchSocketClient.connect();
+  } else {
+    console.log("[TrenchSocket] Socket already connected");
   }
 
-  // Set up event listeners
-  const handleTrenchUpdate = (msg: WsMessage<TrenchUpdateEventDto>) => {
-    handlers.onTrenchUpdate?.(msg.data);
+  // Set up event listeners - 后端直接推送数据，无 WsMessage 包装
+  const handleTrenchUpdate = (data: TrenchUpdateEventDto) => {
+    handlers.onTrenchUpdate?.(data);
   };
 
-  const handlePriceUpdate = (msg: WsMessage<PriceUpdateEventDto>) => {
-    handlers.onPriceUpdate?.(msg.data);
+  const handlePriceUpdate = (data: PriceUpdateEventDto) => {
+    handlers.onPriceUpdate?.(data);
   };
 
-  const handleTransaction = (msg: WsMessage<TransactionEventDto>) => {
-    handlers.onTransaction?.(msg.data);
+  const handleTransaction = (data: TransactionEventDto) => {
+    handlers.onTransaction?.(data);
   };
 
-  const handleLeaderboardUpdate = (
-    msg: WsMessage<LeaderboardUpdateEventDto>,
-  ) => {
-    handlers.onLeaderboardUpdate?.(msg.data);
+  const handleLeaderboardUpdate = (data: LeaderboardUpdateEventDto) => {
+    handlers.onLeaderboardUpdate?.(data);
   };
 
-  const handleError = (msg: WsMessage<WsErrorEventDto>) => {
-    handlers.onError?.(msg.data);
+  const handleError = (data: WsErrorEventDto) => {
+    handlers.onError?.(data);
   };
 
   // Register listeners
@@ -69,15 +73,17 @@ export function subscribeTrench(
 
   // Subscribe to trench after connection
   const doSubscribe = () => {
+    console.log(`[TrenchSocket] Emitting subscribeTrench for trenchId: ${trenchId}`);
     socket.emit(
       WsEventType.SUBSCRIBE_TRENCH,
       { trenchId },
       (response: SubscribeTrenchResponse) => {
         if (response?.success) {
-          console.log(`[TrenchSocket] Subscribed to trench ${trenchId}`);
+          console.log(`[TrenchSocket] Subscribed to trench ${trenchId}`, response);
         } else {
           console.error(
             `[TrenchSocket] Failed to subscribe to trench ${trenchId}`,
+            response,
           );
         }
       },
@@ -86,8 +92,10 @@ export function subscribeTrench(
 
   // Subscribe now if connected, or wait for connection
   if (socket.connected) {
+    console.log("[TrenchSocket] Socket connected, subscribing immediately");
     doSubscribe();
   } else {
+    console.log("[TrenchSocket] Socket not connected yet, waiting for connect event");
     socket.once("connect", doSubscribe);
   }
 
@@ -109,8 +117,10 @@ export function subscribeTrench(
 
 /**
  * Unsubscribe from a trench
+ *
+ * @param trenchId - On-chain trench ID (string)
  */
-export function unsubscribeTrench(trenchId: number): void {
+export function unsubscribeTrench(trenchId: string): void {
   const socket = trenchSocketClient.getSocket();
 
   if (socket.connected) {

@@ -54,6 +54,7 @@ export interface AgentRanking {
   agentAvatar?: string;
   tokenAmount: number;
   pnlSol: number;
+  prizeAmount: number;
   supplyPercentage: number;
   isOwned?: boolean;
 }

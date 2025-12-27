@@ -9,10 +9,11 @@ import type {
 
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useAccount } from "@particle-network/connectkit";
 
 import DefaultLayout from "@/layouts/default";
 import { EvaCard, EvaCardContent, EvaButton, EvaBadge } from "@/components/ui";
-import { DepositModal, EditAgentModal, StartTimingModal, WithdrawModal } from "@/components/agent";
+import { DepositModal, EditAgentModal, PauseRequiredModal, StartTimingModal, WithdrawModal } from "@/components/agent";
 import { ConnectWalletPrompt } from "@/components/wallet/connect-wallet-prompt";
 import {
   useMyAgents,
@@ -697,9 +698,11 @@ export default function MyAgentPage() {
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isStartTimingModalOpen, setIsStartTimingModalOpen] = useState(false);
+  const [isPauseRequiredModalOpen, setIsPauseRequiredModalOpen] = useState(false);
 
   // Auth state
   const { isAuthenticated } = useIsAuthenticated();
+  const { address: walletAddress } = useAccount();
 
   // Fetch user's agents
   const { data: agentsData, isLoading: isAgentsLoading, refetch: refetchAgents } = useMyAgents();
@@ -830,7 +833,14 @@ export default function MyAgentPage() {
         <AgentInfo
           agent={displayAgent}
           isToggling={toggleStatusMutation.isPending}
-          onEdit={() => setIsEditModalOpen(true)}
+          onEdit={() => {
+            // If agent is active, show pause required modal first
+            if (displayAgent.status === "ACTIVE") {
+              setIsPauseRequiredModalOpen(true);
+            } else {
+              setIsEditModalOpen(true);
+            }
+          }}
           onToggleStatus={() => {
             // Show timing modal when activating, directly pause when deactivating
             if (displayAgent.status === "ACTIVE") {
@@ -1020,14 +1030,15 @@ export default function MyAgentPage() {
 
       {/* Withdraw Modal */}
       <WithdrawModal
+        balanceInSol={balance}
         isOpen={isWithdrawModalOpen}
         isWithdrawing={withdrawMutation.isPending}
-        maxBalance={balance}
+        recipientAddress={walletAddress ?? ""}
         onClose={() => setIsWithdrawModalOpen(false)}
-        onWithdraw={async (amount, recipientAddress) => {
+        onWithdraw={async (amountInLamports, toAddress) => {
           await withdrawMutation.mutateAsync({
             id: displayAgent.id,
-            data: { amount, toAddress: recipientAddress },
+            data: { amount: amountInLamports, toAddress },
           });
           // Refresh panel data after successful withdrawal
           refetchPanel();
@@ -1055,6 +1066,21 @@ export default function MyAgentPage() {
           console.log("Start timing selected:", timing);
           toggleStatusMutation.mutate(displayAgent.id);
           setIsStartTimingModalOpen(false);
+        }}
+        isLoading={toggleStatusMutation.isPending}
+      />
+
+      {/* Pause Required Modal */}
+      <PauseRequiredModal
+        isOpen={isPauseRequiredModalOpen}
+        onClose={() => setIsPauseRequiredModalOpen(false)}
+        onPause={async () => {
+          // Pause the agent first
+          await toggleStatusMutation.mutateAsync(displayAgent.id);
+          // Close pause required modal
+          setIsPauseRequiredModalOpen(false);
+          // Open edit modal
+          setIsEditModalOpen(true);
         }}
         isLoading={toggleStatusMutation.isPending}
       />

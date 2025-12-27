@@ -30,13 +30,18 @@ export interface UseTrenchSocketOptions {
   onLeaderboardUpdate?: (data: LeaderboardUpdateEventDto) => void;
   /** Whether to automatically invalidate React Query cache on updates */
   autoInvalidate?: boolean;
+  /** Database trench ID for query invalidation (required if autoInvalidate is true) */
+  dbTrenchId?: number;
 }
 
 /**
  * Hook for subscribing to real-time trench updates via WebSocket
+ *
+ * @param trenchId - On-chain trench ID (string) for WebSocket subscription
+ * @param options - Hook options including callbacks and query invalidation settings
  */
 export function useTrenchSocket(
-  trenchId: number | null | undefined,
+  trenchId: string | null | undefined,
   options: UseTrenchSocketOptions = {},
 ) {
   const {
@@ -45,6 +50,7 @@ export function useTrenchSocket(
     onTransaction,
     onLeaderboardUpdate,
     autoInvalidate = true,
+    dbTrenchId,
   } = options;
 
   const queryClient = useQueryClient();
@@ -87,9 +93,9 @@ export function useTrenchSocket(
       onTrenchUpdate: (data) => {
         handlersRef.current.onTrenchUpdate?.(data);
 
-        if (autoInvalidate) {
+        if (autoInvalidate && dbTrenchId) {
           queryClient.invalidateQueries({
-            queryKey: trenchKeys.detail(trenchId),
+            queryKey: trenchKeys.detail(dbTrenchId),
           });
           queryClient.invalidateQueries({ queryKey: trenchKeys.current() });
         }
@@ -99,9 +105,9 @@ export function useTrenchSocket(
         setLatestPrice(data);
         handlersRef.current.onPriceUpdate?.(data);
 
-        if (autoInvalidate) {
+        if (autoInvalidate && dbTrenchId) {
           queryClient.invalidateQueries({
-            queryKey: trenchKeys.priceCurve(trenchId),
+            queryKey: trenchKeys.priceCurve(dbTrenchId),
           });
         }
       },
@@ -111,9 +117,9 @@ export function useTrenchSocket(
         setTransactions((prev) => [data, ...prev.slice(0, 49)]); // Keep last 50
         handlersRef.current.onTransaction?.(data);
 
-        if (autoInvalidate) {
+        if (autoInvalidate && dbTrenchId) {
           queryClient.invalidateQueries({
-            queryKey: trenchKeys.transactions(trenchId),
+            queryKey: trenchKeys.transactions(dbTrenchId),
           });
         }
       },
@@ -121,9 +127,9 @@ export function useTrenchSocket(
       onLeaderboardUpdate: (data) => {
         handlersRef.current.onLeaderboardUpdate?.(data);
 
-        if (autoInvalidate) {
+        if (autoInvalidate && dbTrenchId) {
           queryClient.invalidateQueries({
-            queryKey: trenchKeys.leaderboard(trenchId),
+            queryKey: trenchKeys.leaderboard(dbTrenchId),
           });
         }
       },
@@ -139,7 +145,7 @@ export function useTrenchSocket(
       setLatestPrice(null);
       setLatestTransaction(null);
     };
-  }, [trenchId, autoInvalidate, queryClient]);
+  }, [trenchId, autoInvalidate, dbTrenchId, queryClient]);
 
   // Manual reconnect function
   const reconnect = useCallback(() => {

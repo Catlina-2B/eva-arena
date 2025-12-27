@@ -29,10 +29,12 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
   >([]);
 
   // Use database primary key ID for API calls
-  const trenchId = round.trenchDbId;
+  const trenchDbId = round.trenchDbId;
+  // Use on-chain trench ID for WebSocket subscription
+  const onChainTrenchId = round.id;
 
   // Fetch price curve data from API
-  const { data: priceCurveData, isLoading } = usePriceCurve(trenchId, "SOL");
+  const { data: priceCurveData, isLoading } = usePriceCurve(trenchDbId, "SOL");
 
   // Subscribe to WebSocket for real-time price updates
   const handlePriceUpdate = useCallback((data: PriceUpdateEventDto) => {
@@ -51,9 +53,10 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
     });
   }, []);
 
-  const { isConnected } = useTrenchSocket(trenchId, {
+  const { isConnected } = useTrenchSocket(onChainTrenchId, {
     onPriceUpdate: handlePriceUpdate,
     autoInvalidate: false, // We handle updates manually
+    dbTrenchId: trenchDbId,
   });
 
   // Convert API data to chart format

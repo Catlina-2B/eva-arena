@@ -4,26 +4,41 @@ import clsx from "clsx";
 
 import { EvaButton } from "@/components/ui";
 
+/** 1 SOL = 1,000,000,000 lamports */
+const LAMPORTS_PER_SOL = 1_000_000_000;
+
+/** Default CU reserve in lamports for transaction fees */
+const DEFAULT_CU_RESERVE_LAMPORTS = 5000;
+
 interface WithdrawModalProps {
   isOpen: boolean;
   onClose: () => void;
-  maxBalance: number;
-  onWithdraw: (amount: number, recipientAddress: string) => Promise<void>;
+  /** Balance in SOL */
+  balanceInSol: number;
+  /** Connected wallet address (recipient) */
+  recipientAddress: string;
+  /** Callback with amount in lamports */
+  onWithdraw: (amountInLamports: number, recipientAddress: string) => Promise<void>;
   isWithdrawing?: boolean;
 }
 
 export function WithdrawModal({
   isOpen,
   onClose,
-  maxBalance,
+  balanceInSol,
+  recipientAddress,
   onWithdraw,
   isWithdrawing = false,
 }: WithdrawModalProps) {
   const [amount, setAmount] = useState("");
-  const [recipientAddress, setRecipientAddress] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  // Calculate max withdrawable amount: balance - CU reserve
+  const balanceInLamports = balanceInSol * LAMPORTS_PER_SOL;
+  const maxWithdrawableLamports = Math.max(0, balanceInLamports - DEFAULT_CU_RESERVE_LAMPORTS);
+  const maxWithdrawableSol = maxWithdrawableLamports / LAMPORTS_PER_SOL;
 
   const handleAmountChange = (value: string) => {
     // Only allow numbers and decimals
@@ -34,45 +49,46 @@ export function WithdrawModal({
   };
 
   const handleMaxClick = () => {
-    setAmount(maxBalance.toFixed(4));
+    setAmount(maxWithdrawableSol.toFixed(9));
     setError(null);
   };
 
   const handleSubmit = async () => {
-    const amountNum = parseFloat(amount);
+    const amountInSol = parseFloat(amount);
 
     // Validation
-    if (!amount || isNaN(amountNum) || amountNum <= 0) {
+    if (!amount || isNaN(amountInSol) || amountInSol <= 0) {
       setError("Please enter a valid amount");
 
       return;
     }
 
-    if (amountNum > maxBalance) {
+    if (amountInSol > maxWithdrawableSol) {
       setError("Amount exceeds available balance");
 
       return;
     }
 
     if (!recipientAddress || recipientAddress.length < 32) {
-      setError("Please enter a valid Solana address");
+      setError("Invalid wallet address");
 
       return;
     }
 
     try {
       setError(null);
-      await onWithdraw(amountNum, recipientAddress);
+      // Convert SOL to lamports for API call
+      const amountInLamports = Math.floor(amountInSol * LAMPORTS_PER_SOL);
+      await onWithdraw(amountInLamports, recipientAddress);
       // Reset form on success
       setAmount("");
-      setRecipientAddress("");
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Withdrawal failed");
     }
   };
 
-  const networkFee = 0.01; // Estimated network fee in SOL
+  const networkFee = 0.0001; // Estimated network fee in SOL
 
   return createPortal(
     <Fragment>
@@ -129,7 +145,7 @@ export function WithdrawModal({
                   className="text-xs text-eva-primary font-mono hover:underline"
                   onClick={handleMaxClick}
                 >
-                  MAX: {maxBalance.toFixed(2)} SOL
+                  MAX: {maxWithdrawableSol.toFixed(4)} SOL
                 </button>
               </div>
               <div className="relative">
@@ -150,27 +166,14 @@ export function WithdrawModal({
               </div>
             </div>
 
-            {/* Recipient Address */}
+            {/* Recipient Address (Read-only: connected wallet) */}
             <div>
               <span className="block text-xs text-eva-text-dim uppercase tracking-wider mb-2">
                 RECIPIENT_ADDRESS
               </span>
-              <input
-                className={clsx(
-                  "w-full px-4 py-3 bg-eva-darker border rounded-lg font-mono text-sm text-eva-text placeholder-eva-text-dim focus:outline-none focus:border-eva-primary transition-colors",
-                  error && !recipientAddress
-                    ? "border-eva-danger"
-                    : "border-eva-border",
-                )}
-                disabled={isWithdrawing}
-                placeholder="Solana Address..."
-                type="text"
-                value={recipientAddress}
-                onChange={(e) => {
-                  setRecipientAddress(e.target.value);
-                  setError(null);
-                }}
-              />
+              <div className="w-full px-4 py-3 bg-eva-darker/50 border border-eva-border rounded-lg font-mono text-sm text-eva-text-dim truncate">
+                {recipientAddress}
+              </div>
             </div>
 
             {/* Network Info */}

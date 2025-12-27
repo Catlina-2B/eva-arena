@@ -39,19 +39,20 @@ export interface SubscribeTrenchResponse {
 
 // ============== Event Data Types ==============
 
+/**
+ * TrenchUpdate 事件 - 增量更新格式
+ * 服务器只推送发生变化的字段
+ */
 export interface TrenchUpdateEventDto {
-  id: number;
-  trenchId: string;
+  trenchId: number;
   trenchPda: string;
-  status: string;
-  totalDepositedSol: string;
-  participantCount: number;
-  activeAgentsCount: number;
-  transactionCount: number;
-  totalBidSol: string;
-  currentTokenPriceSol: string | null;
-  currentTokenPriceUsd: string | null;
-  updatedAt: string;
+  status?: string; // 状态: BIDDING | TRADING | ENDED
+  realSolReserves?: string; // 实际 SOL 储备 (lamports)
+  prizePoolReserves?: string; // 奖池储备 (lamports)
+  activeAgentsCount?: number; // 活跃 Agent 数量
+  tokenPriceSol?: string | null; // Token 价格 (SOL)
+  tokenPriceUsd?: string | null; // Token 价格 (USD)
+  totalDepositedSol?: string; // 总存入 SOL (lamports)
 }
 
 export interface PriceUpdateEventDto {
@@ -84,14 +85,17 @@ export interface TransactionEventDto {
 }
 
 export interface LeaderboardItemEventDto {
-  rank: number;
+  rank: number; // 排名 (1, 2, 3)
   participantId: number;
   userAddress: string;
   agentPda: string;
-  agentName: string | null;
-  tokenBalance: string;
-  depositedSol: string;
-  pnlSol: string;
+  agentName: string | null; // Agent 名称
+  agentLogo: string | null; // Agent 头像 URL
+  tokenBalance: string; // Token 余额
+  depositedSol: string; // 已存入 SOL
+  pnlSol: string; // 预估 PNL (lamports)
+  prizeAmount: string; // 预估奖励 (lamports)
+  allocationPercent: string; // 分配比例 (%)
 }
 
 export interface LeaderboardUpdateEventDto {
@@ -99,6 +103,8 @@ export interface LeaderboardUpdateEventDto {
   trenchPda: string;
   topThree: LeaderboardItemEventDto[];
   totalParticipants: number;
+  totalTokenBalance: string; // 总 Token 余额
+  totalPrizePool: string; // 总奖池
 }
 
 export interface WsErrorEventDto {

@@ -16,7 +16,7 @@ import {
   AgentDashboardCard,
   WelcomeOnboardingModal,
 } from "@/components/arena";
-import { EditAgentModal, StartTimingModal } from "@/components/agent";
+import { EditAgentModal, PauseRequiredModal, StartTimingModal } from "@/components/agent";
 import {
   useCurrentTrench,
   useLeaderboard,
@@ -33,6 +33,8 @@ import { useIsAuthenticated } from "@/hooks/use-auth";
 import {
   trenchToArenaRound,
   leaderboardToRankings,
+  getCurrentUserRanking,
+  getThirdPlaceTokenAmount,
   transactionsToActivities,
 } from "@/lib/trench-utils";
 import {
@@ -58,8 +60,10 @@ export default function ArenaPage() {
     error: trenchError,
   } = useCurrentTrench();
 
-  // Get trench ID for dependent queries
+  // Get trench ID for dependent queries (database primary key for REST APIs)
   const trenchId = trenchData?.id;
+  // Get on-chain trench ID for WebSocket subscription
+  const onChainTrenchId = trenchData?.trenchId;
 
   // Fetch leaderboard
   const { data: leaderboardData } = useLeaderboard(trenchId);
@@ -69,11 +73,13 @@ export default function ArenaPage() {
     limit: 10,
   });
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates (uses on-chain trenchId)
   const { isConnected, transactions: realtimeTransactions } = useTrenchSocket(
-    trenchId ?? null,
+    onChainTrenchId ?? null,
     {
       autoInvalidate: true,
+      // Pass database ID for query invalidation
+      dbTrenchId: trenchId,
     },
   );
 
@@ -91,6 +97,9 @@ export default function ArenaPage() {
   
   // Start timing modal state
   const [isStartTimingModalOpen, setIsStartTimingModalOpen] = useState(false);
+
+  // Pause required modal state
+  const [isPauseRequiredModalOpen, setIsPauseRequiredModalOpen] = useState(false);
 
   // Toggle agent status mutation
   const toggleAgentStatus = useToggleAgentStatus();
@@ -112,6 +121,18 @@ export default function ArenaPage() {
     if (!USE_REAL_DATA) return mockRankings;
 
     return leaderboardToRankings(leaderboardData);
+  }, [leaderboardData]);
+
+  const currentUserRanking = useMemo(() => {
+    if (!USE_REAL_DATA) return null;
+
+    return getCurrentUserRanking(leaderboardData);
+  }, [leaderboardData]);
+
+  const thirdPlaceTokenAmount = useMemo(() => {
+    if (!USE_REAL_DATA) return 0;
+
+    return getThirdPlaceTokenAmount(leaderboardData);
   }, [leaderboardData]);
 
   const activities = useMemo(() => {
@@ -258,7 +279,9 @@ export default function ArenaPage() {
           {/* Right column: Rankings + Welcome/Agent */}
           <div className="space-y-4">
             <LiveRankings 
-              rankings={rankings} 
+              rankings={rankings}
+              currentUser={currentUserRanking}
+              thirdPlaceTokenAmount={thirdPlaceTokenAmount}
               isSkipped={currentRound.phase === "trading" && !currentRound.hasBets}
             />
             {!isAuthenticated && <WelcomeCard />}
@@ -285,7 +308,14 @@ export default function ArenaPage() {
                 tokenChangePercent={0}
                 totalPnl={primaryAgent.totalPnl}
                 trenchId={trenchId}
-                onEditName={() => setIsEditModalOpen(true)}
+                onEditName={() => {
+                  // If agent is active, show pause required modal first
+                  if (primaryAgent.status === "ACTIVE") {
+                    setIsPauseRequiredModalOpen(true);
+                  } else {
+                    setIsEditModalOpen(true);
+                  }
+                }}
                 onPauseSystem={() => toggleAgentStatus.mutate(primaryAgent.id)}
                 onStartSystem={() => setIsStartTimingModalOpen(true)}
               />
@@ -315,6 +345,23 @@ export default function ArenaPage() {
             console.log("Start timing selected:", timing);
             toggleAgentStatus.mutate(primaryAgent.id);
             setIsStartTimingModalOpen(false);
+          }}
+          isLoading={toggleAgentStatus.isPending}
+        />
+      )}
+
+      {/* Pause Required Modal */}
+      {primaryAgent && (
+        <PauseRequiredModal
+          isOpen={isPauseRequiredModalOpen}
+          onClose={() => setIsPauseRequiredModalOpen(false)}
+          onPause={async () => {
+            // Pause the agent first
+            await toggleAgentStatus.mutateAsync(primaryAgent.id);
+            // Close pause required modal
+            setIsPauseRequiredModalOpen(false);
+            // Open edit modal
+            setIsEditModalOpen(true);
           }}
           isLoading={toggleAgentStatus.isPending}
         />

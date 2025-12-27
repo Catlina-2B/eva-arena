@@ -9,7 +9,7 @@ import { useAuthStore } from "@/stores/auth";
  * Polling configuration
  * Change this value to adjust the polling interval for all trench-related queries
  */
-export const POLLING_INTERVAL = 500; // milliseconds
+export const POLLING_INTERVAL = 5000; // milliseconds
 
 /**
  * Query keys for trenches

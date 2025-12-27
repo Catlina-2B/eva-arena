@@ -202,6 +202,7 @@ export interface AgentDepositDto {
 }
 
 export interface AgentWithdrawDto {
+  /** Amount in lamports (1 SOL = 1,000,000,000 lamports) */
   amount: number;
   toAddress: string;
 }
@@ -344,6 +345,7 @@ export interface LeaderboardItemDto {
   tokenBalance: string;
   depositedSol: string;
   pnlSol: string;
+  prizeAmount: string;
   isCurrentUser: boolean;
 }
 

@@ -128,7 +128,7 @@ export const agentApi = {
     data: AgentWithdrawDto,
   ): Promise<AgentWithdrawResponseDto> => {
     const response = await apiClient.post<AgentWithdrawResponseDto>(
-      `/api/agents/${id}/withdraw`,
+      `/api/agents/withdraw`,
       data,
     );
 
