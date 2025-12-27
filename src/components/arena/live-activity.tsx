@@ -91,7 +91,7 @@ function ActivityRow({ activity }: ActivityRowProps) {
             </div>
             {!isDepositOrWithdraw && (
               <div className="text-xs text-eva-text-dim font-mono mt-0.5">
-                @{formatSmallNumber(activity.solAmount)}
+                @{formatSmallNumber(activity.solAmount / activity.tokenAmount)} SOL
               </div>
             )}
           </div>

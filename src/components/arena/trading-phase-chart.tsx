@@ -31,7 +31,8 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
   // Use database primary key ID for API calls
   const trenchDbId = round.trenchDbId;
   // Use on-chain trench ID for WebSocket subscription
-  const onChainTrenchId = round.id;
+  // round.id is in format "eva-916", but WebSocket expects just the number
+  const onChainTrenchId = parseInt(round.id.replace(/^eva-/, ""), 10);
 
   // Fetch price curve data from API
   const { data: priceCurveData, isLoading } = usePriceCurve(trenchDbId, "SOL");

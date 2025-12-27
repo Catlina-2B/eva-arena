@@ -25,11 +25,11 @@ export interface TrenchEventHandlers {
 /**
  * Subscribe to a trench for real-time updates
  *
- * @param trenchId - On-chain trench ID (string) for subscription
+ * @param trenchId - On-chain trench ID (number) for subscription
  * @param handlers - Event handlers for various trench events
  */
 export function subscribeTrench(
-  trenchId: string,
+  trenchId: number,
   handlers: TrenchEventHandlers,
 ): () => void {
   console.log(`[TrenchSocket] subscribeTrench called with trenchId: ${trenchId}`);
@@ -118,9 +118,9 @@ export function subscribeTrench(
 /**
  * Unsubscribe from a trench
  *
- * @param trenchId - On-chain trench ID (string)
+ * @param trenchId - On-chain trench ID (number)
  */
-export function unsubscribeTrench(trenchId: string): void {
+export function unsubscribeTrench(trenchId: number): void {
   const socket = trenchSocketClient.getSocket();
 
   if (socket.connected) {

@@ -63,7 +63,10 @@ export default function ArenaPage() {
   // Get trench ID for dependent queries (database primary key for REST APIs)
   const trenchId = trenchData?.id;
   // Get on-chain trench ID for WebSocket subscription
-  const onChainTrenchId = trenchData?.trenchId;
+  // trenchData.trenchId may be in format "eva-916", but WebSocket expects just the number
+  const onChainTrenchId = trenchData?.trenchId
+    ? parseInt(trenchData.trenchId.replace(/^eva-/, ""), 10)
+    : undefined;
 
   // Fetch leaderboard
   const { data: leaderboardData } = useLeaderboard(trenchId);

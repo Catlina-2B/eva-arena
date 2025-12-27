@@ -37,11 +37,11 @@ export interface UseTrenchSocketOptions {
 /**
  * Hook for subscribing to real-time trench updates via WebSocket
  *
- * @param trenchId - On-chain trench ID (string) for WebSocket subscription
+ * @param trenchId - On-chain trench ID (number) for WebSocket subscription
  * @param options - Hook options including callbacks and query invalidation settings
  */
 export function useTrenchSocket(
-  trenchId: string | null | undefined,
+  trenchId: number | null | undefined,
   options: UseTrenchSocketOptions = {},
 ) {
   const {
