@@ -283,6 +283,8 @@ export interface TrenchDetailDto {
   activeAgentsCount: number;
   transactionCount: number;
   totalBidSol: string;
+  pnlSol: string | null;
+  tokenBalance: string | null;
   createdAt: string;
   updatedAt: string;
 }

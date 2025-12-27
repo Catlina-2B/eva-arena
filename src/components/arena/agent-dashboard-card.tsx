@@ -276,11 +276,24 @@ export function AgentDashboardCard({
     });
   };
 
-  // Format token number (no decimals for large numbers)
+  // Format token number with K, M, B units
   const formatTokenNumber = (num: number | undefined | null) => {
-    if (num == null) return "0";
+    if (num == null || num === 0) return "0";
 
-    return num.toLocaleString("en-US", {
+    const absNum = Math.abs(num);
+    const sign = num < 0 ? "-" : "";
+
+    if (absNum >= 1_000_000_000) {
+      return sign + (absNum / 1_000_000_000).toFixed(2) + "B";
+    }
+    if (absNum >= 1_000_000) {
+      return sign + (absNum / 1_000_000).toFixed(2) + "M";
+    }
+    if (absNum >= 1_000) {
+      return sign + (absNum / 1_000).toFixed(2) + "K";
+    }
+
+    return sign + absNum.toLocaleString("en-US", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });

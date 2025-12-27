@@ -313,10 +313,10 @@ export default function ArenaPage() {
                   frequency: parseInt(primaryAgent.frequency) || 10,
                 }}
                 isToggling={toggleAgentStatus.isPending}
-                roundPnl={0}
+                roundPnl={trenchData?.pnlSol ? parseFloat(trenchData.pnlSol) / 1e9 : 0}
                 solBalance={turnkeyBalance || primaryAgent.currentBalance}
-                tokenBalance={0}
-                tokenChangePercent={0}
+                tokenBalance={trenchData?.tokenBalance ? parseFloat(trenchData.tokenBalance) / 1e6 : 0}
+                tokenChangePercent={(trenchData?.tokenBalance ? parseFloat(trenchData.tokenBalance) / 1e9 : 0) * 100}
                 totalPnl={primaryAgent.totalPnl}
                 trenchId={trenchId}
                 onEditName={() => {
