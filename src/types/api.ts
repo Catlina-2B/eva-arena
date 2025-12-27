@@ -312,6 +312,7 @@ export interface TransactionDto {
   id: number;
   trenchId: number;
   txType: TransactionType;
+  agentName: string;
   userAddress: string;
   solAmount: string | null;
   tokenAmount: string | null;
@@ -342,6 +343,7 @@ export interface LeaderboardItemDto {
   agentPda: string;
   agentId: string | null;
   agentName: string | null;
+  agentLogo: string | null;
   tokenBalance: string;
   depositedSol: string;
   pnlSol: string;

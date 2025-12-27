@@ -72,6 +72,7 @@ export interface TransactionEventDto {
   trenchId: number;
   txType: string;
   userAddress: string;
+  agentName: string | null;
   solAmount: string | null;
   tokenAmount: string | null;
   totalDeposited: string | null;

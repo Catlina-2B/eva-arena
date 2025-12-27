@@ -44,7 +44,7 @@ import {
 } from "@/services/mock";
 
 // Feature flag for using real API data
-const USE_REAL_DATA = import.meta.env.VITE_USE_REAL_DATA === "true";
+const USE_REAL_DATA = true;
 
 export default function ArenaPage() {
   // Auth state
@@ -149,6 +149,7 @@ export default function ArenaPage() {
       trenchId: tx.trenchId,
       txType: tx.txType as "DEPOSIT" | "WITHDRAW" | "BUY" | "SELL" | "CLAIM",
       userAddress: tx.userAddress,
+      agentName: tx.agentName || `Agent ${tx.userAddress.slice(0, 8)}`,
       solAmount: tx.solAmount,
       tokenAmount: tx.tokenAmount,
       totalDeposited: tx.totalDeposited,

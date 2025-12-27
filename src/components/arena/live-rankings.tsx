@@ -157,13 +157,13 @@ export function LiveRankings({
   );
 }
 
-// Default agent avatar for betting phase
+// Default agent avatar
 function AgentAvatarIcon({ avatar, name }: { avatar?: string; name: string }) {
   if (avatar) {
     return (
       <img
         alt={name}
-        className="w-8 h-8 rounded-full object-cover border border-eva-border"
+        className="w-8 h-8 rounded object-cover border border-eva-border"
         src={avatar}
       />
     );
@@ -171,7 +171,7 @@ function AgentAvatarIcon({ avatar, name }: { avatar?: string; name: string }) {
 
   // Default EVA-style avatar
   return (
-    <div className="w-8 h-8 rounded-full border border-eva-border bg-eva-dark overflow-hidden flex items-center justify-center">
+    <div className="w-8 h-8 rounded border border-eva-border bg-eva-dark overflow-hidden flex items-center justify-center">
       <svg className="w-full h-full" viewBox="0 0 32 32">
         <defs>
           <linearGradient id="avatar-bg" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -246,6 +246,7 @@ function RankingRow({ agent, isBettingPhase = false }: RankingRowProps) {
     >
       <div className="flex items-center gap-3">
         <RankBadge rank={agent.rank} />
+        <AgentAvatarIcon avatar={agent.agentAvatar} name={agent.agentName} />
         <div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-white">
