@@ -50,21 +50,37 @@ export function EvaBadge({
   );
 }
 
-// Specialized badges for activity types
+// Specialized badges for activity types - styled according to Figma design
 export function DepositBadge() {
-  return <EvaBadge variant="success">Deposit</EvaBadge>;
+  return (
+    <span className="inline-flex items-center px-2 py-1.5 text-xs font-medium uppercase tracking-wider bg-[#064E3B] text-[#6CE182] border-none rounded">
+      Deposit
+    </span>
+  );
 }
 
 export function WithdrawBadge() {
-  return <EvaBadge variant="danger">Withdraw</EvaBadge>;
+  return (
+    <span className="inline-flex items-center px-2 py-1.5 text-xs font-medium uppercase tracking-wider bg-[#4C1D30] text-[#F472B6] border-none rounded">
+      Withdraw
+    </span>
+  );
 }
 
 export function BuyBadge() {
-  return <EvaBadge variant="primary">Buy</EvaBadge>;
+  return (
+    <span className="inline-flex items-center px-2 py-1.5 text-xs font-medium uppercase tracking-wider bg-[#064E3B] text-[#6CE182] border-none rounded">
+      Buy
+    </span>
+  );
 }
 
 export function SellBadge() {
-  return <EvaBadge variant="warning">Sell</EvaBadge>;
+  return (
+    <span className="inline-flex items-center px-2 py-1.5 text-xs font-medium uppercase tracking-wider bg-[#7F1D1D] text-[#F87171] border-none rounded">
+      Sell
+    </span>
+  );
 }
 
 // Rank badge component
@@ -77,13 +93,13 @@ export function RankBadge({ rank, className }: RankBadgeProps) {
   const getRankStyle = () => {
     switch (rank) {
       case 1:
-        return "bg-eva-primary/20 text-eva-primary border border-eva-primary/40";
+        return "bg-[#6CE182] text-black";
       case 2:
-        return "bg-eva-secondary/20 text-eva-secondary border border-eva-secondary/40";
+        return "bg-[#60A5FA] text-white";
       case 3:
-        return "bg-eva-secondary/20 text-eva-secondary border border-eva-secondary/40";
+        return "bg-[#78350F80] text-[#F59E0B]";
       default:
-        return "bg-eva-card border border-eva-border text-eva-text-dim";
+        return "bg-[#374151] text-white";
     }
   };
 

@@ -57,6 +57,10 @@ export interface AgentRanking {
   prizeAmount: number;
   supplyPercentage: number;
   isOwned?: boolean;
+  /** 投注金额 (SOL) - 用于 betting 阶段显示 */
+  betAmount?: number;
+  /** 分配百分比 - 用于 betting 阶段显示 */
+  allocationPercent?: number;
 }
 
 /** AI 推理过程 */

@@ -7,7 +7,13 @@ import { HeartFilledIcon } from "@/components/icons";
 
 // System Idle icon for empty state
 const SystemIdleIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
     <path d="M12 6V18" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" />
     <path d="M8 10V18" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" />
     <path d="M16 8V18" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" />
@@ -16,10 +22,31 @@ const SystemIdleIcon = () => (
 
 // Info icon for footer
 const InfoIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M6 11C8.76142 11 11 8.76142 11 6C11 3.23858 8.76142 1 6 1C3.23858 1 1 3.23858 1 6C1 8.76142 3.23858 11 6 11Z" stroke="#9CA3AF" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M6 8V6" stroke="#9CA3AF" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M6 4H6.005" stroke="#9CA3AF" strokeLinecap="round" strokeLinejoin="round"/>
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 12 12"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M6 11C8.76142 11 11 8.76142 11 6C11 3.23858 8.76142 1 6 1C3.23858 1 1 3.23858 1 6C1 8.76142 3.23858 11 6 11Z"
+      stroke="#9CA3AF"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M6 8V6"
+      stroke="#9CA3AF"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M6 4H6.005"
+      stroke="#9CA3AF"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
   </svg>
 );
 
@@ -31,20 +58,23 @@ interface LiveRankingsProps {
   thirdPlaceTokenAmount?: number;
   /** Whether the current round is skipped (no bets placed) */
   isSkipped?: boolean;
+  /** Whether the current phase is betting phase */
+  isBettingPhase?: boolean;
 }
 
-export function LiveRankings({ 
-  rankings, 
+export function LiveRankings({
+  rankings,
   currentUser,
   thirdPlaceTokenAmount = 0,
-  isSkipped = false 
+  isSkipped = false,
+  isBettingPhase = false,
 }: LiveRankingsProps) {
   // Only show current user section if they exist and are not in top 3
   const showCurrentUserSection = currentUser && currentUser.rank > 3;
-  
+
   // Calculate gap to podium (difference between 3rd place and current user)
-  const gapToPodium = showCurrentUserSection 
-    ? Math.max(0, thirdPlaceTokenAmount - currentUser.tokenAmount) 
+  const gapToPodium = showCurrentUserSection
+    ? Math.max(0, thirdPlaceTokenAmount - currentUser.tokenAmount)
     : 0;
 
   return (
@@ -67,7 +97,8 @@ export function LiveRankings({
               SYSTEM IDLE
             </h3>
             <p className="text-xs text-eva-text-dim text-center max-w-[240px] leading-relaxed">
-              Due to no bets being placed during the free betting phase, the current round is skipped.
+              Due to no bets being placed during the free betting phase, the
+              current round is skipped.
             </p>
           </div>
         </div>
@@ -77,7 +108,7 @@ export function LiveRankings({
           <div className="p-3 pt-8 space-y-4">
             <div className="space-y-4">
               {rankings.slice(0, 3).map((agent) => (
-                <RankingRow key={agent.agentId} agent={agent} />
+                <RankingRow key={agent.agentId} agent={agent} isBettingPhase={isBettingPhase} />
               ))}
             </div>
 
@@ -96,7 +127,7 @@ export function LiveRankings({
                 </div>
 
                 {/* Current user ranking row */}
-                <RankingRow agent={currentUser} />
+                <RankingRow agent={currentUser} isBettingPhase={isBettingPhase} />
 
                 {/* Prize distribution info */}
                 <div className="bg-[rgba(31,41,55,0.3)] border border-eva-border flex items-center gap-2 px-3 py-2">
@@ -112,10 +143,10 @@ export function LiveRankings({
           {/* Footer note (only show when current user section is not shown) */}
           {!showCurrentUserSection && (
             <div className="px-3 pb-3">
-              <div className="px-3 py-3 border border-eva-border text-xs text-eva-text-dim flex items-start gap-2 bg-eva-darker/50">
-                <span className="text-eva-text-dim">ℹ️</span>
+              <div className="px-3 py-3 border border-eva-border text-xs text-eva-text-dim flex items-center gap-2 bg-eva-darker/50">
+                <InfoIcon />
                 <span className="font-mono">
-                  After betting phase ends, 80% to Prize, 20% to Bonding Curve.
+                  Top 3 take 95% Prize | Rest share 5%
                 </span>
               </div>
             </div>
@@ -126,20 +157,91 @@ export function LiveRankings({
   );
 }
 
-interface RankingRowProps {
-  agent: AgentRanking;
+// Default agent avatar for betting phase
+function AgentAvatarIcon({ avatar, name }: { avatar?: string; name: string }) {
+  if (avatar) {
+    return (
+      <img
+        alt={name}
+        className="w-8 h-8 rounded-full object-cover border border-eva-border"
+        src={avatar}
+      />
+    );
+  }
+
+  // Default EVA-style avatar
+  return (
+    <div className="w-8 h-8 rounded-full border border-eva-border bg-eva-dark overflow-hidden flex items-center justify-center">
+      <svg className="w-full h-full" viewBox="0 0 32 32">
+        <defs>
+          <linearGradient id="avatar-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#1a1a25" />
+            <stop offset="100%" stopColor="#0a0a0f" />
+          </linearGradient>
+        </defs>
+        <rect fill="url(#avatar-bg)" width="32" height="32" />
+        <circle cx="16" cy="16" fill="#a855f7" opacity="0.6" r="8" />
+        <circle cx="16" cy="16" fill="#e879f9" r="4" />
+      </svg>
+    </div>
+  );
 }
 
-function RankingRow({ agent }: RankingRowProps) {
+interface RankingRowProps {
+  agent: AgentRanking;
+  /** Whether to show betting phase layout */
+  isBettingPhase?: boolean;
+}
+
+function RankingRow({ agent, isBettingPhase = false }: RankingRowProps) {
   const isFirst = agent.rank === 1;
 
+  // Betting phase layout: show avatar, bet amount, and allocation percentage
+  if (isBettingPhase) {
+    return (
+      <div
+        className={clsx(
+          "flex items-center justify-between px-3 py-3 border transition-colors",
+          isFirst && "border-l-2 border-l-eva-primary",
+          "border-eva-border",
+          "bg-eva-darker/50 border-eva-border hover:bg-eva-card-hover"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <RankBadge rank={agent.rank} />
+          <AgentAvatarIcon avatar={agent.agentAvatar} name={agent.agentName} />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-white">
+                {agent.agentName}
+              </span>
+              {agent.isOwned && (
+                <HeartFilledIcon className="w-4 h-4 text-eva-danger" />
+              )}
+            </div>
+            <div className="text-[11px] text-eva-text-dim font-mono">
+              Bet {agent.betAmount?.toFixed(2) ?? "0.00"} SOL
+            </div>
+          </div>
+        </div>
+
+        <div className="text-right">
+          <div className="text-sm font-mono font-medium text-eva-primary">
+            {agent.allocationPercent?.toFixed(1) ?? "0.0"}% Alloc
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Default trading/liquidation phase layout
   return (
     <div
       className={clsx(
         "flex items-center justify-between px-3 py-3 border transition-colors",
         isFirst && "border-l-2 border-l-eva-primary",
         "border-eva-border",
-        "bg-eva-darker/50 border-eva-border hover:bg-eva-card-hover",
+        "bg-eva-darker/50 border-eva-border hover:bg-eva-card-hover"
       )}
     >
       <div className="flex items-center gap-3">
@@ -160,10 +262,12 @@ function RankingRow({ agent }: RankingRowProps) {
       </div>
 
       <div className="text-right">
-        <div className={clsx(
-          "text-sm font-mono font-medium",
-          agent.prizeAmount >= 0 ? "text-eva-primary" : "text-eva-danger"
-        )}>
+        <div
+          className={clsx(
+            "text-sm font-mono font-medium",
+            agent.prizeAmount >= 0 ? "text-eva-primary" : "text-eva-danger"
+          )}
+        >
           {agent.prizeAmount.toFixed(2)} SOL
         </div>
         <div className="text-[11px] text-eva-text-dim font-mono">

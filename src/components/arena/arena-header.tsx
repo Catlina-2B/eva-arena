@@ -100,12 +100,12 @@ export function ArenaHeader({ round }: ArenaHeaderProps) {
             </span>
           </div>
 
-          {/* Segmented progress bar */}
+          {/* Segmented progress bar - 10 segments, 300 blocks each */}
           <div className="border border-eva-primary p-1">
             <div className="flex gap-1">
-              {Array.from({ length: 12 }).map((_, i) => {
-                const segmentProgress = ((i + 1) / 12) * 100;
-                const isFilled = percentage >= segmentProgress - 100 / 12 / 2;
+              {Array.from({ length: 10 }).map((_, i) => {
+                const segmentProgress = ((i + 1) / 10) * 100;
+                const isFilled = percentage >= segmentProgress - 100 / 10 / 2;
 
                 return (
                   <div

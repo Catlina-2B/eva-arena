@@ -286,19 +286,29 @@ const TOTAL_TOKEN_SUPPLY = 1_000_000_000;
 
 /**
  * Convert LeaderboardResponseDto to AgentRanking array (top 3 only)
+ * @param leaderboard - Leaderboard data from API
+ * @param totalDepositedSol - Total deposited SOL in lamports (for allocation calculation)
+ * @param currentUserAddress - Current user's wallet address
  */
 export function leaderboardToRankings(
   leaderboard: LeaderboardResponseDto | undefined,
+  totalDepositedSol?: string,
   currentUserAddress?: string,
 ): AgentRanking[] {
   if (!leaderboard) return [];
 
   const rankings: AgentRanking[] = [];
+  const totalDeposited = totalDepositedSol ? parseFloat(totalDepositedSol) : 0;
 
   // Add top three only
   for (const item of leaderboard.topThree) {
     const tokenAmount = parseInt(item.tokenBalance) / 1e6; // Adjust decimals
     const supplyPercentage = (tokenAmount / TOTAL_TOKEN_SUPPLY) * 100;
+    const depositedSol = parseFloat(item.depositedSol);
+    const betAmount = depositedSol / 1e9; // Convert lamports to SOL
+    const allocationPercent = totalDeposited > 0 
+      ? (depositedSol / totalDeposited) * 100 
+      : 0;
 
     rankings.push({
       rank: item.rank,
@@ -310,6 +320,8 @@ export function leaderboardToRankings(
       prizeAmount: parseFloat(item.prizeAmount) / 1e9,
       supplyPercentage,
       isOwned: item.isCurrentUser || item.userAddress === currentUserAddress,
+      betAmount,
+      allocationPercent,
     });
   }
 
@@ -318,9 +330,12 @@ export function leaderboardToRankings(
 
 /**
  * Get current user ranking info (when not in top 3)
+ * @param leaderboard - Leaderboard data from API
+ * @param totalDepositedSol - Total deposited SOL in lamports (for allocation calculation)
  */
 export function getCurrentUserRanking(
   leaderboard: LeaderboardResponseDto | undefined,
+  totalDepositedSol?: string,
 ): AgentRanking | null {
   if (!leaderboard?.currentUser) return null;
   
@@ -329,6 +344,12 @@ export function getCurrentUserRanking(
 
   const tokenAmount = parseInt(leaderboard.currentUser.tokenBalance) / 1e6;
   const supplyPercentage = (tokenAmount / TOTAL_TOKEN_SUPPLY) * 100;
+  const totalDeposited = totalDepositedSol ? parseFloat(totalDepositedSol) : 0;
+  const depositedSol = parseFloat(leaderboard.currentUser.depositedSol);
+  const betAmount = depositedSol / 1e9;
+  const allocationPercent = totalDeposited > 0 
+    ? (depositedSol / totalDeposited) * 100 
+    : 0;
 
   return {
     rank: leaderboard.currentUser.rank,
@@ -340,6 +361,8 @@ export function getCurrentUserRanking(
     prizeAmount: parseFloat(leaderboard.currentUser.prizeAmount) / 1e9,
     supplyPercentage,
     isOwned: true,
+    betAmount,
+    allocationPercent,
   };
 }
 

@@ -7,13 +7,13 @@ import type {
   TrenchHistoryItemDto,
 } from "@/types/api";
 
-import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useState, useMemo, useRef } from "react";
+import { Link, Navigate } from "react-router-dom";
 import { useAccount } from "@particle-network/connectkit";
 
 import DefaultLayout from "@/layouts/default";
 import { EvaCard, EvaCardContent, EvaButton, EvaBadge } from "@/components/ui";
-import { DepositModal, EditAgentModal, PauseRequiredModal, StartTimingModal, WithdrawModal } from "@/components/agent";
+import { DepositModal, EditAgentModal, FirstDepositPromptModal, PauseRequiredModal, StartTimingModal, WithdrawModal } from "@/components/agent";
 import { ConnectWalletPrompt } from "@/components/wallet/connect-wallet-prompt";
 import {
   useMyAgents,
@@ -25,6 +25,7 @@ import {
   useAgentWithdraw,
   useUserPnlTimeline,
   useTurnkeyBalance,
+  useFirstDepositPrompt,
 } from "@/hooks";
 import { useIsAuthenticated } from "@/hooks/use-auth";
 
@@ -52,26 +53,92 @@ function CornerDecoration({ position }: CornerDecorationProps) {
   );
 }
 
-// PNL Chart Component - Simple SVG line chart
+// PNL Chart Component - Simple SVG line chart with hover interaction
 interface PnlChartProps {
   timeline?: PnlTimelineItemDto[];
   isLoading?: boolean;
+  onHoverChange?: (pnl: number | null, timestamp: string | null) => void;
 }
 
-function PnlChart({ timeline, isLoading }: PnlChartProps) {
+function PnlChart({ timeline, isLoading, onHoverChange }: PnlChartProps) {
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+
   // Convert timeline data to chart points (convert lamports to SOL)
   const dataPoints = useMemo(() => {
     if (!timeline || timeline.length === 0) {
       return [];
     }
 
-    return timeline.map((item) => parseFloat(item.pnl) / 1e9);
+    return timeline.map((item) => ({
+      pnl: parseFloat(item.pnl) / 1e9,
+      timestamp: item.timestamp,
+    }));
   }, [timeline]);
 
   // Generate SVG path
   const width = 280;
   const height = 140;
   const padding = 10;
+
+  // Calculate point positions
+  const pointPositions = useMemo(() => {
+    if (dataPoints.length === 0) return [];
+
+    const maxValue = Math.max(...dataPoints.map((d) => d.pnl));
+    const minValue = Math.min(...dataPoints.map((d) => d.pnl));
+    const range = maxValue - minValue || 1;
+
+    return dataPoints.map((data, index) => {
+      const x =
+        padding +
+        (index / (dataPoints.length - 1 || 1)) * (width - 2 * padding);
+      const y =
+        height -
+        padding -
+        ((data.pnl - minValue) / range) * (height - 2 * padding);
+
+      return { x, y, pnl: data.pnl, timestamp: data.timestamp };
+    });
+  }, [dataPoints]);
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!svgRef.current || pointPositions.length === 0) return;
+
+    const rect = svgRef.current.getBoundingClientRect();
+    const mouseX = ((e.clientX - rect.left) / rect.width) * width;
+
+    // Find closest point
+    let closestIndex = 0;
+    let minDistance = Infinity;
+    pointPositions.forEach((point, index) => {
+      const distance = Math.abs(point.x - mouseX);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = index;
+      }
+    });
+
+    setHoverIndex(closestIndex);
+    const point = pointPositions[closestIndex];
+    onHoverChange?.(point.pnl, point.timestamp);
+  };
+
+  const handleMouseLeave = () => {
+    setHoverIndex(null);
+    onHoverChange?.(null, null);
+  };
+
+  // Format timestamp for tooltip
+  const formatTooltipTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const dateStr = date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+    const timeStr = date.toLocaleTimeString("en-US", { hour12: false });
+    return `${dateStr} ${timeStr}`;
+  };
 
   // Loading state
   if (isLoading) {
@@ -112,43 +179,85 @@ function PnlChart({ timeline, isLoading }: PnlChartProps) {
     );
   }
 
-  const maxValue = Math.max(...dataPoints);
-  const minValue = Math.min(...dataPoints);
-  const range = maxValue - minValue || 1; // Avoid division by zero
-
-  const points = dataPoints.map((value, index) => {
-    const x =
-      padding + (index / (dataPoints.length - 1 || 1)) * (width - 2 * padding);
-    const y =
-      height - padding - ((value - minValue) / range) * (height - 2 * padding);
-
-    return `${x},${y}`;
-  });
-
-  const pathD = `M ${points.join(" L ")}`;
+  const pathD = `M ${pointPositions.map((p) => `${p.x},${p.y}`).join(" L ")}`;
 
   // Create gradient fill area
   const areaD = `M ${padding},${height - padding} L ${pathD.slice(2)} L ${width - padding},${height - padding} Z`;
 
   // Determine color based on overall PNL trend (last value vs first value)
-  const isPositive = dataPoints[dataPoints.length - 1] >= dataPoints[0];
+  const isPositive =
+    pointPositions[pointPositions.length - 1].pnl >= pointPositions[0].pnl;
   const strokeColor = isPositive ? "#00ff88" : "#ff4444";
 
+  const hoverPoint = hoverIndex !== null ? pointPositions[hoverIndex] : null;
+
+  // Calculate hover position as percentage for HTML overlay
+  const hoverXPercent = hoverPoint ? (hoverPoint.x / width) * 100 : 0;
+  const hoverYPercent = hoverPoint ? (hoverPoint.y / height) * 100 : 0;
+
   return (
-    <svg
-      className="w-full h-full"
-      preserveAspectRatio="none"
-      viewBox={`0 0 ${width} ${height}`}
-    >
-      <defs>
-        <linearGradient id="chartGradient" x1="0%" x2="0%" y1="0%" y2="100%">
-          <stop offset="0%" stopColor={strokeColor} stopOpacity="0.3" />
-          <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={areaD} fill="url(#chartGradient)" />
-      <path d={pathD} fill="none" stroke={strokeColor} strokeWidth="2" />
-    </svg>
+    <div className="relative w-full h-full">
+      <svg
+        ref={svgRef}
+        className="w-full h-full cursor-crosshair"
+        preserveAspectRatio="none"
+        viewBox={`0 0 ${width} ${height}`}
+        onMouseLeave={handleMouseLeave}
+        onMouseMove={handleMouseMove}
+      >
+        <defs>
+          <linearGradient id="chartGradient" x1="0%" x2="0%" y1="0%" y2="100%">
+            <stop offset="0%" stopColor={strokeColor} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={areaD} fill="url(#chartGradient)" />
+        <path d={pathD} fill="none" stroke={strokeColor} strokeWidth="2" />
+
+        {/* Vertical line in SVG (stretches fine) */}
+        {hoverPoint && (
+          <line
+            stroke={strokeColor}
+            strokeDasharray="2,2"
+            strokeOpacity="0.5"
+            strokeWidth="1"
+            x1={hoverPoint.x}
+            x2={hoverPoint.x}
+            y1={padding}
+            y2={height - padding}
+          />
+        )}
+      </svg>
+
+      {/* HTML overlay for hover indicator (doesn't stretch) */}
+      {hoverPoint && (
+        <>
+          {/* Point circle */}
+          <div
+            className="absolute pointer-events-none w-2 h-2 rounded-full"
+            style={{
+              left: `${hoverXPercent}%`,
+              top: `${hoverYPercent}%`,
+              transform: "translate(-50%, -50%)",
+              backgroundColor: strokeColor,
+            }}
+          />
+
+          {/* Tooltip */}
+          <div
+            className="absolute pointer-events-none px-2 py-1 rounded text-[10px] text-white font-mono whitespace-nowrap"
+            style={{
+              left: `${hoverXPercent}%`,
+              bottom: "2px",
+              transform: "translateX(-50%)",
+              backgroundColor: "rgba(0,0,0,0.85)",
+            }}
+          >
+            {formatTooltipTime(hoverPoint.timestamp)}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -192,8 +301,13 @@ function TradeHistoryTable({
     createdAt: string,
   ) => {
     const date = blockTime ? new Date(blockTime * 1000) : new Date(createdAt);
+    const dateStr = date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+    const timeStr = date.toLocaleTimeString("en-US", { hour12: false });
 
-    return date.toLocaleTimeString("en-US", { hour12: false });
+    return `${dateStr} ${timeStr}`;
   };
 
   const formatTokenAmount = (amount: string | null) => {
@@ -436,7 +550,7 @@ function HistoryRow({
               ROUND: {round.tokenName}
             </div>
             <div className="text-xs text-eva-text-dim">
-              Trades: {round.trades}
+              Rank: #{round.rank}
             </div>
           </div>
         </div>
@@ -699,6 +813,10 @@ export default function MyAgentPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isStartTimingModalOpen, setIsStartTimingModalOpen] = useState(false);
   const [isPauseRequiredModalOpen, setIsPauseRequiredModalOpen] = useState(false);
+  const [hoverPnl, setHoverPnl] = useState<number | null>(null);
+
+  // First deposit prompt state
+  const { shouldShowPrompt: showFirstDepositPrompt, dismissPrompt: dismissFirstDepositPrompt } = useFirstDepositPrompt();
 
   // Auth state
   const { isAuthenticated } = useIsAuthenticated();
@@ -781,25 +899,9 @@ export default function MyAgentPage() {
     );
   }
 
-  // No agent
+  // No agent - redirect to create agent page
   if (!primaryAgent) {
-    return (
-      <DefaultLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <p className="text-eva-text font-mono text-lg mb-2">
-              NO AGENT FOUND
-            </p>
-            <p className="text-eva-text-dim text-sm mb-4">
-              You haven&apos;t created an agent yet.
-            </p>
-            <Link to="/create-agent">
-              <EvaButton variant="primary">CREATE AGENT</EvaButton>
-            </Link>
-          </div>
-        </div>
-      </DefaultLayout>
-    );
+    return <Navigate replace to="/create-agent" />;
   }
 
   // Use real API data with Turnkey balance WebSocket subscription
@@ -891,7 +993,7 @@ export default function MyAgentPage() {
                           className="text-xs font-mono text-eva-text-dim hover:text-eva-primary transition-colors cursor-pointer"
                           type="button"
                         >
-                          VIEW_LOG_HISTORY &gt;&gt;
+                          VIEW_TRANSACTIONS &gt;&gt;
                         </button>
                       </div>
                     </div>
@@ -956,12 +1058,17 @@ export default function MyAgentPage() {
                   <h3 className="text-xs font-mono text-eva-text-dim uppercase tracking-wider">
                     <span className="text-eva-primary">{`///`}</span> PNL
                   </h3>
-                  <div
-                    className={`font-mono text-xl font-bold ${pnl >= 0 ? "text-eva-primary" : "text-eva-danger"}`}
-                  >
-                    {pnl >= 0 ? "+" : ""}
-                    {pnl.toFixed(2)} <span className="text-sm">SOL</span>
-                  </div>
+                  {(() => {
+                    const displayPnl = hoverPnl !== null ? hoverPnl : pnl;
+                    return (
+                      <div
+                        className={`font-mono text-xl font-bold transition-colors ${displayPnl >= 0 ? "text-eva-primary" : "text-eva-danger"}`}
+                      >
+                        {displayPnl >= 0 ? "+" : ""}
+                        {displayPnl.toFixed(2)} <span className="text-sm">SOL</span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Chart - Full Width */}
@@ -969,6 +1076,7 @@ export default function MyAgentPage() {
                   <PnlChart
                     isLoading={isPnlTimelineLoading}
                     timeline={pnlTimelineData?.timeline}
+                    onHoverChange={(hoveredPnl) => setHoverPnl(hoveredPnl)}
                   />
                 </div>
               </div>
@@ -1083,6 +1191,17 @@ export default function MyAgentPage() {
           setIsEditModalOpen(true);
         }}
         isLoading={toggleStatusMutation.isPending}
+      />
+
+      {/* First Deposit Prompt Modal - shown for first-time users */}
+      <FirstDepositPromptModal
+        isOpen={showFirstDepositPrompt}
+        onClose={dismissFirstDepositPrompt}
+        onDeposit={() => {
+          dismissFirstDepositPrompt();
+          setIsDepositModalOpen(true);
+        }}
+        onSkip={dismissFirstDepositPrompt}
       />
     </DefaultLayout>
   );

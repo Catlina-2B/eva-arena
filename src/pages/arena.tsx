@@ -120,14 +120,20 @@ export default function ArenaPage() {
   const rankings = useMemo(() => {
     if (!USE_REAL_DATA) return mockRankings;
 
-    return leaderboardToRankings(leaderboardData);
-  }, [leaderboardData]);
+    return leaderboardToRankings(
+      leaderboardData,
+      trenchData?.totalDepositedSol,
+    );
+  }, [leaderboardData, trenchData?.totalDepositedSol]);
 
   const currentUserRanking = useMemo(() => {
     if (!USE_REAL_DATA) return null;
 
-    return getCurrentUserRanking(leaderboardData);
-  }, [leaderboardData]);
+    return getCurrentUserRanking(
+      leaderboardData,
+      trenchData?.totalDepositedSol,
+    );
+  }, [leaderboardData, trenchData?.totalDepositedSol]);
 
   const thirdPlaceTokenAmount = useMemo(() => {
     if (!USE_REAL_DATA) return 0;
@@ -283,6 +289,7 @@ export default function ArenaPage() {
               currentUser={currentUserRanking}
               thirdPlaceTokenAmount={thirdPlaceTokenAmount}
               isSkipped={currentRound.phase === "trading" && !currentRound.hasBets}
+              isBettingPhase={currentRound.phase === "betting"}
             />
             {!isAuthenticated && <WelcomeCard />}
             {isAuthenticated && !hasAgent && <CreateAgentCard />}

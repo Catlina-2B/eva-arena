@@ -83,6 +83,7 @@ export { useSlotSubscription } from "./use-slot-subscription";
 
 // UI hooks
 export { useFirstVisit } from "./use-first-visit";
+export { useFirstDepositPrompt } from "./use-first-deposit-prompt";
 
 // Turnkey balance hooks
 export { useTurnkeyBalance } from "./use-turnkey-balance";

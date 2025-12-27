@@ -14,6 +14,7 @@ export interface ExecutionLogEntry {
   action: string;
   amount: number;
   userAddress: string;
+  trenchId: number;
 }
 
 interface AgentDashboardCardProps {
@@ -60,36 +61,33 @@ function transactionToLogEntry(tx: TransactionDto): ExecutionLogEntry {
     action: txTypeToAction(tx.txType),
     amount: solAmount,
     userAddress: tx.userAddress,
+    trenchId: tx.trenchId,
   };
 }
 
-// Transaction type badge component
+// Transaction type badge component - matches Figma design with gray background
 function TxTypeBadge({ txType }: { txType: TransactionType }) {
-  const getTypeStyle = () => {
+  // Get display text for transaction type
+  const getDisplayText = () => {
     switch (txType) {
       case "BUY":
-        return "bg-eva-primary/20 text-eva-primary border-eva-primary/30";
+        return "Buying Phase";
       case "SELL":
-        return "bg-eva-danger/20 text-eva-danger border-eva-danger/30";
+        return "Selling Phase";
       case "DEPOSIT":
-        return "bg-eva-secondary/20 text-eva-secondary border-eva-secondary/30";
+        return "Betting Phase";
       case "WITHDRAW":
-        return "bg-eva-warning/20 text-eva-warning border-eva-warning/30";
+        return "Withdraw Phase";
       case "CLAIM":
-        return "bg-eva-success/20 text-eva-success border-eva-success/30";
+        return "Claim Phase";
       default:
-        return "bg-eva-card text-eva-text-dim border-eva-border";
+        return txType;
     }
   };
 
   return (
-    <span
-      className={clsx(
-        "inline-flex items-center px-2 py-0.5 text-[10px] rounded border font-medium",
-        getTypeStyle(),
-      )}
-    >
-      {txType}
+    <span className="inline-flex items-center px-1 py-0.5 text-[10px] rounded bg-[#1f2937] text-eva-text-dim font-medium">
+      {getDisplayText()}
     </span>
   );
 }
@@ -331,16 +329,8 @@ export function AgentDashboardCard({
             <div className="font-mono text-xl font-semibold text-eva-text">
               {formatTokenNumber(tokenBalance)}
             </div>
-            <div
-              className={clsx(
-                "text-xs font-mono",
-                tokenChangePercent >= 0
-                  ? "text-eva-primary"
-                  : "text-eva-danger",
-              )}
-            >
-              {tokenChangePercent >= 0 ? "+" : ""}
-              {tokenChangePercent.toFixed(2)}%
+            <div className="text-xs font-mono text-purple-400">
+              {((tokenBalance / 1_000_000_000) * 100).toFixed(2)}%
             </div>
           </div>
 
@@ -443,14 +433,15 @@ export function AgentDashboardCard({
                   key={log.id}
                   className="flex items-center justify-between text-xs py-1"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-eva-text-dim">
-                      {formatShortAddress(log.userAddress)}
-                    </span>
-                    <TxTypeBadge txType={log.txType} />
-                  </div>
-                  <span className="font-mono text-eva-text-dim">
-                    {log.action} {log.amount.toFixed(4)} SOL
+                  {/* Left: EVA Round Number */}
+                  <span className="font-mono text-eva-text-dim text-[10px]">
+                    Eva-{log.trenchId}
+                  </span>
+                  {/* Middle: Phase Badge */}
+                  <TxTypeBadge txType={log.txType} />
+                  {/* Right: Action + Amount */}
+                  <span className="font-mono text-eva-text-dim text-[10px]">
+                    {log.action} {log.amount.toFixed(0)} SOL
                   </span>
                 </div>
               ))

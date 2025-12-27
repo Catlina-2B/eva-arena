@@ -44,15 +44,15 @@ export function WelcomeOnboardingModal({
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 animate-fade-in" />
 
       {/* Modal */}
-      <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
+      <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none overflow-y-auto">
         <div
           className={clsx(
             "bg-eva-dark/80 backdrop-blur-md border border-eva-border/50 rounded-xl shadow-2xl pointer-events-auto animate-slide-up",
-            "w-full max-w-lg",
+            "w-full max-w-lg max-h-[90vh] overflow-y-auto my-auto",
           )}
         >
           {/* Content */}
-          <div className="p-8">
+          <div className="p-6 sm:p-8">
             {/* Title */}
             <h1 className="text-2xl font-bold tracking-[0.2em] uppercase text-eva-text text-center mb-4">
               Welcome to EVA
