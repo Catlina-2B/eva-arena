@@ -1,4 +1,4 @@
-import type { AgentHistoryRound } from "@/types";
+import type { AgentHistoryRound, ActivityItem } from "@/types";
 import type {
   AgentItemDto,
   PnlTimelineItemDto,
@@ -15,6 +15,7 @@ import DefaultLayout from "@/layouts/default";
 import { EvaCard, EvaCardContent, EvaButton, EvaBadge } from "@/components/ui";
 import { DepositModal, EditAgentModal, FirstDepositPromptModal, PauseRequiredModal, StartTimingModal, WithdrawModal } from "@/components/agent";
 import { ConnectWalletPrompt } from "@/components/wallet/connect-wallet-prompt";
+import { ReasoningModal } from "@/components/arena/reasoning-modal";
 import {
   useMyAgents,
   useAgent,
@@ -293,8 +294,36 @@ function TradeHistoryTable({
   isLoading?: boolean;
 }) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
+  const [isReasoningModalOpen, setIsReasoningModalOpen] = useState(false);
   const itemsPerPage = 10;
   const totalPages = Math.ceil(total / itemsPerPage);
+
+  // Convert TransactionDto to ActivityItem for ReasoningModal
+  const transactionToActivity = (tx: TransactionDto): ActivityItem => {
+    const typeMap: Record<string, "buy" | "sell" | "deposit" | "withdraw"> = {
+      BUY: "buy",
+      SELL: "sell",
+      DEPOSIT: "deposit",
+      WITHDRAW: "withdraw",
+    };
+    return {
+      id: tx.signature,
+      type: typeMap[tx.txType] || "buy",
+      agentId: tx.agentName || "",
+      agentName: tx.agentName || "",
+      tokenAmount: tx.tokenAmount ? parseFloat(tx.tokenAmount) / 1e6 : 0,
+      solAmount: tx.solAmount ? parseFloat(tx.solAmount) / 1e9 : 0,
+      timestamp: tx.blockTime ? new Date(tx.blockTime * 1000) : new Date(tx.createdAt),
+      signature: tx.signature,
+      reason: tx.reason ? {
+        id: tx.reason.id,
+        content: tx.reason.content,
+        action: tx.reason.action,
+        createdAt: tx.reason.createdAt,
+      } : undefined,
+    };
+  };
 
   const formatTime = (
     blockTime: number | null | undefined,
@@ -423,10 +452,14 @@ function TradeHistoryTable({
                   </button>
                 </td>
                 <td className="px-4 py-3 text-center">
-                  {tx.reasoningOutput ? (
+                  {tx.reason ? (
                     <button
                       className="text-eva-text-dim hover:text-eva-primary transition-colors"
-                      title={tx.reasoningOutput}
+                      title="View reasoning"
+                      onClick={() => {
+                        setSelectedActivity(transactionToActivity(tx));
+                        setIsReasoningModalOpen(true);
+                      }}
                     >
                       <svg
                         className="w-4 h-4"
@@ -451,6 +484,16 @@ function TradeHistoryTable({
           </tbody>
         </table>
       </div>
+
+      {/* Reasoning Modal */}
+      <ReasoningModal
+        isOpen={isReasoningModalOpen}
+        onClose={() => {
+          setIsReasoningModalOpen(false);
+          setSelectedActivity(null);
+        }}
+        activity={selectedActivity}
+      />
 
       {/* Pagination */}
       {totalPages > 1 && (
