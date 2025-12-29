@@ -146,3 +146,135 @@ h1, h2 {
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
+
+/* Cyber Grid Animation */
+@keyframes cyber-grid-scroll {
+  0% { background-position: 0 0; }
+  100% { background-position: 30px 30px; }
+}
+
+@keyframes scan-beam {
+  0% { top: -50%; opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { top: 150%; opacity: 0; }
+}
+
+.cyber-grid-anim {
+  animation: cyber-grid-scroll 3s linear infinite;
+  will-change: background-position;
+}
+
+.cyber-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 150px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 255, 136, 0.08), transparent);
+  border-bottom: 1px solid rgba(0, 255, 136, 0.15);
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
+  animation: scan-beam 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Global body cyber grid background */
+.cyber-grid-bg {
+  background-image:
+    linear-gradient(rgba(0, 255, 136, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 136, 0.02) 1px, transparent 1px);
+  background-size: 30px 30px;
+  z-index: 0;
+}
+
+@keyframes scan-beam-global {
+  0% { 
+    top: -200px; 
+    opacity: 0; 
+  }
+  10% { 
+    opacity: 1; 
+  }
+  90% { 
+    opacity: 1; 
+  }
+  100% { 
+    top: calc(100% + 200px); 
+    opacity: 0; 
+  }
+}
+
+/* 扫描线后的遮罩层动画 - 跟随扫描线擦除网格 */
+@keyframes grid-fade-mask {
+  0% { 
+    transform: translateY(-100%);
+  }
+  100% { 
+    transform: translateY(0%);
+  }
+}
+
+.cyber-scan-line-global {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -200px;
+  height: 200px;
+  background: linear-gradient(to bottom, transparent, rgba(0, 255, 136, 0.04), transparent);
+  border-bottom: 1px solid rgba(0, 255, 136, 0.08);
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.05);
+  animation: scan-beam-global 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* 网格消失遮罩 - 跟随扫描线擦除网格 */
+.cyber-grid-fade-mask {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--eva-dark) 0%, var(--eva-dark) 98%, transparent 100%);
+  animation: grid-fade-mask 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Bracket container hover effect */
+.bracket-container {
+  position: relative;
+}
+
+.bracket-container::before,
+.bracket-container::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--eva-primary);
+  transition: all 0.3s ease;
+  pointer-events: none;
+  z-index: 30;
+}
+
+.bracket-container::before {
+  top: 0;
+  left: 0;
+  border-right: 0;
+  border-bottom: 0;
+}
+
+.bracket-container::after {
+  bottom: 0;
+  right: 0;
+  border-left: 0;
+  border-top: 0;
+}
+
+.bracket-container:hover::before,
+.bracket-container:hover::after {
+  width: 100%;
+  height: 100%;
+  opacity: 0.15;
+}

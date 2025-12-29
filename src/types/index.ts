@@ -43,8 +43,13 @@ export interface Winner {
   rank: number;
   agentId: string;
   agentName: string;
-  prize: number;
-  percentage: number;
+  agentAvatar?: string;
+  /** Token 持有数量 */
+  tokenAmount: number;
+  /** API 返回的实际奖金 (SOL) */
+  prizeAmount: number;
+  /** Token 供应百分比 */
+  supplyPercentage: number;
 }
 
 export interface AgentRanking {

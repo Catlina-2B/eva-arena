@@ -12,25 +12,30 @@ export function RoundSettlement({ round }: RoundSettlementProps) {
 
   return (
     <div className="relative">
-      {/* Main card with subtle border */}
-      <div className="relative border border-eva-border/60 overflow-hidden">
+      {/* Main card with subtle border and bracket hover effect */}
+      <div className="relative border border-eva-border/60 overflow-hidden bracket-container">
         {/* Corner decorations */}
         <CornerDecoration position="top-left" />
         <CornerDecoration position="top-right" />
         <CornerDecoration position="bottom-left" />
         <CornerDecoration position="bottom-right" />
 
-        {/* Background grid pattern */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px)
-            `,
-            backgroundSize: "24px 24px",
-          }}
-        />
+        {/* Background grid pattern with animation */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* Animated grid */}
+          <div
+            className="absolute inset-0 cyber-grid-anim"
+            style={{
+              backgroundImage: `
+                linear-gradient(rgba(0, 255, 136, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.05) 1px, transparent 1px)
+              `,
+              backgroundSize: "30px 30px",
+            }}
+          />
+          {/* Scanning beam effect */}
+          <div className="cyber-scan-line" />
+        </div>
 
         {/* Content */}
         <div className="relative z-10">
@@ -73,47 +78,45 @@ export function RoundSettlement({ round }: RoundSettlementProps) {
 
             <div className="space-y-3">
               {/* Top 3 winners */}
-              {winners
-                .filter((w) => w.rank <= 3)
-                .map((winner) => (
-                  <div
-                    key={winner.rank}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-white/60">
-                        #{winner.rank}
-                      </span>
+              {winners.map((winner) => (
+                <div
+                  key={winner.rank}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-white/60">
+                      #{winner.rank}
+                    </span>
+                    {winner.agentAvatar ? (
+                      <img
+                        alt={winner.agentName}
+                        className="w-6 h-6 rounded object-cover border border-eva-border"
+                        src={winner.agentAvatar}
+                      />
+                    ) : (
+                      <div className="w-6 h-6 rounded border border-eva-border bg-eva-dark flex items-center justify-center">
+                        <div className="w-3 h-3 rounded-full bg-eva-primary/60" />
+                      </div>
+                    )}
+                    <div>
                       <span className="font-mono text-white">
                         {winner.agentName}
                       </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-lg font-bold text-eva-secondary">
-                        {winner.prize.toFixed(2)} SOL
-                      </span>
-                      <span className="font-mono text-sm text-white/40">
-                        ({winner.percentage}%)
-                      </span>
+                      <div className="text-[11px] text-eva-text-dim font-mono">
+                        {winner.tokenAmount.toLocaleString()} Tokens
+                      </div>
                     </div>
                   </div>
-                ))}
-
-              {/* Others (rank 4 entry represents all other participants) */}
-              {winners.find((w) => w.agentId === "others") && (
-                <div className="flex items-center justify-between pt-2 border-t border-eva-border/30">
-                  <span className="font-mono text-white/60">Others</span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-lg font-bold text-eva-secondary">
-                      {winners.find((w) => w.agentId === "others")?.prize.toFixed(2)}{" "}
-                      SOL
-                    </span>
-                    <span className="font-mono text-sm text-white/40">
-                      ({winners.find((w) => w.agentId === "others")?.percentage}%)
-                    </span>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-eva-secondary">
+                      {winner.prizeAmount.toFixed(2)} SOL
+                    </div>
+                    <div className="text-[11px] text-eva-text-dim font-mono">
+                      {winner.supplyPercentage.toFixed(1)}% Supply
+                    </div>
                   </div>
                 </div>
-              )}
+              ))}
             </div>
           </div>
 
@@ -180,3 +183,4 @@ function CornerDecoration({ position }: CornerDecorationProps) {
     </div>
   );
 }
+

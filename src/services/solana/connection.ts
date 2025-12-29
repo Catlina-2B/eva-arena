@@ -16,7 +16,7 @@ let connection: Connection | null = null;
  */
 export function getSolanaConnection(): Connection {
   if (!connection) {
-    connection = new Connection(SOLANA_RPC_URL, "confirmed");
+    connection = new Connection(SOLANA_RPC_URL, "finalized");
   }
 
   return connection;

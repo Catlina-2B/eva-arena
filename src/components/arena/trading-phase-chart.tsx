@@ -196,25 +196,30 @@ export function TradingPhaseChart({ round }: TradingPhaseChartProps) {
 
   return (
     <div className="relative">
-      {/* Main card with subtle border */}
-      <div className="relative border border-eva-border/60 overflow-hidden">
+      {/* Main card with subtle border and bracket hover effect */}
+      <div className="relative border border-eva-border/60 overflow-hidden bracket-container">
         {/* Corner decorations */}
         <CornerDecoration position="top-left" />
         <CornerDecoration position="top-right" />
         <CornerDecoration position="bottom-left" />
         <CornerDecoration position="bottom-right" />
 
-        {/* Background grid pattern */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px)
-            `,
-            backgroundSize: "24px 24px",
-          }}
-        />
+        {/* Background grid pattern with animation */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* Animated grid */}
+          <div
+            className="absolute inset-0 cyber-grid-anim"
+            style={{
+              backgroundImage: `
+                linear-gradient(rgba(0, 255, 136, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 136, 0.05) 1px, transparent 1px)
+              `,
+              backgroundSize: "30px 30px",
+            }}
+          />
+          {/* Scanning beam effect */}
+          <div className="cyber-scan-line" />
+        </div>
 
         {/* Content */}
         <div className="relative z-10">

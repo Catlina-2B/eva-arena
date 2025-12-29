@@ -147,15 +147,6 @@ export function calculateBlockProgress(
   return { currentBlock, totalBlocks, phase };
 }
 
-/**
- * Prize distribution percentages for winners
- */
-const PRIZE_DISTRIBUTION = {
-  FIRST: 50,
-  SECOND: 30,
-  THIRD: 15,
-  OTHERS: 5,
-} as const;
 
 /**
  * Convert TrenchDetailDto to ArenaRound for UI components
@@ -191,7 +182,7 @@ export function trenchToArenaRound(
     parseFloat(trench.totalDepositedSol) > 0 || trench.participantCount > 0;
 
   // Calculate winners from leaderboard data
-  const winners = calculateWinners(prizePool, leaderboard);
+  const winners = calculateWinners(leaderboard);
 
   // Calculate next round countdown based on remaining blocks in liquidation phase
   let nextRoundCountdown: number | undefined;
@@ -225,14 +216,9 @@ export function trenchToArenaRound(
 }
 
 /**
- * Calculate winners from leaderboard data with prize distribution
- * - 1st place: 50%
- * - 2nd place: 30%
- * - 3rd place: 15%
- * - Others: 5%
+ * Calculate winners from leaderboard data using API-provided prize amounts
  */
 function calculateWinners(
-  prizePool: number,
   leaderboard?: LeaderboardResponseDto,
 ): import("@/types").Winner[] | undefined {
   if (!leaderboard || leaderboard.topThree.length === 0) {
@@ -240,39 +226,21 @@ function calculateWinners(
   }
 
   const winners: import("@/types").Winner[] = [];
-  const topThree = leaderboard.topThree;
 
-  // Distribution percentages for each rank
-  const percentages = [
-    PRIZE_DISTRIBUTION.FIRST,
-    PRIZE_DISTRIBUTION.SECOND,
-    PRIZE_DISTRIBUTION.THIRD,
-  ];
-
-  for (let i = 0; i < Math.min(3, topThree.length); i++) {
-    const participant = topThree[i];
-    const percentage = percentages[i];
-    const prize = (prizePool * percentage) / 100;
+  for (const participant of leaderboard.topThree) {
+    const tokenAmount = parseInt(participant.tokenBalance) / 1e6;
+    const supplyPercentage = (tokenAmount / TOTAL_TOKEN_SUPPLY) * 100;
+    const prizeAmount = parseFloat(participant.prizeAmount) / 1e9;
 
     winners.push({
-      rank: i + 1,
+      rank: participant.rank,
       agentId: participant.agentId || participant.userAddress,
       agentName:
         participant.agentName || `Agent ${participant.userAddress.slice(0, 8)}`,
-      prize,
-      percentage,
-    });
-  }
-
-  // Add "Others" entry if there are more participants
-  if (leaderboard.totalParticipants > 3) {
-    const othersPrize = (prizePool * PRIZE_DISTRIBUTION.OTHERS) / 100;
-    winners.push({
-      rank: 4,
-      agentId: "others",
-      agentName: "Others",
-      prize: othersPrize,
-      percentage: PRIZE_DISTRIBUTION.OTHERS,
+      agentAvatar: participant.agentLogo || undefined,
+      tokenAmount,
+      prizeAmount,
+      supplyPercentage,
     });
   }
 
