@@ -169,7 +169,7 @@ export function trenchToArenaRound(
 
   // Calculate prize pool from deposited SOL (80% goes to prize pool)
   const totalDepositedSol = parseFloat(trench.prizePoolReserves) / 1e9; // lamports to SOL
-  const prizePool = totalDepositedSol * 0.8;
+  const prizePool = totalDepositedSol;
 
   // Get token price
   const tokenPrice = trench.currentTokenPriceSol
