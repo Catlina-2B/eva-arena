@@ -27,8 +27,10 @@ import {
   useUserPnlTimeline,
   useTurnkeyBalance,
   useFirstDepositPrompt,
+  useCurrentTrench,
 } from "@/hooks";
 import { useIsAuthenticated } from "@/hooks/use-auth";
+import { useAuthStore } from "@/stores/auth";
 
 // Corner decoration component
 interface CornerDecorationProps {
@@ -561,12 +563,15 @@ function HistoryRow({
   trenchId,
   isExpanded,
   onToggle,
+  currentTrenchId,
 }: {
   round: AgentHistoryRound;
   trenchId: number;
   isExpanded: boolean;
   onToggle: () => void;
+  currentTrenchId?: number;
 }) {
+  const isCurrentBatch = currentTrenchId !== undefined && trenchId === currentTrenchId;
   // Fetch user's transactions only when expanded (no polling for history)
   // Use logged-in user's wallet address (not turnkey address)
   const { data: transactionsData, isLoading: isTransactionsLoading } =
@@ -586,7 +591,7 @@ function HistoryRow({
       >
         <div className="flex items-center gap-3">
           <div
-            className={`w-2 h-2 rounded-sm ${round.pnl >= 0 ? "bg-eva-primary" : "bg-eva-text-dim"}`}
+            className={`w-2 h-2 rounded-sm ${isCurrentBatch ? "bg-eva-primary" : "bg-eva-text-dim"}`}
           />
           <div>
             <div className="text-sm font-mono text-eva-text">
@@ -864,6 +869,8 @@ export default function MyAgentPage() {
   // Auth state
   const { isAuthenticated } = useIsAuthenticated();
   const { address: walletAddress } = useAccount();
+  const { user } = useAuthStore();
+  const turnkeyAddress = user?.turnkeyAddress;
 
   // Fetch user's agents
   const { data: agentsData, isLoading: isAgentsLoading, refetch: refetchAgents } = useMyAgents();
@@ -888,7 +895,7 @@ export default function MyAgentPage() {
   const withdrawMutation = useAgentWithdraw();
 
   // Subscribe to Turnkey wallet balance updates via WebSocket
-  const { balance: turnkeyBalance } = useTurnkeyBalance(primaryAgent?.turnkeyAddress);
+  const { balance: turnkeyBalance } = useTurnkeyBalance(turnkeyAddress);
 
   // Fetch user trench history
   const {
@@ -896,6 +903,10 @@ export default function MyAgentPage() {
     isLoading: isHistoryLoading,
     error: historyError,
   } = useTrenchHistory({ limit: 10 });
+
+  // Fetch current trench (one-time, no polling) to determine current batch indicator
+  const { data: currentTrench } = useCurrentTrench({ polling: false });
+  const currentTrenchId = currentTrench?.id;
 
   // Fetch user PNL timeline
   const { data: pnlTimelineData, isLoading: isPnlTimelineLoading } =
@@ -1150,6 +1161,7 @@ export default function MyAgentPage() {
               {historyRounds.map((round) => (
                 <EvaCard key={round.roundId}>
                   <HistoryRow
+                    currentTrenchId={currentTrenchId}
                     isExpanded={expandedRound === round.roundId}
                     round={round}
                     trenchId={round.trenchDbId}
@@ -1174,7 +1186,7 @@ export default function MyAgentPage() {
       {/* Deposit Modal */}
       <DepositModal
         agentName={displayAgent.name}
-        depositAddress={displayAgent.turnkeyAddress}
+        depositAddress={turnkeyAddress ?? ""}
         isOpen={isDepositModalOpen}
         onClose={() => setIsDepositModalOpen(false)}
       />

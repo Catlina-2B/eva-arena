@@ -33,10 +33,10 @@ export const authApi = {
   },
 
   /**
-   * Get current user profile
+   * Get current user profile (via /auth/me)
    */
   getProfile: async (): Promise<UserDto> => {
-    const response = await apiClient.get<UserDto>("/api/auth/profile");
+    const response = await apiClient.get<UserDto>("/api/auth/me");
 
     return response.data;
   },

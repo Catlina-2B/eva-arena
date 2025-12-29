@@ -5,8 +5,8 @@ import { WalletInterfaceModal } from "./wallet-interface-modal";
 
 import { EvaButton } from "@/components/ui";
 import { useWalletAuth } from "@/hooks/use-wallet-auth";
-import { useMyAgents } from "@/hooks/use-agents";
 import { useTurnkeyBalance } from "@/hooks/use-turnkey-balance";
+import { useAuthStore } from "@/stores/auth";
 
 // 规则/玩法 Icon
 function RulesIcon() {
@@ -32,10 +32,9 @@ export function WalletConnectButton({ onOpenRules }: WalletConnectButtonProps) {
     autoLogin: true,
   });
 
-  // 获取用户的 Agent 数据（包含 turnkey 地址）
-  const { data: agentsData } = useMyAgents();
-  const primaryAgent = agentsData?.agents?.[0];
-  const turnkeyAddress = primaryAgent?.turnkeyAddress;
+  // 从 auth store 获取 turnkey 地址
+  const { user } = useAuthStore();
+  const turnkeyAddress = user?.turnkeyAddress;
 
   // 订阅 Turnkey 钱包余额更新（会自动更新全局 store）
   useTurnkeyBalance(turnkeyAddress);

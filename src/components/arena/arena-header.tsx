@@ -104,8 +104,8 @@ export function ArenaHeader({ round }: ArenaHeaderProps) {
           <div className="border border-eva-primary p-1">
             <div className="flex gap-1">
               {Array.from({ length: 10 }).map((_, i) => {
-                const segmentProgress = ((i + 1) / 10) * 100;
-                const isFilled = percentage >= segmentProgress - 100 / 10 / 2;
+                // 第一格总是填满，之后每超过 i * 300 就填满对应的格子
+                const isFilled = i === 0 || currentBlock > i * 300;
 
                 return (
                   <div

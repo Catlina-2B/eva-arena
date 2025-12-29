@@ -195,8 +195,8 @@ export function useWalletAuth(
         tokenType: response.tokenType,
         user: {
           id: response.user.id,
-          walletAddress: address,
-          chainType: "SOLANA",
+          publicKey: response.user.publicKey,
+          turnkeyAddress: response.user.turnkeyAddress,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
@@ -232,7 +232,7 @@ export function useWalletAuth(
     if (isLoggingInRef.current) return;
 
     // Don't auto-login if already authenticated with same address
-    if (isAuthenticated && user?.walletAddress === address) return;
+    if (isAuthenticated && user?.publicKey === address) return;
 
     // Don't auto-login if we already tried this address
     if (lastLoginAddressRef.current === address) return;
@@ -244,7 +244,7 @@ export function useWalletAuth(
     isConnected,
     address,
     isAuthenticated,
-    user?.walletAddress,
+    user?.publicKey,
     login,
   ]);
 

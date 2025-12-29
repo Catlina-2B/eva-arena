@@ -6,6 +6,7 @@ import { EvaButton } from "@/components/ui";
 import { DepositModal, WithdrawModal } from "@/components/agent";
 import { useAgentPanel, useMyAgents, useAgentWithdraw } from "@/hooks";
 import { useTurnkeyBalanceStore } from "@/stores/turnkey-balance";
+import { useAuthStore } from "@/stores/auth";
 
 interface WalletInterfaceModalProps {
   isOpen: boolean;
@@ -23,7 +24,11 @@ export function WalletInterfaceModal({
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
 
-  // Fetch user's agent data
+  // 从 auth store 获取 turnkey 地址
+  const { user } = useAuthStore();
+  const turnkeyAddress = user?.turnkeyAddress ?? "";
+
+  // Fetch user's agent data (for withdraw functionality)
   const { data: agentsData } = useMyAgents();
   const primaryAgent = agentsData?.agents?.[0];
 
@@ -39,7 +44,6 @@ export function WalletInterfaceModal({
   if (!isOpen) return null;
 
   const balance = turnkeyBalance;
-  const turnkeyAddress = primaryAgent?.turnkeyAddress ?? "";
 
   const handleCopyAddress = async () => {
     try {

@@ -44,8 +44,8 @@ function txTypeToAction(txType: TransactionType): string {
       return "DEPOSIT";
     case "WITHDRAW":
       return "WITHDRAW";
-    case "CLAIM":
-      return "CLAIM";
+    case "PRIZE":
+      return "Reward";
     default:
       return txType;
   }
@@ -71,15 +71,15 @@ function TxTypeBadge({ txType }: { txType: TransactionType }) {
   const getDisplayText = () => {
     switch (txType) {
       case "BUY":
-        return "Buying Phase";
+        return "Trading Phase";
       case "SELL":
-        return "Selling Phase";
+        return "Trading Phase";
       case "DEPOSIT":
         return "Betting Phase";
       case "WITHDRAW":
-        return "Withdraw Phase";
-      case "CLAIM":
-        return "Claim Phase";
+        return "Betting Phase";
+      case "PRIZE":
+        return "Liquidation";
       default:
         return txType;
     }
@@ -257,7 +257,7 @@ export function AgentDashboardCard({
 
   // Fetch user's transactions for this trench
   const { data: transactionsData, isLoading: isTransactionsLoading } =
-    useUserTransactions(trenchId, { limit: 10 });
+    useUserTransactions(trenchId, { limit: 10, txType: ['BUY', 'SELL', 'DEPOSIT', 'WITHDRAW', 'PRIZE'] });
 
   // Convert transactions to execution log entries
   const executionLogs = useMemo(() => {
@@ -444,17 +444,19 @@ export function AgentDashboardCard({
               executionLogs.map((log) => (
                 <div
                   key={log.id}
-                  className="flex items-center justify-between text-xs py-1"
+                  className="grid grid-cols-3 text-xs py-1"
                 >
                   {/* Left: EVA Round Number */}
                   <span className="font-mono text-eva-text-dim text-[10px]">
                     Eva-{log.trenchId}
                   </span>
                   {/* Middle: Phase Badge */}
-                  <TxTypeBadge txType={log.txType} />
+                  <div>
+                    <TxTypeBadge txType={log.txType} />
+                  </div>
                   {/* Right: Action + Amount */}
-                  <span className="font-mono text-eva-text-dim text-[10px]">
-                    {log.action} {log.amount.toFixed(0)} SOL
+                  <span className="font-mono text-eva-text-dim text-[10px] justify-self-end">
+                    {log.action} {log.amount.toFixed(4)} SOL
                   </span>
                 </div>
               ))

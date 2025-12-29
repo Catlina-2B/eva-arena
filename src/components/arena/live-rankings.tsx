@@ -108,7 +108,12 @@ export function LiveRankings({
           <div className="p-3 pt-8 space-y-4">
             <div className="space-y-4">
               {rankings.slice(0, 3).map((agent) => (
-                <RankingRow key={agent.agentId} agent={agent} isBettingPhase={isBettingPhase} />
+                <RankingRow
+                  key={agent.agentId}
+                  agent={agent}
+                  isBettingPhase={isBettingPhase}
+                  isCurrentUser={agent.isCurrentUser}
+                />
               ))}
             </div>
 
@@ -133,7 +138,9 @@ export function LiveRankings({
                 <div className="bg-[rgba(31,41,55,0.3)] border border-eva-border flex items-center gap-2 px-3 py-2">
                   <InfoIcon />
                   <span className="text-[10px] text-eva-text-dim font-mono">
-                    Top 3 take 95% Prize | Rest share 5%
+                    {isBettingPhase
+                      ? "After betting phase ends, 80% to Prize, 20% to Bonding Curve."
+                      : "Top 3 take 95% Prize | Rest share 5%"}
                   </span>
                 </div>
               </div>
@@ -146,7 +153,9 @@ export function LiveRankings({
               <div className="px-3 py-3 border border-eva-border text-xs text-eva-text-dim flex items-center gap-2 bg-eva-darker/50">
                 <InfoIcon />
                 <span className="font-mono">
-                  Top 3 take 95% Prize | Rest share 5%
+                  {isBettingPhase
+                    ? "After betting phase ends, 80% to Prize, 20% to Bonding Curve."
+                    : "Top 3 take 95% Prize | Rest share 5%"}
                 </span>
               </div>
             </div>
@@ -191,10 +200,13 @@ interface RankingRowProps {
   agent: AgentRanking;
   /** Whether to show betting phase layout */
   isBettingPhase?: boolean;
+  /** Whether this is the current user's agent */
+  isCurrentUser?: boolean;
 }
 
-function RankingRow({ agent, isBettingPhase = false }: RankingRowProps) {
+function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false }: RankingRowProps) {
   const isFirst = agent.rank === 1;
+  const isTop3CurrentUser = isCurrentUser && agent.rank <= 3;
 
   // Betting phase layout: show avatar, bet amount, and allocation percentage
   if (isBettingPhase) {
@@ -203,8 +215,8 @@ function RankingRow({ agent, isBettingPhase = false }: RankingRowProps) {
         className={clsx(
           "flex items-center justify-between px-3 py-3 border transition-colors",
           isFirst && "border-l-2 border-l-eva-primary",
-          "border-eva-border",
-          "bg-eva-darker/50 border-eva-border hover:bg-eva-card-hover"
+          isTop3CurrentUser ? "border-eva-primary bg-eva-primary/10" : "border-eva-border bg-eva-darker/50",
+          "hover:bg-eva-card-hover"
         )}
       >
         <div className="flex items-center gap-3">
@@ -227,7 +239,7 @@ function RankingRow({ agent, isBettingPhase = false }: RankingRowProps) {
 
         <div className="text-right">
           <div className="text-sm font-mono font-medium text-eva-primary">
-            {agent.allocationPercent?.toFixed(1) ?? "0.0"}% Alloc
+            {((agent.allocationPercent ?? 0) / 2).toFixed(1) ?? "0.0"}% Alloc
           </div>
         </div>
       </div>
@@ -240,8 +252,8 @@ function RankingRow({ agent, isBettingPhase = false }: RankingRowProps) {
       className={clsx(
         "flex items-center justify-between px-3 py-3 border transition-colors",
         isFirst && "border-l-2 border-l-eva-primary",
-        "border-eva-border",
-        "bg-eva-darker/50 border-eva-border hover:bg-eva-card-hover"
+        isTop3CurrentUser ? "border-eva-primary bg-eva-primary/10" : "border-eva-border bg-eva-darker/50",
+        "hover:bg-eva-card-hover"
       )}
     >
       <div className="flex items-center gap-3">

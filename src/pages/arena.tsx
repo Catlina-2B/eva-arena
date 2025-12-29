@@ -30,6 +30,7 @@ import {
   useTurnkeyBalance,
 } from "@/hooks";
 import { useIsAuthenticated } from "@/hooks/use-auth";
+import { useAuthStore } from "@/stores/auth";
 import {
   trenchToArenaRound,
   leaderboardToRankings,
@@ -49,6 +50,8 @@ const USE_REAL_DATA = true;
 export default function ArenaPage() {
   // Auth state
   const { isAuthenticated } = useIsAuthenticated();
+  const { user } = useAuthStore();
+  const turnkeyAddress = user?.turnkeyAddress;
 
   // First visit detection for welcome modal
   const { isFirstVisit, markVisited } = useFirstVisit();
@@ -74,6 +77,7 @@ export default function ArenaPage() {
   // Fetch recent transactions
   const { data: transactionsData } = useTrenchTransactions(trenchId, {
     limit: 10,
+    txType: ["DEPOSIT", "WITHDRAW", "BUY", "SELL"],
   });
 
   // Subscribe to real-time updates (uses on-chain trenchId)
@@ -108,7 +112,7 @@ export default function ArenaPage() {
   const toggleAgentStatus = useToggleAgentStatus();
 
   // Subscribe to Turnkey wallet balance updates via WebSocket
-  const { balance: turnkeyBalance } = useTurnkeyBalance(primaryAgent?.turnkeyAddress);
+  const { balance: turnkeyBalance } = useTurnkeyBalance(turnkeyAddress);
 
   // Subscribe to real-time Solana slot updates via WebSocket
   const { slot: currentSlot } = useSlotSubscription();

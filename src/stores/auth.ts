@@ -8,8 +8,8 @@ import { apiClient } from "@/services/api/client";
  */
 export interface User {
   id: string;
-  walletAddress: string;
-  chainType: string;
+  publicKey: string;
+  turnkeyAddress?: string;
   createdAt: string;
   updatedAt: string;
 }

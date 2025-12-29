@@ -52,14 +52,17 @@ export function useTrenchList(params?: {
 /**
  * Hook for getting current active trench
  *
- * Polls every 500ms for real-time updates
+ * @param options - Additional options
+ * @param options.polling - Whether to poll for updates (default: true)
  */
-export function useCurrentTrench() {
+export function useCurrentTrench(options?: { polling?: boolean }) {
+  const polling = options?.polling ?? true;
+
   return useQuery({
     queryKey: trenchKeys.current(),
     queryFn: () => trenchApi.getCurrentTrench(),
-    staleTime: 0, // Always fetch fresh data
-    refetchInterval: POLLING_INTERVAL,
+    staleTime: polling ? 0 : undefined, // Fresh data when polling, use default staleTime otherwise
+    refetchInterval: polling ? POLLING_INTERVAL : false,
   });
 }
 
@@ -175,7 +178,7 @@ export function useUserTransactions(
   },
 ) {
   const { user } = useAuthStore();
-  const userAddress = user?.walletAddress;
+  const userAddress = user?.publicKey;
   const polling = options?.polling ?? true;
 
   return useQuery({

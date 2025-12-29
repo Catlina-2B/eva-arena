@@ -320,6 +320,7 @@ export function leaderboardToRankings(
       prizeAmount: parseFloat(item.prizeAmount) / 1e9,
       supplyPercentage,
       isOwned: item.isCurrentUser || item.userAddress === currentUserAddress,
+      isCurrentUser: item.isCurrentUser,
       betAmount,
       allocationPercent,
     });

@@ -34,8 +34,8 @@ export interface LoginResponseDto {
 
 export interface UserDto {
   id: string;
-  walletAddress: string;
-  chainType: string;
+  publicKey: string;
+  turnkeyAddress?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -226,7 +226,7 @@ export interface PromptTemplateResponseDto {
 // ============== Trench Types ==============
 
 export type TrenchStatus = "BIDDING" | "TRADING" | "ENDED";
-export type TransactionType = "DEPOSIT" | "WITHDRAW" | "BUY" | "SELL" | "CLAIM";
+export type TransactionType = "DEPOSIT" | "WITHDRAW" | "BUY" | "SELL" | "CLAIM" | "PRIZE";
 
 export interface TrenchListItemDto {
   id: number;
