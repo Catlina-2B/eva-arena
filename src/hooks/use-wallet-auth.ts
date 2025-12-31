@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount, useWallets } from "@particle-network/connectkit";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { authApi } from "@/services/api";
 import { useAuthStore } from "@/stores/auth";
@@ -124,6 +125,7 @@ export function useWalletAuth(
 
   const { isConnected, address } = useAccount();
   const [primaryWallet] = useWallets();
+  const queryClient = useQueryClient();
 
   const { isAuthenticated, user, login: storeLogin, logout } = useAuthStore();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -132,6 +134,8 @@ export function useWalletAuth(
   // Track login state to prevent duplicate attempts
   const isLoggingInRef = useRef(false);
   const lastLoginAddressRef = useRef<string | null>(null);
+  // Track the previous address for detecting wallet switches
+  const prevAddressRef = useRef<string | null>(null);
 
   /**
    * Perform wallet signature login
@@ -256,16 +260,41 @@ export function useWalletAuth(
     }
   }, [isConnected, isAuthenticated, logout]);
 
-  // Reset login tracking when address changes
+  // Handle wallet address change (wallet switch)
   useEffect(() => {
-    if (address !== lastLoginAddressRef.current && !isLoggingInRef.current) {
-      // Address changed, allow new login attempt
-      // But don't reset if we haven't tried yet (null)
-      if (lastLoginAddressRef.current !== null) {
-        lastLoginAddressRef.current = null;
-      }
+    // Skip if no address or if this is the first mount
+    if (!address) {
+      prevAddressRef.current = null;
+      return;
     }
-  }, [address]);
+
+    // If this is the first address we're seeing, just record it
+    if (prevAddressRef.current === null) {
+      prevAddressRef.current = address;
+      return;
+    }
+
+    // Check if address actually changed (wallet switch)
+    if (prevAddressRef.current !== address) {
+      console.log(
+        "Wallet switched from",
+        prevAddressRef.current,
+        "to",
+        address,
+      );
+
+      // Clear old auth state and cache before new login
+      logout();
+      queryClient.clear();
+
+      // Reset login tracking to allow new login attempt
+      lastLoginAddressRef.current = null;
+      isLoggingInRef.current = false;
+
+      // Update previous address
+      prevAddressRef.current = address;
+    }
+  }, [address, logout, queryClient]);
 
   return {
     isLoggingIn,

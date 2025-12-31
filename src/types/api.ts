@@ -214,13 +214,21 @@ export interface AgentWithdrawResponseDto {
   error?: string;
 }
 
-// AgentLogosResponseDto is now a simple string array
-export type AgentLogosResponseDto = string[];
+// AgentLogosResponseDto contains small and large avatar URLs
+export interface AgentLogosResponseDto {
+  small: string[];
+  large: string[];
+}
 
 // Prompt template response
 export interface PromptTemplateResponseDto {
   bettingStrategyTemplate: string;
   tradingStrategyTemplate: string;
+}
+
+// Avatar upload response
+export interface AvatarUploadResponseDto {
+  url: string;
 }
 
 // ============== Trench Types ==============

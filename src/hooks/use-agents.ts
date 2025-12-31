@@ -271,3 +271,12 @@ export function usePromptTemplate() {
     staleTime: 60 * 60 * 1000, // 1 hour - template doesn't change often
   });
 }
+
+/**
+ * Hook for uploading a custom avatar
+ */
+export function useUploadAvatar() {
+  return useMutation({
+    mutationFn: (file: File) => agentApi.uploadAvatar(file),
+  });
+}

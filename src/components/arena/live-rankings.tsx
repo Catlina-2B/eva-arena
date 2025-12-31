@@ -1,9 +1,12 @@
+import { useState } from "react";
+
 import type { AgentRanking } from "@/types";
 
 import clsx from "clsx";
 
 import { RankBadge } from "@/components/ui";
 import { HeartFilledIcon } from "@/components/icons";
+import { AgentDetailModal, type AgentDetailData } from "./agent-detail-modal";
 
 // System Idle icon for empty state
 const SystemIdleIcon = () => (
@@ -60,6 +63,8 @@ interface LiveRankingsProps {
   isSkipped?: boolean;
   /** Whether the current phase is betting phase */
   isBettingPhase?: boolean;
+  /** Optional callback to load agent detail data */
+  onLoadAgentDetail?: (agentId: string) => Promise<AgentDetailData | null>;
 }
 
 export function LiveRankings({
@@ -68,7 +73,13 @@ export function LiveRankings({
   thirdPlaceTokenAmount = 0,
   isSkipped = false,
   isBettingPhase = false,
+  onLoadAgentDetail,
 }: LiveRankingsProps) {
+  // Modal state
+  const [selectedAgent, setSelectedAgent] = useState<AgentRanking | null>(null);
+  const [agentDetailData, setAgentDetailData] = useState<AgentDetailData | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Only show current user section if they exist and are not in top 3
   const showCurrentUserSection = currentUser && currentUser.rank > 3;
 
@@ -76,6 +87,30 @@ export function LiveRankings({
   const gapToPodium = showCurrentUserSection
     ? Math.max(0, thirdPlaceTokenAmount - currentUser.tokenAmount)
     : 0;
+
+  // Handle agent row click
+  const handleAgentClick = async (agent: AgentRanking) => {
+    setSelectedAgent(agent);
+    setIsModalOpen(true);
+    setAgentDetailData(null);
+
+    // Load detail data if callback is provided
+    if (onLoadAgentDetail) {
+      try {
+        const data = await onLoadAgentDetail(agent.agentId);
+        setAgentDetailData(data);
+      } catch (error) {
+        console.error("Failed to load agent detail:", error);
+      }
+    }
+  };
+
+  // Handle modal close
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedAgent(null);
+    setAgentDetailData(null);
+  };
 
   return (
     <div className="border border-eva-border overflow-hidden relative">
@@ -113,6 +148,7 @@ export function LiveRankings({
                   agent={agent}
                   isBettingPhase={isBettingPhase}
                   isCurrentUser={agent.isCurrentUser}
+                  onClick={handleAgentClick}
                 />
               ))}
             </div>
@@ -132,7 +168,7 @@ export function LiveRankings({
                 </div>
 
                 {/* Current user ranking row */}
-                <RankingRow agent={currentUser} isBettingPhase={isBettingPhase} />
+                <RankingRow agent={currentUser} isBettingPhase={isBettingPhase} onClick={handleAgentClick} />
 
                 {/* Prize distribution info */}
                 <div className="bg-[rgba(31,41,55,0.3)] border border-eva-border flex items-center gap-2 px-3 py-2">
@@ -162,6 +198,14 @@ export function LiveRankings({
           )}
         </>
       )}
+
+      {/* Agent Detail Modal */}
+      <AgentDetailModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        agent={selectedAgent}
+        detailData={agentDetailData}
+      />
     </div>
   );
 }
@@ -202,22 +246,29 @@ interface RankingRowProps {
   isBettingPhase?: boolean;
   /** Whether this is the current user's agent */
   isCurrentUser?: boolean;
+  /** Click handler for opening agent detail */
+  onClick?: (agent: AgentRanking) => void;
 }
 
-function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false }: RankingRowProps) {
+function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onClick }: RankingRowProps) {
   const isFirst = agent.rank === 1;
   const isTop3CurrentUser = isCurrentUser && agent.rank <= 3;
+
+  const handleClick = () => {
+    onClick?.(agent);
+  };
 
   // Betting phase layout: show avatar, bet amount, and allocation percentage
   if (isBettingPhase) {
     return (
       <div
         className={clsx(
-          "flex items-center justify-between px-3 py-3 border transition-colors",
+          "flex items-center justify-between px-3 py-3 border transition-colors cursor-pointer",
           isFirst && "border-l-2 border-l-eva-primary",
           isTop3CurrentUser ? "border-eva-primary bg-eva-primary/10" : "border-eva-border bg-eva-darker/50",
           "hover:bg-eva-card-hover"
         )}
+        onClick={handleClick}
       >
         <div className="flex items-center gap-3">
           <RankBadge rank={agent.rank} />
@@ -250,11 +301,12 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false }: Ra
   return (
     <div
       className={clsx(
-        "flex items-center justify-between px-3 py-3 border transition-colors",
+        "flex items-center justify-between px-3 py-3 border transition-colors cursor-pointer",
         isFirst && "border-l-2 border-l-eva-primary",
         isTop3CurrentUser ? "border-eva-primary bg-eva-primary/10" : "border-eva-border bg-eva-darker/50",
         "hover:bg-eva-card-hover"
       )}
+      onClick={handleClick}
     >
       <div className="flex items-center gap-3">
         <RankBadge rank={agent.rank} />

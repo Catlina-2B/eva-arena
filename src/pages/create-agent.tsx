@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import DefaultLayout from "@/layouts/default";
@@ -7,6 +7,7 @@ import {
   useAgentLogos,
   useCreateAgent,
   usePromptTemplate,
+  useUploadAvatar,
 } from "@/hooks/use-agents";
 import { useAuthStore } from "@/stores/auth";
 
@@ -106,6 +107,17 @@ const PlusIcon = () => (
   </svg>
 );
 
+const LoadingSpinner = () => (
+  <svg className="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="10" stroke="white" strokeOpacity="0.25" strokeWidth="3" />
+    <path d="M12 2C6.48 2 2 6.48 2 12" stroke="white" strokeWidth="3" strokeLinecap="round" />
+  </svg>
+);
+
+// Supported image types and max file size
+const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
 // Avatar item component with skeleton loading
 function AvatarItem({
   url,
@@ -151,15 +163,72 @@ function AvatarItem({
   );
 }
 
-// Add Avatar Button
-function AddAvatarButton() {
+// Add Avatar Button with upload functionality
+function AddAvatarButton({
+  onUpload,
+  isUploading,
+  uploadError,
+}: {
+  onUpload: (file: File) => void;
+  isUploading: boolean;
+  uploadError: string | null;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleClick = () => {
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!SUPPORTED_IMAGE_TYPES.includes(file.type)) {
+      alert("不支持的文件格式，请上传 JPG、PNG、GIF 或 WebP 格式的图片");
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      alert("文件大小超过限制，请上传小于 5MB 的图片");
+      return;
+    }
+
+    onUpload(file);
+
+    // Reset input so the same file can be selected again
+    e.target.value = "";
+  };
+
   return (
-    <button
-      type="button"
-      className="aspect-square w-full bg-[#080a12] border border-white/10 flex items-center justify-center hover:border-white/30 transition-colors"
-    >
-      <PlusIcon />
-    </button>
+    <div className="relative">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+        className="hidden"
+        onChange={handleFileChange}
+        disabled={isUploading}
+      />
+      <button
+        type="button"
+        className={`aspect-square w-full bg-[#080a12] border flex items-center justify-center transition-colors ${
+          isUploading 
+            ? "border-[#6ce182]/50 cursor-wait" 
+            : uploadError 
+              ? "border-red-500 hover:border-red-400" 
+              : "border-white/10 hover:border-white/30"
+        }`}
+        onClick={handleClick}
+        disabled={isUploading}
+        title={uploadError || "上传自定义头像"}
+      >
+        {isUploading ? <LoadingSpinner /> : <PlusIcon />}
+      </button>
+    </div>
   );
 }
 
@@ -196,8 +265,13 @@ export default function CreateAgentPage() {
   // Create agent mutation
   const createAgentMutation = useCreateAgent();
 
+  // Upload avatar mutation
+  const uploadAvatarMutation = useUploadAvatar();
+
   // Form state
   const [selectedLogoUrl, setSelectedLogoUrl] = useState<string | null>(null);
+  // Custom uploaded avatars (stored locally)
+  const [customAvatars, setCustomAvatars] = useState<string[]>([]);
   const [agentName, setAgentName] = useState("");
   const [bettingStrategy, setBettingStrategy] = useState("");
   const [tradingStrategy, setTradingStrategy] = useState("");
@@ -216,10 +290,22 @@ export default function CreateAgentPage() {
 
   // Set default selected logo when data loads
   useMemo(() => {
-    if (logosData && logosData.length > 0 && !selectedLogoUrl) {
-      setSelectedLogoUrl(logosData[0]);
+    if (logosData?.small && logosData.small.length > 0 && !selectedLogoUrl) {
+      setSelectedLogoUrl(logosData.small[0]);
     }
   }, [logosData, selectedLogoUrl]);
+
+  // Handle avatar upload
+  const handleAvatarUpload = useCallback(async (file: File) => {
+    try {
+      const result = await uploadAvatarMutation.mutateAsync(file);
+      // Add the uploaded URL to custom avatars and select it
+      setCustomAvatars((prev) => [...prev, result.url]);
+      setSelectedLogoUrl(result.url);
+    } catch (error) {
+      console.error("Failed to upload avatar:", error);
+    }
+  }, [uploadAvatarMutation]);
 
   const handleCreateAgent = async () => {
     if (!agentName.trim() || !selectedLogoUrl || !bettingStrategy.trim() || !tradingStrategy.trim()) {
@@ -249,7 +335,7 @@ export default function CreateAgentPage() {
   const isSubmitting = createAgentMutation.isPending;
 
   // Get selected avatar index for background color
-  const selectedIndex = logosData?.findIndex(url => url === selectedLogoUrl) ?? 0;
+  const selectedIndex = logosData?.small?.findIndex(url => url === selectedLogoUrl) ?? 0;
   const selectedBgColor = AVATAR_COLORS[selectedIndex % AVATAR_COLORS.length];
 
   return (
@@ -320,7 +406,7 @@ export default function CreateAgentPage() {
                 <>
                   {/* First Row - Avatars 1-7 */}
                   <div className="grid grid-cols-7 gap-3">
-                    {logosData?.slice(0, 7).map((url, index) => (
+                    {logosData?.small?.slice(0, 7).map((url, index) => (
                     <AvatarItem
                         key={`avatar-row1-${index}`}
                       index={index}
@@ -331,9 +417,9 @@ export default function CreateAgentPage() {
                     />
                   ))}
                 </div>
-                  {/* Second Row - Avatars 8-13 + Add Button */}
+                  {/* Second Row - Avatars 8-13 + Custom Avatars + Add Button */}
                   <div className="grid grid-cols-7 gap-3">
-                    {logosData?.slice(7, 13).map((url, index) => (
+                    {logosData?.small?.slice(7, 13).map((url, index) => (
                       <AvatarItem
                         key={`avatar-row2-${index}`}
                         index={index + 7}
@@ -343,7 +429,22 @@ export default function CreateAgentPage() {
                         onSelect={() => setSelectedLogoUrl(url)}
                       />
                     ))}
-                    <AddAvatarButton />
+                    {/* Custom uploaded avatars */}
+                    {customAvatars.map((url, index) => (
+                      <AvatarItem
+                        key={`custom-avatar-${index}`}
+                        index={13 + index}
+                        isSelected={selectedLogoUrl === url}
+                        bgColor="#1a1a2e"
+                        url={url}
+                        onSelect={() => setSelectedLogoUrl(url)}
+                      />
+                    ))}
+                    <AddAvatarButton
+                      onUpload={handleAvatarUpload}
+                      isUploading={uploadAvatarMutation.isPending}
+                      uploadError={uploadAvatarMutation.isError ? "上传失败，请重试" : null}
+                    />
                   </div>
                 </>
               )}

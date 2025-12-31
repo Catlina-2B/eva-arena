@@ -9,6 +9,7 @@ import type {
   AgentTrenchListResponseDto,
   AgentWithdrawDto,
   AgentWithdrawResponseDto,
+  AvatarUploadResponseDto,
   CreateAgentDto,
   PromptTemplateResponseDto,
   TransactionListResponseDto,
@@ -206,6 +207,26 @@ export const agentApi = {
   getPromptTemplate: async (): Promise<PromptTemplateResponseDto> => {
     const response = await apiClient.get<PromptTemplateResponseDto>(
       "/api/agents/prompt-template",
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Upload a custom avatar image
+   */
+  uploadAvatar: async (file: File): Promise<AvatarUploadResponseDto> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await apiClient.post<AvatarUploadResponseDto>(
+      "/api/agents/avatar",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
     );
 
     return response.data;

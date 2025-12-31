@@ -1,6 +1,6 @@
 import type { AgentDetailDto, UpdateAgentDto } from "@/types/api";
 
-import { Fragment, useState, useEffect, useCallback } from "react";
+import { Fragment, useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 
 // Avatar item component with skeleton loading
@@ -45,7 +45,11 @@ function AvatarItem({
   );
 }
 
-import { useAgentLogos, useUpdateAgent } from "@/hooks/use-agents";
+import { useAgentLogos, useUpdateAgent, useUploadAvatar } from "@/hooks/use-agents";
+
+// Supported image types and max file size
+const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 interface EditAgentModalProps {
   isOpen: boolean;
@@ -65,12 +69,50 @@ export function EditAgentModal({
   const [selectedLogo, setSelectedLogo] = useState<string | null>(null);
   const [bettingStrategyPrompt, setBettingStrategyPrompt] = useState("");
   const [tradingStrategyPrompt, setTradingStrategyPrompt] = useState("");
+  const [customAvatars, setCustomAvatars] = useState<string[]>([]);
+
+  // File input ref
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch logos
   const { data: logosData, isLoading: isLoadingLogos } = useAgentLogos();
 
   // Update mutation
   const updateMutation = useUpdateAgent();
+
+  // Upload avatar mutation
+  const uploadAvatarMutation = useUploadAvatar();
+
+  // Handle avatar upload
+  const handleAvatarUpload = useCallback(async (file: File) => {
+    try {
+      const result = await uploadAvatarMutation.mutateAsync(file);
+      setCustomAvatars((prev) => [...prev, result.url]);
+      setSelectedLogo(result.url);
+    } catch (error) {
+      console.error("Failed to upload avatar:", error);
+    }
+  }, [uploadAvatarMutation]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!SUPPORTED_IMAGE_TYPES.includes(file.type)) {
+      alert("不支持的文件格式，请上传 JPG、PNG、GIF 或 WebP 格式的图片");
+      return;
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      alert("文件大小超过限制，请上传小于 5MB 的图片");
+      return;
+    }
+
+    handleAvatarUpload(file);
+    e.target.value = "";
+  };
 
   // Initialize form with agent data
   useEffect(() => {
@@ -79,8 +121,14 @@ export function EditAgentModal({
       setSelectedLogo(agent.logo || null);
       setBettingStrategyPrompt(agent.bettingStrategyPrompt || "");
       setTradingStrategyPrompt(agent.tradingStrategyPrompt || "");
+      // If agent has a custom logo not in preset list, add it to customAvatars
+      if (agent.logo && logosData?.small && !logosData.small.includes(agent.logo)) {
+        setCustomAvatars([agent.logo]);
+      } else {
+        setCustomAvatars([]);
+      }
     }
-  }, [agent, isOpen]);
+  }, [agent, isOpen, logosData]);
 
   // Reset form on close
   useEffect(() => {
@@ -236,7 +284,7 @@ export function EditAgentModal({
                 </div>
               ) : (
                 <div className="grid grid-cols-7 gap-2">
-                  {logosData?.map((url, index) => (
+                  {logosData?.small?.map((url, index) => (
                     <AvatarItem
                       key={`avatar-${index}`}
                       index={index}
@@ -245,25 +293,56 @@ export function EditAgentModal({
                       onSelect={() => setSelectedLogo(url)}
                     />
                   ))}
-                  {/* Custom upload placeholder */}
+                  {/* Custom uploaded avatars */}
+                  {customAvatars.map((url, index) => (
+                    <AvatarItem
+                      key={`custom-avatar-${index}`}
+                      index={(logosData?.small?.length || 0) + index}
+                      isSelected={selectedLogo === url}
+                      url={url}
+                      onSelect={() => setSelectedLogo(url)}
+                    />
+                  ))}
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                    className="hidden"
+                    disabled={uploadAvatarMutation.isPending}
+                    type="file"
+                    onChange={handleFileChange}
+                  />
+                  {/* Upload button */}
                   <button
-                    className="w-12 h-12 rounded-lg border-2 border-dashed border-eva-border flex items-center justify-center text-eva-text-dim hover:border-eva-primary hover:text-eva-primary transition-colors"
-                    title="Upload custom avatar (coming soon)"
+                    className={`w-12 h-12 rounded-lg border-2 border-dashed flex items-center justify-center transition-colors ${
+                      uploadAvatarMutation.isPending
+                        ? "border-eva-primary/50 cursor-wait"
+                        : uploadAvatarMutation.isError
+                          ? "border-red-500 text-red-500 hover:border-red-400"
+                          : "border-eva-border text-eva-text-dim hover:border-eva-primary hover:text-eva-primary"
+                    }`}
+                    disabled={uploadAvatarMutation.isPending}
+                    title={uploadAvatarMutation.isError ? "上传失败，点击重试" : "上传自定义头像"}
                     type="button"
+                    onClick={() => fileInputRef.current?.click()}
                   >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        d="M12 4v16m8-8H4"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                      />
-                    </svg>
+                    {uploadAvatarMutation.isPending ? (
+                      <div className="w-5 h-5 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          d="M12 4v16m8-8H4"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                        />
+                      </svg>
+                    )}
                   </button>
                 </div>
               )}

@@ -11,3 +11,4 @@ export * from "./welcome-card";
 export * from "./create-agent-card";
 export * from "./agent-dashboard-card";
 export * from "./welcome-onboarding-modal";
+export * from "./agent-detail-modal";
