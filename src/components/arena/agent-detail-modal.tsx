@@ -276,13 +276,13 @@ export function AgentDetailModal({
             {/* Header */}
             <div className="flex items-center gap-6">
               {/* Avatar */}
-              <div className="relative w-16 h-16 border border-[rgba(108,225,130,0.3)] bg-[rgba(108,225,130,0.05)] flex items-center justify-center">
+              <div className="relative w-16 h-16 border border-[rgba(108,225,130,0.3)] bg-[rgba(108,225,130,0.05)] flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 bg-[rgba(108,225,130,0.1)] blur-md" />
                 {agent.agentAvatar ? (
                   <img
                     src={agent.agentAvatar}
                     alt={agent.agentName}
-                    className="relative w-8 h-8 object-cover"
+                    className="relative w-full h-full object-cover"
                   />
                 ) : (
                   <div className="relative">

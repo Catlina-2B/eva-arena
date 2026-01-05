@@ -1,6 +1,7 @@
-import type { ArenaRound } from "@/types";
+import type { ArenaRound, AgentRanking } from "@/types";
+import type { AgentDetailData } from "@/components/arena/agent-detail-modal";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import DefaultLayout from "@/layouts/default";
 import {
@@ -43,6 +44,7 @@ import {
   mockRankings,
   mockActivities,
 } from "@/services/mock";
+import { agentApi } from "@/services/api";
 
 // Feature flag for using real API data
 const USE_REAL_DATA = true;
@@ -179,6 +181,40 @@ export default function ArenaPage() {
     return transactionsToActivities(allTransactions);
   }, [transactionsData, realtimeTransactions]);
 
+  // Handle loading agent detail data for modal
+  const handleLoadAgentDetail = useCallback(
+    async (agentId: string): Promise<AgentDetailData | null> => {
+      // Find the agent in rankings to get userAddress
+      const agent = rankings.find((r) => r.agentId === agentId);
+      if (!agent?.userAddress) {
+        console.warn("Agent not found in rankings or missing userAddress:", agentId);
+        return null;
+      }
+
+      try {
+        const panelData = await agentApi.getAgentPanelByUserAddress(agent.userAddress);
+        
+        // Convert AgentPanelDto to AgentDetailData
+        return {
+          agentId: panelData.id,
+          agentName: panelData.name,
+          agentAvatar: panelData.logo,
+          solBalance: 0, // Not provided by panel API, modal will show from ranking
+          tokenBalance: agent.tokenAmount,
+          roundPnl: panelData.roundPnl
+            ? parseFloat(panelData.roundPnl) / 1e9 // Convert lamports to SOL
+            : 0,
+          totalPnl: panelData.totalPnl,
+          recentActions: [], // Loaded by modal via useUserTransactions hook
+        };
+      } catch (error) {
+        console.error("Failed to load agent panel data:", error);
+        return null;
+      }
+    },
+    [rankings],
+  );
+
   // Loading state
   if (USE_REAL_DATA && isTrenchLoading) {
     return (
@@ -299,6 +335,7 @@ export default function ArenaPage() {
               isSkipped={currentRound.phase === "trading" && !currentRound.hasBets}
               isBettingPhase={currentRound.phase === "betting"}
               trenchId={trenchId}
+              onLoadAgentDetail={handleLoadAgentDetail}
             />
             {!isAuthenticated && <WelcomeCard />}
             {isAuthenticated && !hasAgent && <CreateAgentCard />}

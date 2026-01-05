@@ -96,6 +96,23 @@ export const agentApi = {
   },
 
   /**
+   * Get agent panel data by user's turnkey address
+   * Used to view other users' agent info in rankings
+   */
+  getAgentPanelByUserAddress: async (
+    userAddress: string,
+  ): Promise<AgentPanelDto> => {
+    const response = await apiClient.get<AgentPanelDto>(
+      "/api/agents/panel/by-address",
+      {
+        params: { userAddress },
+      },
+    );
+
+    return response.data;
+  },
+
+  /**
    * Toggle agent status (ACTIVE <-> PAUSED)
    */
   toggleStatus: async (id: string): Promise<AgentPanelDto> => {
