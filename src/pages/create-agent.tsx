@@ -334,9 +334,13 @@ export default function CreateAgentPage() {
     agentName.trim() && selectedLogoUrl && bettingStrategy.trim() && tradingStrategy.trim();
   const isSubmitting = createAgentMutation.isPending;
 
-  // Get selected avatar index for background color
+  // Get selected avatar index for background color and large preview
   const selectedIndex = logosData?.small?.findIndex(url => url === selectedLogoUrl) ?? 0;
   const selectedBgColor = AVATAR_COLORS[selectedIndex % AVATAR_COLORS.length];
+  // Get the large version of the selected avatar for the preview
+  const selectedLargeLogoUrl = selectedIndex >= 0 && logosData?.large?.[selectedIndex] 
+    ? logosData.large[selectedIndex] 
+    : selectedLogoUrl;
 
   return (
     <DefaultLayout>
@@ -361,12 +365,12 @@ export default function CreateAgentPage() {
                 background: `linear-gradient(to bottom, #02120a 0%, ${selectedBgColor}40 50%, #544273 100%)`,
               }}
             >
-              {/* Selected Avatar Image */}
-              {selectedLogoUrl && (
+              {/* Selected Avatar Image (Large version for preview) */}
+              {selectedLargeLogoUrl && (
                 <img
                   alt="Selected avatar"
                   className="absolute inset-0 w-full h-full object-cover object-center"
-                  src={selectedLogoUrl}
+                  src={selectedLargeLogoUrl}
                 />
               )}
             </div>

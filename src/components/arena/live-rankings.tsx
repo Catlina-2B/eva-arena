@@ -63,6 +63,8 @@ interface LiveRankingsProps {
   isSkipped?: boolean;
   /** Whether the current phase is betting phase */
   isBettingPhase?: boolean;
+  /** Current trench ID for fetching agent transactions */
+  trenchId?: number;
   /** Optional callback to load agent detail data */
   onLoadAgentDetail?: (agentId: string) => Promise<AgentDetailData | null>;
 }
@@ -73,6 +75,7 @@ export function LiveRankings({
   thirdPlaceTokenAmount = 0,
   isSkipped = false,
   isBettingPhase = false,
+  trenchId,
   onLoadAgentDetail,
 }: LiveRankingsProps) {
   // Modal state
@@ -204,6 +207,7 @@ export function LiveRankings({
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         agent={selectedAgent}
+        trenchId={trenchId}
         detailData={agentDetailData}
       />
     </div>

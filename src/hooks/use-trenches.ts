@@ -159,16 +159,18 @@ export function useTrenchSummary(
 /**
  * Hook for getting current user's transactions in a trench
  *
- * Automatically uses the logged-in user's wallet address.
+ * Uses the provided userAddress, or falls back to current user's turnkeyAddress.
  *
  * @param trenchId - The trench ID
  * @param params - Query parameters
+ * @param params.userAddress - Optional specific user address (e.g., agent's turnkeyAddress)
  * @param options - Additional options
  * @param options.polling - Whether to poll for updates (default: true)
  */
 export function useUserTransactions(
   trenchId: number | undefined,
   params?: {
+    userAddress?: string;
     txType?: TransactionType[];
     page?: number;
     limit?: number;
@@ -178,7 +180,8 @@ export function useUserTransactions(
   },
 ) {
   const { user } = useAuthStore();
-  const userAddress = user?.publicKey;
+  // Use provided userAddress, or fall back to user's turnkeyAddress
+  const userAddress = params?.userAddress ?? user?.turnkeyAddress;
   const polling = options?.polling ?? true;
 
   return useQuery({

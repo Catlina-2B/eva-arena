@@ -1,9 +1,10 @@
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
 
 import type { AgentRanking, ActivityItem } from "@/types";
-import { formatSmallNumber } from "@/lib/trench-utils";
+import { formatSmallNumber, transactionsToActivities } from "@/lib/trench-utils";
+import { useUserTransactions } from "@/hooks";
 
 // Robot icon SVG
 const RobotIcon = () => (
@@ -180,6 +181,8 @@ interface AgentDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   agent: AgentRanking | null;
+  /** Current trench ID for fetching transactions */
+  trenchId?: number;
   /** Optional detailed data loaded from API */
   detailData?: AgentDetailData | null;
   /** Callback when user wants to view transaction on explorer */
@@ -190,9 +193,30 @@ export function AgentDetailModal({
   isOpen,
   onClose,
   agent,
+  trenchId,
   detailData,
   onViewTransaction,
 }: AgentDetailModalProps) {
+  // Fetch transactions using agent's userAddress
+  const { data: transactionsData, isLoading: isLoadingTransactions } = useUserTransactions(
+    isOpen && agent?.userAddress ? trenchId : undefined,
+    {
+      userAddress: agent?.userAddress,
+      limit: 5,
+      txType: ['BUY', 'SELL', 'DEPOSIT', 'WITHDRAW'],
+    },
+    { polling: false }
+  );
+
+  // Convert transactions to activities
+  const recentActions = useMemo(() => {
+    if (detailData?.recentActions && detailData.recentActions.length > 0) {
+      return detailData.recentActions;
+    }
+    if (!transactionsData?.transactions) return [];
+    return transactionsToActivities(transactionsData.transactions).slice(0, 5);
+  }, [detailData?.recentActions, transactionsData?.transactions]);
+
   if (!isOpen || !agent) return null;
 
   // Use detail data if available, otherwise use ranking data with defaults
@@ -200,7 +224,6 @@ export function AgentDetailModal({
   const tokenBalance = detailData?.tokenBalance ?? agent.tokenAmount;
   const roundPnl = detailData?.roundPnl ?? agent.pnlSol;
   const totalPnl = detailData?.totalPnl ?? agent.pnlSol;
-  const recentActions = detailData?.recentActions ?? [];
 
   const handleExternalLink = (signature: string) => {
     if (onViewTransaction) {
@@ -322,7 +345,11 @@ export function AgentDetailModal({
                 </h3>
 
                 <div className="space-y-3">
-                  {recentActions.length > 0 ? (
+                  {isLoadingTransactions ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="w-5 h-5 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : recentActions.length > 0 ? (
                     recentActions.slice(0, 5).map((action) => (
                       <ActivityRow
                         key={action.id}

@@ -26,6 +26,8 @@ interface AgentDashboardCardProps {
   roundPnl: number;
   /** Current trench ID for fetching user transactions */
   trenchId?: number;
+  /** Agent's turnkey address for filtering transactions */
+  turnkeyAddress?: string;
   /** Whether the toggle operation is in progress */
   isToggling?: boolean;
   onStartSystem?: () => void;
@@ -247,6 +249,7 @@ export function AgentDashboardCard({
   totalPnl,
   roundPnl,
   trenchId,
+  turnkeyAddress,
   isToggling = false,
   onStartSystem,
   onPauseSystem,
@@ -255,9 +258,13 @@ export function AgentDashboardCard({
   const isRunning = agent.status === "running";
   const isPaused = agent.status === "paused";
 
-  // Fetch user's transactions for this trench
+  // Fetch user's transactions for this trench using agent's turnkey address
   const { data: transactionsData, isLoading: isTransactionsLoading } =
-    useUserTransactions(trenchId, { limit: 10, txType: ['BUY', 'SELL', 'DEPOSIT', 'WITHDRAW', 'PRIZE'] });
+    useUserTransactions(trenchId, { 
+      userAddress: turnkeyAddress,
+      limit: 10, 
+      txType: ['BUY', 'SELL', 'DEPOSIT', 'WITHDRAW', 'PRIZE'] 
+    });
 
   // Convert transactions to execution log entries
   const executionLogs = useMemo(() => {

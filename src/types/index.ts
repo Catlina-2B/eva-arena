@@ -57,6 +57,8 @@ export interface AgentRanking {
   agentId: string;
   agentName: string;
   agentAvatar?: string;
+  /** User/turnkey address for querying transactions */
+  userAddress?: string;
   tokenAmount: number;
   pnlSol: number;
   prizeAmount: number;

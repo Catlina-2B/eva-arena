@@ -64,6 +64,9 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+// Token expired error code
+const TOKEN_EXPIRED_CODE = 1103;
+
 /**
  * Response interceptor - Unwrap data and handle token refresh
  */
@@ -80,6 +83,16 @@ apiClient.interceptors.response.use(
       if (apiResponse.code === 0) {
         // Return the unwrapped data
         response.data = apiResponse.data;
+      } else if (apiResponse.code === TOKEN_EXPIRED_CODE) {
+        // Token expired, logout and reject
+        const { logout } = useAuthStore.getState();
+        logout();
+
+        return Promise.reject({
+          code: apiResponse.code,
+          message: apiResponse.message || "Token expired, please login again",
+          status: response.status,
+        } as ApiError);
       } else {
         // Backend returned an error code
         return Promise.reject({

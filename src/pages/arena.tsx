@@ -298,6 +298,7 @@ export default function ArenaPage() {
               thirdPlaceTokenAmount={thirdPlaceTokenAmount}
               isSkipped={currentRound.phase === "trading" && !currentRound.hasBets}
               isBettingPhase={currentRound.phase === "betting"}
+              trenchId={trenchId}
             />
             {!isAuthenticated && <WelcomeCard />}
             {isAuthenticated && !hasAgent && <CreateAgentCard />}
@@ -323,6 +324,7 @@ export default function ArenaPage() {
                 tokenChangePercent={(trenchData?.tokenBalance ? parseFloat(trenchData.tokenBalance) / 1e9 : 0) * 100}
                 totalPnl={primaryAgent.totalPnl}
                 trenchId={trenchId}
+                turnkeyAddress={primaryAgent.turnkeyAddress}
                 onEditName={() => {
                   // If agent is active, show pause required modal first
                   if (primaryAgent.status === "ACTIVE") {
