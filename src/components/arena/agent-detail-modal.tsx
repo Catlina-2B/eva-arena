@@ -109,11 +109,11 @@ function ActivityRow({
   activity: ActivityItem;
   onExternalLink?: (signature: string) => void;
 }) {
-  const isDepositOrWithdraw = activity.type === "deposit" || activity.type === "withdraw";
-  const actionText = isDepositOrWithdraw
-    ? `${formatSmallNumber(activity.solAmount)} SOL`
-    : `${activity.tokenAmount.toLocaleString()} Token for ${formatSmallNumber(activity.solAmount)} SOL`;
+  // Always show only SOL amount
+  const actionText = `${formatSmallNumber(activity.solAmount)} SOL`;
 
+  // Show price for buy/sell transactions
+  const isDepositOrWithdraw = activity.type === "deposit" || activity.type === "withdraw";
   const priceText = isDepositOrWithdraw
     ? ""
     : `@${formatSmallNumber(activity.solAmount / activity.tokenAmount)}`;
@@ -202,7 +202,7 @@ export function AgentDetailModal({
     isOpen && agent?.userAddress ? trenchId : undefined,
     {
       userAddress: agent?.userAddress,
-      limit: 5,
+      limit: 3,
       txType: ['BUY', 'SELL', 'DEPOSIT', 'WITHDRAW'],
     },
     { polling: false }
@@ -214,7 +214,7 @@ export function AgentDetailModal({
       return detailData.recentActions;
     }
     if (!transactionsData?.transactions) return [];
-    return transactionsToActivities(transactionsData.transactions).slice(0, 5);
+    return transactionsToActivities(transactionsData.transactions).slice(0, 3);
   }, [detailData?.recentActions, transactionsData?.transactions]);
 
   if (!isOpen || !agent) return null;
@@ -247,7 +247,7 @@ export function AgentDetailModal({
       <div className="fixed inset-0 flex items-center justify-center z-[100] p-4 pointer-events-none">
         <div
           aria-modal="true"
-          className="bg-eva-darker border border-eva-border shadow-2xl pointer-events-auto animate-slide-up w-full max-w-[900px]"
+          className="relative bg-eva-darker border border-eva-border shadow-2xl pointer-events-auto animate-slide-up w-full max-w-[900px]"
           role="dialog"
           onClick={(e) => e.stopPropagation()}
         >
@@ -350,7 +350,7 @@ export function AgentDetailModal({
                       <div className="w-5 h-5 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
                     </div>
                   ) : recentActions.length > 0 ? (
-                    recentActions.slice(0, 5).map((action) => (
+                    recentActions.slice(0, 3).map((action) => (
                       <ActivityRow
                         key={action.id}
                         activity={action}
