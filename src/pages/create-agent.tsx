@@ -521,7 +521,7 @@ export default function CreateAgentPage() {
             {createAgentMutation.isError && (
             <div className="p-4 bg-red-500/10 border border-red-500/50">
                 <span className="text-sm font-mono text-red-400">
-                  Failed to create agent. Please try again.
+                  {(createAgentMutation.error as { message?: string })?.message || "Failed to create agent. Please try again."}
                 </span>
               </div>
             )}

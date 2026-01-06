@@ -11,7 +11,8 @@ const API_BASE_URL =
  */
 export interface ApiResponse<T> {
   code: number;
-  message: string | null;
+  msg: string | null;
+  message?: string | null; // legacy field
   data: T;
 }
 
@@ -90,14 +91,14 @@ apiClient.interceptors.response.use(
 
         return Promise.reject({
           code: apiResponse.code,
-          message: apiResponse.message || "Token expired, please login again",
+          message: apiResponse.msg || apiResponse.message || "Token expired, please login again",
           status: response.status,
         } as ApiError);
       } else {
         // Backend returned an error code
         return Promise.reject({
           code: apiResponse.code,
-          message: apiResponse.message || "Unknown error",
+          message: apiResponse.msg || apiResponse.message || "Unknown error",
           status: response.status,
         } as ApiError);
       }
@@ -160,7 +161,7 @@ apiClient.interceptors.response.use(
     const apiError: ApiError = {
       code: error.response?.data?.code ?? -1,
       message:
-        error.response?.data?.message || error.message || "Network error",
+        error.response?.data?.msg || error.response?.data?.message || error.message || "Network error",
       status: error.response?.status,
     };
 
