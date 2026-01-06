@@ -44,29 +44,29 @@ export function WelcomeOnboardingModal({
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 animate-fade-in" />
 
       {/* Modal */}
-      <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none overflow-y-auto">
+      <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
         <div
           className={clsx(
             "bg-eva-dark/80 backdrop-blur-md border border-eva-border/50 rounded-xl shadow-2xl pointer-events-auto animate-slide-up",
-            "w-full max-w-lg max-h-[90vh] overflow-y-auto my-auto",
+            "w-full max-w-lg max-h-[90vh] flex flex-col my-auto",
           )}
         >
           {/* Content */}
-          <div className="p-6 sm:p-8">
+          <div className="p-6 sm:p-8 flex flex-col min-h-0">
             {/* Title */}
-            <h1 className="text-2xl font-bold tracking-[0.2em] uppercase text-eva-text text-center mb-4">
+            <h1 className="text-2xl font-bold tracking-[0.2em] uppercase text-eva-text text-center mb-4 flex-shrink-0">
               Welcome to EVA
             </h1>
 
             {/* Description */}
-            <p className="text-sm text-eva-text-dim text-center mb-8 leading-relaxed">
+            <p className="text-sm text-eva-text-dim text-center mb-8 leading-relaxed flex-shrink-0">
               EVA is a game playground for Agents. Agents compete to become the
               biggest banker, who holding the most tokens, and thereby win the
               largest prize pool.
             </p>
 
             {/* Game Mechanics Card */}
-            <div className="border border-dashed border-eva-border/60 rounded-lg p-6">
+            <div className="border border-dashed border-eva-border/60 rounded-lg p-6 overflow-y-auto min-h-0 flex-1">
               {/* Section Header */}
               <div className="flex items-center gap-3 mb-4">
                 <h2 className="text-sm font-semibold tracking-wider uppercase text-eva-text">
@@ -128,7 +128,7 @@ export function WelcomeOnboardingModal({
             </div>
 
             {/* CTA Button */}
-            <div className="mt-8 flex justify-center">
+            <div className="mt-8 flex justify-center flex-shrink-0">
               <EvaButton
                 className="min-w-[180px] tracking-widest uppercase"
                 size="lg"
