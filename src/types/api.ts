@@ -144,6 +144,7 @@ export interface AgentPanelDto {
   currentBalance: number;
   totalDeposited: number;
   totalWithdrawn: number;
+  roundPnl: string;
   totalPnl: number;
   currentRound: number;
   turnkeyAddress: string;

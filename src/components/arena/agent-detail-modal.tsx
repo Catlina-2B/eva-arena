@@ -1,10 +1,11 @@
-import { Fragment, useMemo } from "react";
+import { Fragment, useMemo, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
 
 import type { AgentRanking, ActivityItem } from "@/types";
 import { formatSmallNumber, transactionsToActivities } from "@/lib/trench-utils";
 import { useUserTransactions } from "@/hooks";
+import { getBalance } from "@/services/solana";
 
 // Robot icon SVG
 const RobotIcon = () => (
@@ -197,6 +198,43 @@ export function AgentDetailModal({
   detailData,
   onViewTransaction,
 }: AgentDetailModalProps) {
+  // State for SOL balance fetched via RPC
+  const [rpcSolBalance, setRpcSolBalance] = useState<number | null>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+
+  // Fetch SOL balance via RPC when modal opens
+  useEffect(() => {
+    if (!isOpen || !agent?.userAddress) {
+      setRpcSolBalance(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingBalance(true);
+
+    getBalance(agent.userAddress)
+      .then((balance) => {
+        if (!cancelled) {
+          setRpcSolBalance(balance);
+        }
+      })
+      .catch((err) => {
+        console.error("[AgentDetailModal] Failed to fetch SOL balance:", err);
+        if (!cancelled) {
+          setRpcSolBalance(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsLoadingBalance(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, agent?.userAddress]);
+
   // Fetch transactions using agent's userAddress
   const { data: transactionsData, isLoading: isLoadingTransactions } = useUserTransactions(
     isOpen && agent?.userAddress ? trenchId : undefined,
@@ -219,8 +257,8 @@ export function AgentDetailModal({
 
   if (!isOpen || !agent) return null;
 
-  // Use detail data if available, otherwise use ranking data with defaults
-  const solBalance = detailData?.solBalance ?? 0;
+  // Use RPC balance if available, otherwise fallback to detailData or 0
+  const solBalance = rpcSolBalance ?? detailData?.solBalance ?? 0;
   const tokenBalance = detailData?.tokenBalance ?? agent.tokenAmount;
   const roundPnl = detailData?.roundPnl ?? agent.pnlSol;
   const totalPnl = detailData?.totalPnl ?? agent.pnlSol;
@@ -318,17 +356,20 @@ export function AgentDetailModal({
                 </h3>
 
                 <div className="space-y-4">
-                  <MetricRow label="SOL Balance" value={formatSmallNumber(solBalance)} />
+                  <MetricRow 
+                    label="SOL Balance" 
+                    value={isLoadingBalance ? "..." : formatSmallNumber(solBalance)} 
+                  />
                   <MetricRow label="Token Balance" value={tokenBalance.toLocaleString()} />
                   <MetricRow
                     label="Round PNL"
-                    value={`${roundPnl >= 0 ? "+" : ""}${formatSmallNumber(roundPnl)} SOL`}
-                    valueColor={roundPnl >= 0 ? "text-[#6ce182]" : "text-[#f87171]"}
+                    value={roundPnl == null || isNaN(roundPnl) ? "--" : `${roundPnl >= 0 ? "+" : ""}${formatSmallNumber(roundPnl)} SOL`}
+                    valueColor={roundPnl == null || isNaN(roundPnl) ? "text-white" : roundPnl >= 0 ? "text-[#6ce182]" : "text-[#f87171]"}
                   />
                   <MetricRow
                     label="Total PNL"
-                    value={`${totalPnl >= 0 ? "+" : ""}${formatSmallNumber(totalPnl)} SOL`}
-                    valueColor={totalPnl >= 0 ? "text-[#6ce182]" : "text-[#f87171]"}
+                    value={totalPnl == null || isNaN(totalPnl) ? "--" : `${totalPnl >= 0 ? "+" : ""}${formatSmallNumber(totalPnl)} SOL`}
+                    valueColor={totalPnl == null || isNaN(totalPnl) ? "text-white" : totalPnl >= 0 ? "text-[#6ce182]" : "text-[#f87171]"}
                     hasBorder={false}
                   />
                 </div>
