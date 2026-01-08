@@ -370,7 +370,7 @@ export default function ArenaPage() {
                     setIsEditModalOpen(true);
                   }
                 }}
-                onPauseSystem={() => toggleAgentStatus.mutate(primaryAgent.id)}
+                onPauseSystem={() => toggleAgentStatus.mutate({ id: primaryAgent.id })}
                 onStartSystem={() => setIsStartTimingModalOpen(true)}
               />
             )}
@@ -395,9 +395,8 @@ export default function ArenaPage() {
           isOpen={isStartTimingModalOpen}
           onClose={() => setIsStartTimingModalOpen(false)}
           onSelectTiming={(timing) => {
-            // TODO: Handle timing selection - for now, just activate the agent
-            console.log("Start timing selected:", timing);
-            toggleAgentStatus.mutate(primaryAgent.id);
+            const immediate = timing === "now";
+            toggleAgentStatus.mutate({ id: primaryAgent.id, immediate });
             setIsStartTimingModalOpen(false);
           }}
           isLoading={toggleAgentStatus.isPending}
@@ -411,7 +410,7 @@ export default function ArenaPage() {
           onClose={() => setIsPauseRequiredModalOpen(false)}
           onPause={async () => {
             // Pause the agent first
-            await toggleAgentStatus.mutateAsync(primaryAgent.id);
+            await toggleAgentStatus.mutateAsync({ id: primaryAgent.id });
             // Close pause required modal
             setIsPauseRequiredModalOpen(false);
             // Open edit modal
