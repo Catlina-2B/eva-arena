@@ -4,6 +4,7 @@ import type {
   AgentStatus,
   AgentWithdrawDto,
   CreateAgentDto,
+  GeneratePromptRequest,
   TransactionType,
   UpdateAgentDto,
 } from "@/types/api";
@@ -30,6 +31,7 @@ export const agentKeys = {
     [...agentKeys.detail(id), "transactions"] as const,
   logos: () => [...agentKeys.all, "logos"] as const,
   promptTemplate: () => [...agentKeys.all, "promptTemplate"] as const,
+  wizardConfig: () => [...agentKeys.all, "wizardConfig"] as const,
 };
 
 /**
@@ -142,8 +144,9 @@ export function useToggleAgentStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => agentApi.toggleStatus(id),
-    onMutate: async (id) => {
+    mutationFn: ({ id, immediate }: { id: string; immediate?: boolean }) =>
+      agentApi.toggleStatus(id, immediate),
+    onMutate: async ({ id }) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: agentKeys.panel(id) });
 
@@ -166,13 +169,13 @@ export function useToggleAgentStatus() {
 
       return { previousPanel };
     },
-    onError: (_, id, context) => {
+    onError: (_, { id }, context) => {
       // Rollback on error
       if (context?.previousPanel) {
         queryClient.setQueryData(agentKeys.panel(id), context.previousPanel);
       }
     },
-    onSettled: (_, __, id) => {
+    onSettled: (_, __, { id }) => {
       // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: agentKeys.panel(id) });
       queryClient.invalidateQueries({ queryKey: agentKeys.lists() });
@@ -278,5 +281,26 @@ export function usePromptTemplate() {
 export function useUploadAvatar() {
   return useMutation({
     mutationFn: (file: File) => agentApi.uploadAvatar(file),
+  });
+}
+
+/**
+ * Hook for getting strategy wizard configuration
+ */
+export function useStrategyWizardConfig() {
+  return useQuery({
+    queryKey: agentKeys.wizardConfig(),
+    queryFn: () => agentApi.getStrategyWizardConfig(),
+    staleTime: 60 * 60 * 1000, // 1 hour - config doesn't change often
+  });
+}
+
+/**
+ * Hook for generating strategy prompt
+ */
+export function useGenerateStrategyPrompt() {
+  return useMutation({
+    mutationFn: (data: GeneratePromptRequest) =>
+      agentApi.generateStrategyPrompt(data),
   });
 }

@@ -11,10 +11,13 @@ import type {
   AgentWithdrawResponseDto,
   AvatarUploadResponseDto,
   CreateAgentDto,
+  GeneratePromptRequest,
+  GeneratePromptResponse,
   PromptTemplateResponseDto,
   TransactionListResponseDto,
   TransactionType,
   UpdateAgentDto,
+  WizardConfigResponse,
 } from "@/types/api";
 
 import { apiClient } from "./client";
@@ -114,10 +117,13 @@ export const agentApi = {
 
   /**
    * Toggle agent status (ACTIVE <-> PAUSED)
+   * @param id - Agent ID
+   * @param immediate - When activating: true = start immediately, false = wait for next round
    */
-  toggleStatus: async (id: string): Promise<AgentPanelDto> => {
+  toggleStatus: async (id: string, immediate?: boolean): Promise<AgentPanelDto> => {
     const response = await apiClient.patch<AgentPanelDto>(
       `/api/agents/${id}/toggle`,
+      { immediate },
     );
 
     return response.data;
@@ -244,6 +250,32 @@ export const agentApi = {
           "Content-Type": "multipart/form-data",
         },
       },
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Get strategy wizard configuration
+   * Returns question configuration for both betting and trading phases
+   */
+  getStrategyWizardConfig: async (): Promise<WizardConfigResponse> => {
+    const response = await apiClient.get<WizardConfigResponse>(
+      "/api/agents/strategy-wizard/config",
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Generate strategy prompt based on user answers
+   */
+  generateStrategyPrompt: async (
+    data: GeneratePromptRequest,
+  ): Promise<GeneratePromptResponse> => {
+    const response = await apiClient.post<GeneratePromptResponse>(
+      "/api/agents/strategy-wizard/generate",
+      data,
     );
 
     return response.data;

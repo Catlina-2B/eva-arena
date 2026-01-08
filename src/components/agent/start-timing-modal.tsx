@@ -152,15 +152,25 @@ export function StartTimingModal({
               </p>
             </div>
 
-            {/* Action Button */}
-            <button
-              type="button"
-              className="w-full h-12 bg-transparent border border-eva-primary text-eva-primary text-xs font-semibold uppercase tracking-[0.15em] hover:bg-eva-primary/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleSelectNow}
-              disabled={isLoading}
-            >
-              {isLoading ? "PROCESSING..." : "RIGHT NOW"}
-            </button>
+            {/* Action Buttons */}
+            <div className="w-full flex flex-row gap-3">
+              <button
+                type="button"
+                className="flex-1 h-12 bg-transparent border border-eva-primary text-eva-primary text-xs font-semibold uppercase tracking-[0.15em] hover:bg-eva-primary/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleSelectNow}
+                disabled={isLoading}
+              >
+                {isLoading ? "PROCESSING..." : "RIGHT NOW"}
+              </button>
+              <button
+                type="button"
+                className="flex-1 h-12 bg-eva-primary text-eva-dark text-xs font-semibold uppercase tracking-[0.15em] hover:bg-eva-primary-dim transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => !isLoading && onSelectTiming("next")}
+                disabled={isLoading}
+              >
+                NEXT ROUND
+              </button>
+            </div>
           </div>
         </div>
       </div>

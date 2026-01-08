@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { AIPromptDrawer } from "@/components/agent";
 import DefaultLayout from "@/layouts/default";
 import { EvaButton } from "@/components/ui";
 import {
@@ -10,6 +11,7 @@ import {
   useUploadAvatar,
 } from "@/hooks/use-agents";
 import { useAuthStore } from "@/stores/auth";
+import type { WizardPhase } from "@/types/api";
 
 // Avatar background colors - matching Figma design
 const AVATAR_COLORS = [
@@ -233,12 +235,13 @@ function AddAvatarButton({
 }
 
 // AI Generated Button Component
-function AIGeneratedButton({ onClick }: { onClick?: () => void }) {
+function AIGeneratedButton({ onClick, disabled }: { onClick?: () => void; disabled?: boolean }) {
   return (
     <button
       type="button"
-      className="flex items-center gap-1 h-8 px-4 border border-[#6ce182] rounded text-[#6ce182] text-xs font-semibold uppercase tracking-wider hover:bg-[#6ce182]/10 transition-colors"
+      className="flex items-center gap-1 h-8 px-4 border border-[#6ce182] rounded text-[#6ce182] text-xs font-semibold uppercase tracking-wider hover:bg-[#6ce182]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       onClick={onClick}
+      disabled={disabled}
     >
       <LinkIcon />
       <span>AI-GENERATED</span>
@@ -277,6 +280,27 @@ export default function CreateAgentPage() {
   const [tradingStrategy, setTradingStrategy] = useState("");
   const [hasUserEditedBetting, setHasUserEditedBetting] = useState(false);
   const [hasUserEditedTrading, setHasUserEditedTrading] = useState(false);
+
+  // AI Prompt Drawer state
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [activeDrawerPhase, setActiveDrawerPhase] = useState<WizardPhase>("betting");
+
+  // Handle AI Generated button click
+  const handleOpenAIDrawer = useCallback((phase: WizardPhase) => {
+    setActiveDrawerPhase(phase);
+    setIsDrawerOpen(true);
+  }, []);
+
+  // Handle AI Prompt confirmation
+  const handleAIPromptConfirm = useCallback((prompt: string) => {
+    if (activeDrawerPhase === "betting") {
+      setBettingStrategy(prompt);
+      setHasUserEditedBetting(true);
+    } else {
+      setTradingStrategy(prompt);
+      setHasUserEditedTrading(true);
+    }
+  }, [activeDrawerPhase]);
 
   // Pre-fill strategies with templates when loaded
   useEffect(() => {
@@ -457,12 +481,9 @@ export default function CreateAgentPage() {
 
             {/* Agent Name */}
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider">
-                Agent Name
-              </label>
-              <AIGeneratedButton />
-            </div>
+            <label className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider">
+              Agent Name
+            </label>
             <div className="bg-black border border-[#374151]">
               <input
                 type="text"
@@ -481,7 +502,7 @@ export default function CreateAgentPage() {
               <label className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider">
                 Betting Strategy Prompt
               </label>
-              <AIGeneratedButton />
+              <AIGeneratedButton onClick={() => handleOpenAIDrawer("betting")} />
             </div>
             <div className="flex-1 min-h-[100px] bg-black border border-[#374151]">
               <textarea
@@ -502,7 +523,7 @@ export default function CreateAgentPage() {
               <label className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider">
                 Trading Strategy Prompt
               </label>
-              <AIGeneratedButton />
+              <AIGeneratedButton onClick={() => handleOpenAIDrawer("trading")} />
             </div>
             <div className="flex-1 min-h-[100px] bg-black border border-[#374151]">
               <textarea
@@ -568,6 +589,14 @@ export default function CreateAgentPage() {
           </div>
         </div>
       </div>
+
+      {/* AI Prompt Drawer */}
+      <AIPromptDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        phase={activeDrawerPhase}
+        onConfirm={handleAIPromptConfirm}
+      />
     </DefaultLayout>
   );
 }

@@ -507,3 +507,68 @@ export interface UserPnlTimelineResponseDto {
   /** PNL 时间线数据（按时间升序） */
   timeline: PnlTimelineItemDto[];
 }
+
+// ============== Strategy Wizard Types ==============
+
+export type QuestionType = "single_choice" | "multi_choice" | "text_input";
+export type WizardPhase = "betting" | "trading";
+
+export interface CustomInputConfig {
+  type: "number" | "text";
+  placeholder?: string;
+  validation?: {
+    min?: number;
+    max?: number;
+  };
+}
+
+export interface WizardOption {
+  value: string;
+  label: string;
+  description?: string;
+}
+
+export interface WizardQuestion {
+  id: string;
+  text: string;
+  type: QuestionType;
+  required: boolean;
+  options?: WizardOption[];
+  customInput?: CustomInputConfig;
+}
+
+export interface WizardStep {
+  id: string;
+  title: string;
+  questions: WizardQuestion[];
+}
+
+export interface PhaseWizardConfig {
+  phase: WizardPhase;
+  title: string;
+  description: string;
+  steps: WizardStep[];
+}
+
+export interface WizardConfigResponse {
+  betting: PhaseWizardConfig;
+  trading: PhaseWizardConfig;
+}
+
+export interface GeneratePromptRequest {
+  phase: WizardPhase;
+  answers: Record<string, string | string[]>;
+  customValues?: Record<string, string>;
+}
+
+export interface PromptAlternative {
+  name: string;
+  prompt: string;
+}
+
+export interface GeneratePromptResponse {
+  prompt: string;
+  summary: Record<string, string>;
+  explanation?: string;
+  alternatives?: PromptAlternative[];
+}

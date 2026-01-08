@@ -1000,7 +1000,7 @@ export default function MyAgentPage() {
           onToggleStatus={() => {
             // Show timing modal when activating, directly pause when deactivating
             if (displayAgent.status === "ACTIVE") {
-              toggleStatusMutation.mutate(displayAgent.id);
+              toggleStatusMutation.mutate({ id: displayAgent.id });
             } else {
               setIsStartTimingModalOpen(true);
             }
@@ -1225,9 +1225,9 @@ export default function MyAgentPage() {
         isOpen={isStartTimingModalOpen}
         onClose={() => setIsStartTimingModalOpen(false)}
         onSelectTiming={(timing) => {
-          // TODO: Handle timing selection - for now, just activate the agent
-          console.log("Start timing selected:", timing);
-          toggleStatusMutation.mutate(displayAgent.id);
+          // immediate=true for "now", immediate=false for "next round"
+          const immediate = timing === "now";
+          toggleStatusMutation.mutate({ id: displayAgent.id, immediate });
           setIsStartTimingModalOpen(false);
         }}
         isLoading={toggleStatusMutation.isPending}
@@ -1239,7 +1239,7 @@ export default function MyAgentPage() {
         onClose={() => setIsPauseRequiredModalOpen(false)}
         onPause={async () => {
           // Pause the agent first
-          await toggleStatusMutation.mutateAsync(displayAgent.id);
+          await toggleStatusMutation.mutateAsync({ id: displayAgent.id });
           // Close pause required modal
           setIsPauseRequiredModalOpen(false);
           // Open edit modal

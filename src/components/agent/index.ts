@@ -2,6 +2,7 @@
  * Agent Components
  */
 
+export { AIPromptDrawer } from "./ai-prompt-drawer";
 export { DepositModal } from "./deposit-modal";
 export { EditAgentModal } from "./edit-agent-modal";
 export { FirstDepositPromptModal } from "./first-deposit-prompt-modal";
