@@ -267,9 +267,8 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
     return (
       <div
         className={clsx(
-          "flex items-center justify-between px-3 py-3 border transition-colors cursor-pointer",
-          isFirst && "border-l-2 border-l-eva-primary",
-          isTop3CurrentUser ? "border-eva-primary bg-eva-primary/10" : "border-eva-border bg-eva-darker/50",
+          "flex items-center justify-between p-[13px] border border-[#374151] transition-colors cursor-pointer",
+          isTop3CurrentUser ? "border-eva-primary bg-eva-primary/10" : "bg-[#15171e]",
           "hover:bg-eva-card-hover"
         )}
         onClick={handleClick}
@@ -294,20 +293,36 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
 
         <div className="text-right">
           <div className="text-sm font-mono font-medium text-eva-primary">
-            {((agent.allocationPercent ?? 0) / 2).toFixed(1) ?? "0.0"}% Alloc
+            +{((agent.allocationPercent ?? 0) / 2).toFixed(1)}%
+          </div>
+          <div className="text-[10px] text-eva-text-dim font-mono uppercase tracking-wider">
+            Alloc
           </div>
         </div>
       </div>
     );
   }
 
+  // Format token amount with K, M, B suffixes for better readability
+  const formatTokenAmount = (amount: number): string => {
+    if (amount >= 1_000_000_000) {
+      return `${(amount / 1_000_000_000).toFixed(1)}B`;
+    }
+    if (amount >= 1_000_000) {
+      return `${(amount / 1_000_000).toFixed(1)}M`;
+    }
+    if (amount >= 1_000) {
+      return `${(amount / 1_000).toFixed(1)}K`;
+    }
+    return amount.toLocaleString();
+  };
+
   // Default trading/liquidation phase layout
   return (
     <div
       className={clsx(
-        "flex items-center justify-between px-3 py-3 border transition-colors cursor-pointer",
-        isFirst && "border-l-2 border-l-eva-primary",
-        isTop3CurrentUser ? "border-eva-primary bg-eva-primary/10" : "border-eva-border bg-eva-darker/50",
+        "flex items-center justify-between p-[13px] border border-[#374151] transition-colors cursor-pointer",
+        isTop3CurrentUser ? "border-eva-primary bg-eva-primary/10" : "bg-[#15171e]",
         "hover:bg-eva-card-hover"
       )}
       onClick={handleClick}
@@ -325,7 +340,7 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
             )}
           </div>
           <div className="text-[11px] text-eva-text-dim font-mono">
-            {agent.tokenAmount.toLocaleString()} Tokens
+            {formatTokenAmount(agent.tokenAmount)} • {agent.supplyPercentage.toFixed(1)}%
           </div>
         </div>
       </div>
@@ -334,13 +349,13 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
         <div
           className={clsx(
             "text-sm font-mono font-medium",
-            agent.prizeAmount >= 0 ? "text-eva-primary" : "text-eva-danger"
+            agent.prizeAmount >= 0 ? "text-[#EAB308]" : "text-eva-danger"
           )}
         >
-          {agent.prizeAmount.toFixed(2)} SOL
+          {agent.prizeAmount >= 0 ? "+" : ""}{agent.prizeAmount.toFixed(2)} SOL
         </div>
-        <div className="text-[11px] text-eva-text-dim font-mono">
-          {agent.supplyPercentage.toFixed(1)}% Supply
+        <div className="text-[10px] text-eva-text-dim font-mono uppercase tracking-wider">
+          Prize
         </div>
       </div>
     </div>

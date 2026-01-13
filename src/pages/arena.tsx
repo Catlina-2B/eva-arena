@@ -22,6 +22,7 @@ import {
   useCurrentTrench,
   useLeaderboard,
   useTrenchTransactions,
+  useUserTransactions,
   useMyAgents,
   useAgent,
   useTrenchSocket,
@@ -92,11 +93,23 @@ export default function ArenaPage() {
     },
   );
 
-  // Fetch user's agents
-  const { data: agentsData, refetch: refetchAgents } = useMyAgents();
+  // Fetch user's agents (with polling to detect WAITING -> ACTIVE transitions)
+  const { data: agentsData, refetch: refetchAgents } = useMyAgents(undefined, { polling: true });
   const userAgents = agentsData?.agents ?? [];
   const hasAgent = userAgents.length > 0;
   const primaryAgent = userAgents[0];
+
+  // Fetch user's buy/sell transactions for chart markers
+  // Use the primary agent's turnkey address when available
+  const { data: userBuySellData } = useUserTransactions(
+    trenchId,
+    {
+      userAddress: primaryAgent?.turnkeyAddress,
+      txType: ["BUY", "SELL"],
+      limit: 100, // Get all buy/sell transactions for the chart
+    },
+    { polling: true }
+  );
 
   // Fetch full agent detail for edit modal
   const { data: agentDetail, refetch: refetchAgentDetail } = useAgent(primaryAgent?.id);
@@ -288,7 +301,12 @@ export default function ArenaPage() {
         return <RoundSkipped round={currentRound} />;
       }
 
-      return <TradingPhaseChart round={currentRound} />;
+      return (
+        <TradingPhaseChart
+          round={currentRound}
+          userTransactions={userBuySellData?.transactions}
+        />
+      );
     }
 
     if (currentRound.phase === "liquidation") {
@@ -347,7 +365,7 @@ export default function ArenaPage() {
                   avatar: primaryAgent.logo,
                   createdAt: new Date(primaryAgent.createdAt),
                   status:
-                    primaryAgent.status === "ACTIVE" ? "running" : "paused",
+                    primaryAgent.status === "ACTIVE" ? "running" : primaryAgent.status === "WAITING" ? "waiting" : "paused",
                   balance: turnkeyBalance || primaryAgent.currentBalance,
                   totalDeposit: 0, // Would need to fetch from panel
                   totalWithdraw: 0,

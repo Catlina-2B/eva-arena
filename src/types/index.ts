@@ -100,7 +100,7 @@ export interface Agent {
   name: string;
   avatar?: string;
   createdAt: Date;
-  status: "running" | "paused" | "stopped";
+  status: "running" | "paused" | "stopped" | "waiting";
   balance: number;
   totalDeposit: number;
   totalWithdraw: number;

@@ -708,6 +708,44 @@ function PauseIcon() {
   );
 }
 
+// Hourglass icon component for waiting state
+function HourglassIcon() {
+  return (
+    <svg
+      className="w-5 h-5"
+      fill="none"
+      viewBox="0 0 20 20"
+    >
+      <path
+        d="M5.83337 2.5H14.1667V5.83333C14.1667 7.67428 12.6743 9.16667 10.8334 9.16667H9.16671C7.32576 9.16667 5.83337 7.67428 5.83337 5.83333V2.5Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5.83337 17.5H14.1667V14.1667C14.1667 12.3257 12.6743 10.8333 10.8334 10.8333H9.16671C7.32576 10.8333 5.83337 12.3257 5.83337 14.1667V17.5Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M4.16663 2.5H15.8333"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M4.16663 17.5H15.8333"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 // Agent Info Component
 function AgentInfo({
   agent,
@@ -721,6 +759,7 @@ function AgentInfo({
   isToggling?: boolean;
 }) {
   const isActive = agent.status === "ACTIVE";
+  const isWaiting = agent.status === "WAITING";
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr)
@@ -780,7 +819,7 @@ function AgentInfo({
                 <EvaBadge
                   variant={agent.status === "ACTIVE" ? "success" : "default"}
                 >
-                  {agent.status}
+                  {isWaiting ? "PAUSED" : agent.status}
                 </EvaBadge>
                 <button
                   className="text-eva-text-dim hover:text-eva-primary transition-colors"
@@ -823,11 +862,13 @@ function AgentInfo({
 
           {/* Status Toggle Button */}
           <button
-            disabled={isToggling}
+            disabled={isToggling || isWaiting}
             className={`h-[44px] min-w-[240px] px-8 text-sm font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 ${
-              isActive 
-                ? "text-black bg-eva-primary hover:bg-eva-primary-dim"
-                : "text-black bg-[#D357E0] hover:bg-[#C045CF]"
+              isWaiting
+                ? "text-white bg-[#4b5563] cursor-not-allowed"
+                : isActive 
+                  ? "text-black bg-eva-primary hover:bg-eva-primary-dim"
+                  : "text-black bg-[#D357E0] hover:bg-[#C045CF]"
             }`}
             style={{
               clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)"
@@ -838,6 +879,11 @@ function AgentInfo({
               <>
                 <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                 {isActive ? "PAUSING..." : "STARTING..."}
+              </>
+            ) : isWaiting ? (
+              <>
+                <HourglassIcon />
+                WAITING NEXT ROUND
               </>
             ) : (
               <>
@@ -872,8 +918,8 @@ export default function MyAgentPage() {
   const { user } = useAuthStore();
   const turnkeyAddress = user?.turnkeyAddress;
 
-  // Fetch user's agents
-  const { data: agentsData, isLoading: isAgentsLoading, refetch: refetchAgents } = useMyAgents();
+  // Fetch user's agents (with polling to detect WAITING -> ACTIVE transitions)
+  const { data: agentsData, isLoading: isAgentsLoading, refetch: refetchAgents } = useMyAgents(undefined, { polling: true });
   const agents = agentsData?.agents ?? [];
   const primaryAgent = agents[0];
 

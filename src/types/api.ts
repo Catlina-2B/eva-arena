@@ -42,7 +42,7 @@ export interface UserDto {
 
 // ============== Agent Types ==============
 
-export type AgentStatus = "ACTIVE" | "PAUSED";
+export type AgentStatus = "ACTIVE" | "PAUSED" | "WAITING";
 export type LlmProvider =
   | "OPENAI"
   | "DEEPSEEK"

@@ -145,6 +145,44 @@ function PauseIcon({ className }: { className?: string }) {
   );
 }
 
+// Hourglass icon component for waiting state
+function HourglassIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={clsx("w-5 h-5", className)}
+      fill="none"
+      viewBox="0 0 20 20"
+    >
+      <path
+        d="M5.83337 2.5H14.1667V5.83333C14.1667 7.67428 12.6743 9.16667 10.8334 9.16667H9.16671C7.32576 9.16667 5.83337 7.67428 5.83337 5.83333V2.5Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5.83337 17.5H14.1667V14.1667C14.1667 12.3257 12.6743 10.8333 10.8334 10.8333H9.16671C7.32576 10.8333 5.83337 12.3257 5.83337 14.1667V17.5Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M4.16663 2.5H15.8333"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <path
+        d="M4.16663 17.5H15.8333"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 // Default agent avatar with EVA-style geometric design
 function AgentAvatar({ avatar, name }: { avatar?: string; name: string }) {
   if (avatar) {
@@ -257,6 +295,7 @@ export function AgentDashboardCard({
 }: AgentDashboardCardProps) {
   const isRunning = agent.status === "running";
   const isPaused = agent.status === "paused";
+  const isWaiting = agent.status === "waiting";
 
   // Fetch user's transactions for this trench using agent's turnkey address
   const { data: transactionsData, isLoading: isTransactionsLoading } =
@@ -333,9 +372,9 @@ export function AgentDashboardCard({
             </div>
           </div>
           <EvaBadge
-            variant={isPaused ? "warning" : isRunning ? "success" : "default"}
+            variant={(isPaused || isWaiting) ? "warning" : isRunning ? "success" : "default"}
           >
-            {isPaused ? "PAUSED" : isRunning ? "RUNNING" : "STOPPED"}
+            {(isPaused || isWaiting) ? "PAUSED" : isRunning ? "RUNNING" : "STOPPED"}
           </EvaBadge>
         </div>
 
@@ -401,20 +440,27 @@ export function AgentDashboardCard({
         <button
           className={clsx(
             "w-full h-[44px] mb-4 text-sm font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3",
-            isPaused 
-              ? "text-black bg-[#D357E0] hover:bg-[#C045CF]"
-              : "text-black bg-eva-primary hover:bg-eva-primary-dim"
+            isWaiting
+              ? "text-white bg-[#4b5563] cursor-not-allowed"
+              : isPaused 
+                ? "text-black bg-[#D357E0] hover:bg-[#C045CF]"
+                : "text-black bg-eva-primary hover:bg-eva-primary-dim"
           )}
           style={{
             clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)"
           }}
-          disabled={isToggling}
+          disabled={isToggling || isWaiting}
           onClick={isPaused ? onStartSystem : onPauseSystem}
         >
           {isToggling ? (
             <>
               <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
               UPDATING...
+            </>
+          ) : isWaiting ? (
+            <>
+              <HourglassIcon />
+              WAITING NEXT ROUND
             </>
           ) : isPaused ? (
             <>

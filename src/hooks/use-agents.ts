@@ -36,14 +36,24 @@ export const agentKeys = {
 
 /**
  * Hook for getting all agents for current user
+ * @param status - Optional status filter
+ * @param options - Optional settings
+ * @param options.polling - Enable polling for real-time updates (e.g., WAITING -> ACTIVE transition)
  */
-export function useMyAgents(status?: AgentStatus) {
+export function useMyAgents(
+  status?: AgentStatus,
+  options?: { polling?: boolean }
+) {
   const { isAuthenticated } = useAuthStore();
+  const { polling = false } = options ?? {};
 
   return useQuery({
     queryKey: agentKeys.list(status),
     queryFn: () => agentApi.getMyAgents(status),
     enabled: isAuthenticated,
+    // Poll every 10 seconds when polling is enabled (for WAITING -> ACTIVE transitions)
+    refetchInterval: polling ? 10 * 1000 : false,
+    staleTime: polling ? 5 * 1000 : undefined,
   });
 }
 
