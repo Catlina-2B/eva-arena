@@ -171,7 +171,7 @@ export default function ArenaPage() {
       trenchId: tx.trenchId,
       txType: tx.txType as "DEPOSIT" | "WITHDRAW" | "BUY" | "SELL" | "CLAIM",
       userAddress: tx.userAddress,
-      agentName: tx.agentName || `Agent ${tx.userAddress.slice(0, 8)}`,
+      agentName: tx.agentName || (tx.userAddress ? `Agent ${tx.userAddress.slice(0, 8)}` : "Unknown Agent"),
       solAmount: tx.solAmount,
       tokenAmount: tx.tokenAmount,
       totalDeposited: tx.totalDeposited,

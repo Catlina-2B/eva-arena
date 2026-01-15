@@ -1107,7 +1107,7 @@ export default function MyAgentPage() {
                             Total Deposit
                           </div>
                           <div className="font-mono text-sm text-eva-text">
-                            {totalDeposit.toFixed(2)}
+                            {(totalDeposit / 1e9).toFixed(2)}
                           </div>
                         </div>
                         <EvaButton
@@ -1129,7 +1129,7 @@ export default function MyAgentPage() {
                             Total Withdraw
                           </div>
                           <div className="font-mono text-sm text-eva-text">
-                            {totalWithdraw.toFixed(2)}{" "}
+                            {(totalWithdraw / 1e9).toFixed(2)}{" "}
                             <span className="text-xs text-eva-text-dim">
                               SOL
                             </span>

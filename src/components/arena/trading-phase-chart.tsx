@@ -59,9 +59,16 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
 
   // Subscribe to WebSocket for real-time price updates
   const handlePriceUpdate = useCallback((data: PriceUpdateEventDto) => {
+    const value = parseFloat(data.priceSol);
+    
+    // Skip invalid values
+    if (isNaN(value) || !isFinite(value)) {
+      return;
+    }
+    
     const newPoint = {
       time: Math.floor(data.timestamp / 1000) as UTCTimestamp,
-      value: parseFloat(data.priceSol),
+      value,
     };
 
     setRealtimePrices((prev) => {
@@ -84,10 +91,12 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
   const apiChartData = useMemo(() => {
     if (!priceCurveData?.pricePoints) return [];
 
-    return priceCurveData.pricePoints.map((point) => ({
-      time: Math.floor(point.timestamp / 1000) as UTCTimestamp,
-      value: parseFloat(point.price),
-    }));
+    return priceCurveData.pricePoints
+      .map((point) => ({
+        time: Math.floor(point.timestamp / 1000) as UTCTimestamp,
+        value: parseFloat(point.price),
+      }))
+      .filter((point) => !isNaN(point.value) && isFinite(point.value));
   }, [priceCurveData]);
 
   // Merge API data with real-time updates

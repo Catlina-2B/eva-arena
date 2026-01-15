@@ -248,25 +248,22 @@ export function WalletInterfaceModal({
         />
       )}
 
-      {/* Withdraw Modal */}
-      {primaryAgent && (
-        <WithdrawModal
-          balanceInSol={balance}
-          isOpen={isWithdrawModalOpen}
-          isWithdrawing={withdrawMutation.isPending}
-          recipientAddress={address}
-          onClose={() => setIsWithdrawModalOpen(false)}
-          onWithdraw={async (amountInLamports, toAddress) => {
-            await withdrawMutation.mutateAsync({
-              id: primaryAgent.id,
-              data: { amount: amountInLamports, toAddress },
-            });
-            refetchPanel();
-          }}
-        />
-      )}
+      <WithdrawModal
+        balanceInSol={balance}
+        isOpen={isWithdrawModalOpen}
+        isWithdrawing={withdrawMutation.isPending}
+        recipientAddress={address}
+        onClose={() => setIsWithdrawModalOpen(false)}
+        onWithdraw={async (amountInLamports, toAddress) => {
+          await withdrawMutation.mutateAsync({
+            id: primaryAgent.id,
+            data: { amount: amountInLamports, toAddress },
+          });
+          refetchPanel();
+        }}
+      />
     </Fragment>,
-    document.body,
+    document.body
   );
 }
 
