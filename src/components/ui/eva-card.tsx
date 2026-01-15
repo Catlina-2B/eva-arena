@@ -21,7 +21,7 @@ export function EvaCard({
   return (
     <div
       className={clsx(
-        "bg-eva-card border border-eva-border rounded-lg",
+        "bg-eva-card border border-eva-border",
         hover &&
           "transition-all duration-200 hover:bg-eva-card-hover hover:border-eva-primary/30",
         glow && "shadow-eva-glow",

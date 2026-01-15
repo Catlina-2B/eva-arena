@@ -1,7 +1,9 @@
-import type { AgentDetailDto, UpdateAgentDto } from "@/types/api";
+import type { AgentDetailDto, UpdateAgentDto, WizardPhase } from "@/types/api";
 
 import { Fragment, useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
+
+import { AIPromptDrawer } from "./ai-prompt-drawer";
 
 // Avatar item component with skeleton loading
 function AvatarItem({
@@ -51,6 +53,41 @@ import { useAgentLogos, useUpdateAgent, useUploadAvatar } from "@/hooks/use-agen
 const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
+// Link Icon for AI Generate button
+const LinkIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <path
+      d="M7.58333 3.79167L8.75 2.625C9.07082 2.30418 9.5 2.125 9.94792 2.125C10.3958 2.125 10.825 2.30418 11.1458 2.625C11.4667 2.94582 11.6458 3.375 11.6458 3.82292C11.6458 4.27083 11.4667 4.7 11.1458 5.02083L8.8125 7.35417C8.49168 7.67499 8.0625 7.85417 7.61458 7.85417C7.16667 7.85417 6.7375 7.67499 6.41667 7.35417"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M6.41667 10.2083L5.25 11.375C4.92918 11.6958 4.5 11.875 4.05208 11.875C3.60417 11.875 3.175 11.6958 2.85417 11.375C2.53335 11.0542 2.35417 10.625 2.35417 10.1771C2.35417 9.72917 2.53335 9.3 2.85417 8.97917L5.1875 6.64583C5.50832 6.32501 5.9375 6.14583 6.38542 6.14583C6.83333 6.14583 7.2625 6.32501 7.58333 6.64583"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+// AI Generated Button Component
+function AIGeneratedButton({ onClick, disabled }: { onClick?: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      className="flex items-center gap-1 h-7 px-3 border border-eva-primary rounded text-eva-primary text-xs font-semibold uppercase tracking-wider hover:bg-eva-primary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      onClick={onClick}
+      disabled={disabled}
+    >
+      <LinkIcon />
+      <span>AI-GENERATED</span>
+    </button>
+  );
+}
+
 interface EditAgentModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -70,6 +107,10 @@ export function EditAgentModal({
   const [bettingStrategyPrompt, setBettingStrategyPrompt] = useState("");
   const [tradingStrategyPrompt, setTradingStrategyPrompt] = useState("");
   const [customAvatars, setCustomAvatars] = useState<string[]>([]);
+
+  // AI Drawer state
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [activeDrawerPhase, setActiveDrawerPhase] = useState<WizardPhase>("betting");
 
   // File input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,6 +134,21 @@ export function EditAgentModal({
       console.error("Failed to upload avatar:", error);
     }
   }, [uploadAvatarMutation]);
+
+  // Handle AI Generated button click
+  const handleOpenAIDrawer = useCallback((phase: WizardPhase) => {
+    setActiveDrawerPhase(phase);
+    setIsDrawerOpen(true);
+  }, []);
+
+  // Handle AI Prompt confirmation
+  const handleAIPromptConfirm = useCallback((prompt: string) => {
+    if (activeDrawerPhase === "betting") {
+      setBettingStrategyPrompt(prompt);
+    } else {
+      setTradingStrategyPrompt(prompt);
+    }
+  }, [activeDrawerPhase]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -350,9 +406,12 @@ export function EditAgentModal({
 
             {/* Betting Strategy Prompt - Betting Phase */}
             <div>
-              <label className="block text-xs font-mono text-eva-text-dim uppercase tracking-widest mb-2">
-                Betting Phase Strategy
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-mono text-eva-text-dim uppercase tracking-widest">
+                  Betting Phase Strategy
+                </label>
+                <AIGeneratedButton onClick={() => handleOpenAIDrawer("betting")} />
+              </div>
               <textarea
                 className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono placeholder:text-eva-muted focus:outline-none focus:border-eva-primary transition-colors resize-none h-28 text-sm"
                 placeholder="Describe your betting phase strategy..."
@@ -363,9 +422,12 @@ export function EditAgentModal({
 
             {/* Trading Strategy Prompt - Trading Phase */}
             <div>
-              <label className="block text-xs font-mono text-eva-text-dim uppercase tracking-widest mb-2">
-                Trading Phase Strategy
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-mono text-eva-text-dim uppercase tracking-widest">
+                  Trading Phase Strategy
+                </label>
+                <AIGeneratedButton onClick={() => handleOpenAIDrawer("trading")} />
+              </div>
               <textarea
                 className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono placeholder:text-eva-muted focus:outline-none focus:border-eva-primary transition-colors resize-none h-28 text-sm"
                 placeholder="Describe your trading phase strategy..."
@@ -385,6 +447,14 @@ export function EditAgentModal({
           </div>
         </div>
       </div>
+
+      {/* AI Prompt Drawer */}
+      <AIPromptDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        phase={activeDrawerPhase}
+        onConfirm={handleAIPromptConfirm}
+      />
     </Fragment>,
     document.body,
   );

@@ -1,71 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-  useGenerateStrategyPrompt,
-  useStrategyWizardConfig,
-} from "@/hooks/use-agents";
+import { useChatWizard, useGenerateFromChat } from "@/hooks/use-agents";
 import type {
-  CustomInputConfig,
-  GeneratePromptResponse,
-  PhaseWizardConfig,
-  WizardOption,
+  ChatQuestion,
+  ChatQuestionOption,
+  ChatWizardResponse,
+  ConversationState,
+  GenerateFromChatResponse,
   WizardPhase,
-  WizardQuestion,
 } from "@/types/api";
-
-// Validate input based on customInput config
-function validateInput(
-  value: string,
-  config: CustomInputConfig | undefined,
-): { isValid: boolean; error?: string } {
-  if (!value.trim()) {
-    return { isValid: false, error: "Please enter a value" };
-  }
-
-  if (!config) {
-    return { isValid: true };
-  }
-
-  if (config.type === "number") {
-    // Check if it's a valid number
-    const numValue = parseFloat(value);
-    if (isNaN(numValue)) {
-      return { isValid: false, error: "Please enter a valid number" };
-    }
-
-    // Check min constraint
-    if (config.validation?.min !== undefined && numValue < config.validation.min) {
-      return {
-        isValid: false,
-        error: `Value must be at least ${config.validation.min}`,
-      };
-    }
-
-    // Check max constraint
-    if (config.validation?.max !== undefined && numValue > config.validation.max) {
-      return {
-        isValid: false,
-        error: `Value must be at most ${config.validation.max}`,
-      };
-    }
-  }
-
-  return { isValid: true };
-}
-
-// Format input based on type (e.g., only allow numbers for number type)
-function formatInputValue(
-  value: string,
-  config: CustomInputConfig | undefined,
-): string {
-  if (!config || config.type !== "number") {
-    return value;
-  }
-
-  // Allow only numbers, decimal point, and minus sign
-  // Remove any non-numeric characters except . and -
-  return value.replace(/[^0-9.\-]/g, "");
-}
 
 // SVG Icons
 const CloseIcon = () => (
@@ -140,15 +83,16 @@ const LoadingSpinner = ({ size = 16 }: { size?: number }) => (
   </svg>
 );
 
-// Message types
-interface Message {
+// UI Message type
+interface UIMessage {
   id: string;
   type: "ai" | "user";
   content: string;
-  questionId?: string;
-  options?: WizardOption[];
-  isGenerateStep?: boolean;
-  generatedResult?: GeneratePromptResponse;
+  question?: ChatQuestion;
+  suggestions?: string[];
+  isCompleted?: boolean;
+  summary?: Record<string, string>;
+  generatedResult?: GenerateFromChatResponse;
 }
 
 interface AIPromptDrawerProps {
@@ -164,342 +108,252 @@ export function AIPromptDrawer({
   phase,
   onConfirm,
 }: AIPromptDrawerProps) {
-  const { data: wizardConfig, isLoading: isLoadingConfig } =
-    useStrategyWizardConfig();
-  const generateMutation = useGenerateStrategyPrompt();
+  const chatMutation = useChatWizard();
+  const generateMutation = useGenerateFromChat();
 
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
-  const [customValues, setCustomValues] = useState<Record<string, string>>({});
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [messages, setMessages] = useState<UIMessage[]>([]);
+  const [conversationState, setConversationState] =
+    useState<ConversationState | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState<ChatQuestion | null>(
+    null,
+  );
   const [inputValue, setInputValue] = useState("");
-  const [inputError, setInputError] = useState<string | null>(null);
-  const [waitingForCustomInput, setWaitingForCustomInput] = useState<
-    string | null
-  >(null);
+  const [isCompleted, setIsCompleted] = useState(false);
   const [generatedResult, setGeneratedResult] =
-    useState<GeneratePromptResponse | null>(null);
+    useState<GenerateFromChatResponse | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Get phase config
-  const phaseConfig: PhaseWizardConfig | undefined = useMemo(() => {
-    if (!wizardConfig) return undefined;
-    return phase === "betting" ? wizardConfig.betting : wizardConfig.trading;
-  }, [wizardConfig, phase]);
-
-  // Get all questions flattened
-  const allQuestions: WizardQuestion[] = useMemo(() => {
-    if (!phaseConfig) return [];
-    return phaseConfig.steps.flatMap((step) => step.questions);
-  }, [phaseConfig]);
-
-  // Get current custom input config
-  const currentCustomInputConfig = useMemo(() => {
-    if (!waitingForCustomInput) return undefined;
-    const question = allQuestions.find((q) => q.id === waitingForCustomInput);
-    return question?.customInput;
-  }, [waitingForCustomInput, allQuestions]);
-
-  // Scroll to bottom when messages change
+  // Scroll to bottom and focus input when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Initialize messages when drawer opens
-  useEffect(() => {
-    if (isOpen && phaseConfig && allQuestions.length > 0) {
-      // Reset state
-      setMessages([]);
-      setAnswers({});
-      setCustomValues({});
-      setCurrentQuestionIndex(0);
-      setGeneratedResult(null);
-      setWaitingForCustomInput(null);
-      setInputValue("");
-      setInputError(null);
-
-      // Add welcome message
-      const welcomeMessage: Message = {
-        id: "welcome",
-        type: "ai",
-        content: `I'm here to help you generate your ${phase === "betting" ? "free betting" : "free trading"} strategy.`,
-      };
-
-      // Add first question
-      const firstQuestion = allQuestions[0];
-      const questionMessage: Message = {
-        id: `q-${firstQuestion.id}`,
-        type: "ai",
-        content: firstQuestion.text,
-        questionId: firstQuestion.id,
-        options: firstQuestion.options,
-      };
-
-      setMessages([welcomeMessage, questionMessage]);
-    }
-  }, [isOpen, phaseConfig, allQuestions, phase]);
-
-  // Handle option selection
-  const handleOptionSelect = useCallback(
-    (questionId: string, option: WizardOption) => {
-      const question = allQuestions.find((q) => q.id === questionId);
-      if (!question) return;
-
-      // Check if this is a custom option that needs input
-      if (option.value === "custom" && question.customInput) {
-        setWaitingForCustomInput(questionId);
-        setInputError(null);
-        setInputValue("");
+    // Auto focus input after messages update (with small delay to ensure DOM is ready)
+    if (!isCompleted && !chatMutation.isPending) {
+      setTimeout(() => {
         inputRef.current?.focus();
-        return;
-      }
-
-      // Add user response message
-      const userMessage: Message = {
-        id: `user-${questionId}`,
-        type: "user",
-        content: option.label,
-      };
-
-      // Update answers
-      if (question.type === "multi_choice") {
-        const currentAnswers = (answers[questionId] as string[]) || [];
-        const newAnswers = currentAnswers.includes(option.value)
-          ? currentAnswers.filter((v) => v !== option.value)
-          : [...currentAnswers, option.value];
-        setAnswers((prev) => ({ ...prev, [questionId]: newAnswers }));
-
-        // For multi-choice, don't advance automatically
-        // Add a visual indication instead
-        setMessages((prev) => {
-          // Remove previous user message for this question if exists
-          const filtered = prev.filter(
-            (m) => !(m.type === "user" && m.id === `user-${questionId}`),
-          );
-          return [
-            ...filtered,
-            {
-              ...userMessage,
-              content: newAnswers
-                .map(
-                  (v) =>
-                    question.options?.find((o) => o.value === v)?.label || v,
-                )
-                .join(", "),
-            },
-          ];
-        });
-        return;
-      }
-
-      // Single choice - update and advance
-      setAnswers((prev) => ({ ...prev, [questionId]: option.value }));
-      setMessages((prev) => [...prev, userMessage]);
-
-      // Move to next question
-      const nextIndex = currentQuestionIndex + 1;
-      if (nextIndex < allQuestions.length) {
-        const nextQuestion = allQuestions[nextIndex];
-        const nextMessage: Message = {
-          id: `q-${nextQuestion.id}`,
-          type: "ai",
-          content: nextQuestion.text,
-          questionId: nextQuestion.id,
-          options: nextQuestion.options,
-        };
-
-        setTimeout(() => {
-          setMessages((prev) => [...prev, nextMessage]);
-          setCurrentQuestionIndex(nextIndex);
-        }, 300);
-      } else {
-        // All questions answered, show generate button
-        setTimeout(() => {
-          const generateMessage: Message = {
-            id: "generate",
-            type: "ai",
-            content:
-              "Do you have any additional strategies? Or shall I generate the strategy directly?",
-            isGenerateStep: true,
-          };
-          setMessages((prev) => [...prev, generateMessage]);
-        }, 300);
-      }
-    },
-    [allQuestions, answers, currentQuestionIndex],
-  );
-
-  // Handle multi-choice confirm
-  const handleMultiChoiceConfirm = useCallback(
-    (questionId: string) => {
-      const nextIndex = currentQuestionIndex + 1;
-      if (nextIndex < allQuestions.length) {
-        const nextQuestion = allQuestions[nextIndex];
-        const nextMessage: Message = {
-          id: `q-${nextQuestion.id}`,
-          type: "ai",
-          content: nextQuestion.text,
-          questionId: nextQuestion.id,
-          options: nextQuestion.options,
-        };
-
-        setTimeout(() => {
-          setMessages((prev) => [...prev, nextMessage]);
-          setCurrentQuestionIndex(nextIndex);
-        }, 300);
-      } else {
-        // All questions answered
-        setTimeout(() => {
-          const generateMessage: Message = {
-            id: "generate",
-            type: "ai",
-            content:
-              "Do you have any additional strategies? Or shall I generate the strategy directly?",
-            isGenerateStep: true,
-          };
-          setMessages((prev) => [...prev, generateMessage]);
-        }, 300);
-      }
-    },
-    [allQuestions, currentQuestionIndex],
-  );
-
-  // Handle custom input submit
-  const handleCustomInputSubmit = useCallback(() => {
-    if (!waitingForCustomInput || !inputValue.trim()) return;
-
-    const questionId = waitingForCustomInput;
-    const question = allQuestions.find((q) => q.id === questionId);
-    if (!question) return;
-
-    // Validate input
-    const validation = validateInput(inputValue.trim(), question.customInput);
-    if (!validation.isValid) {
-      setInputError(validation.error || "Invalid input");
-      return;
+      }, 100);
     }
+  }, [messages, isCompleted, chatMutation.isPending]);
 
-    // Clear error
-    setInputError(null);
+  // Start conversation when drawer opens
+  useEffect(() => {
+    if (isOpen) {
+      startConversation();
+      // Focus input when drawer opens
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 300);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, phase]);
 
-    // Add user response
-    const userMessage: Message = {
-      id: `user-${questionId}`,
-      type: "user",
-      content: inputValue.trim(),
-    };
+  const addMessage = useCallback((message: UIMessage) => {
+    setMessages((prev) => [...prev, message]);
+  }, []);
 
-    setAnswers((prev) => ({ ...prev, [questionId]: "custom" }));
-    setCustomValues((prev) => ({ ...prev, [questionId]: inputValue.trim() }));
-    setMessages((prev) => [...prev, userMessage]);
+  const startConversation = useCallback(async () => {
+    // Reset state
+    setMessages([]);
+    setConversationState(null);
+    setCurrentQuestion(null);
+    setIsCompleted(false);
+    setGeneratedResult(null);
     setInputValue("");
-    setWaitingForCustomInput(null);
-
-    // Move to next question
-    const nextIndex = currentQuestionIndex + 1;
-    if (nextIndex < allQuestions.length) {
-      const nextQuestion = allQuestions[nextIndex];
-      const nextMessage: Message = {
-        id: `q-${nextQuestion.id}`,
-        type: "ai",
-        content: nextQuestion.text,
-        questionId: nextQuestion.id,
-        options: nextQuestion.options,
-      };
-
-      setTimeout(() => {
-        setMessages((prev) => [...prev, nextMessage]);
-        setCurrentQuestionIndex(nextIndex);
-      }, 300);
-    } else {
-      setTimeout(() => {
-        const generateMessage: Message = {
-          id: "generate",
-          type: "ai",
-          content:
-            "Do you have any additional strategies? Or shall I generate the strategy directly?",
-          isGenerateStep: true,
-        };
-        setMessages((prev) => [...prev, generateMessage]);
-      }, 300);
-    }
-  }, [waitingForCustomInput, inputValue, allQuestions, currentQuestionIndex]);
-
-  // Handle generate
-  const handleGenerate = useCallback(async () => {
-    const userMessage: Message = {
-      id: "user-generate",
-      type: "user",
-      content: "Generate Strategy",
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    setIsStarting(true);
 
     try {
-      const result = await generateMutation.mutateAsync({
+      // Send initial request to get first question
+      const response = await chatMutation.mutateAsync({
         phase,
-        answers,
-        customValues: Object.keys(customValues).length > 0 ? customValues : undefined,
+        userInput: "start",
       });
 
-      setGeneratedResult(result);
-
-      // Add result message
-      const resultMessage: Message = {
-        id: "result",
-        type: "ai",
-        content: "Okay, generating your strategy.",
-        generatedResult: result,
-      };
-
-      setTimeout(() => {
-        setMessages((prev) => [...prev, resultMessage]);
-      }, 300);
+      handleChatResponse(response, true);
     } catch (error) {
-      console.error("Failed to generate strategy:", error);
-      const errorMessage: Message = {
+      console.error("Failed to start conversation:", error);
+      addMessage({
         id: "error",
         type: "ai",
-        content: "Sorry, failed to generate strategy. Please try again.",
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+        content: "Failed to start conversation. Please try again.",
+      });
+    } finally {
+      setIsStarting(false);
     }
-  }, [phase, answers, customValues, generateMutation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
-  // Handle retry
+  const handleChatResponse = useCallback(
+    (response: ChatWizardResponse, isFirst = false) => {
+      // Update conversation state
+      setConversationState(response.conversationState);
+
+      const question = response.nextQuestion || response.currentQuestion;
+      const newMessages: UIMessage[] = [];
+
+      // First, add the response message (welcome/confirmation message)
+      if (response.message) {
+        newMessages.push({
+          id: `ai-msg-${Date.now()}`,
+          type: "ai",
+          content: response.message,
+        });
+      }
+
+      // Then, if there's a question, add it as a separate message with options
+      if (question) {
+        newMessages.push({
+          id: `ai-question-${Date.now()}`,
+          type: "ai",
+          content: question.questionText,
+          question: question,
+          suggestions: response.suggestions,
+        });
+      }
+
+      // Handle completed state
+      if (response.status === "completed") {
+        // Add summary message
+        newMessages.push({
+          id: `ai-completed-${Date.now()}`,
+          type: "ai",
+          content: "All questions completed! Here's your selection summary:",
+          isCompleted: true,
+          summary: response.summary,
+        });
+      }
+
+      switch (response.status) {
+        case "continue":
+          setCurrentQuestion(response.nextQuestion || null);
+          break;
+        case "retry":
+        case "off_topic":
+          setCurrentQuestion(response.currentQuestion || null);
+          // Add suggestions to the last message if retry/off_topic
+          if (response.suggestions && newMessages.length > 0) {
+            newMessages[newMessages.length - 1].suggestions = response.suggestions;
+          }
+          break;
+        case "completed":
+          setIsCompleted(true);
+          setCurrentQuestion(null);
+          break;
+      }
+
+      if (isFirst) {
+        setMessages(newMessages);
+      } else {
+        setMessages((prev) => [...prev, ...newMessages]);
+      }
+    },
+    [],
+  );
+
+  const sendMessage = useCallback(
+    async (input: string) => {
+      if (!input.trim() || chatMutation.isPending) return;
+
+      // Add user message to UI
+      addMessage({
+        id: `user-${Date.now()}`,
+        type: "user",
+        content: input,
+      });
+      setInputValue("");
+
+      try {
+        // Build conversation state, only include non-empty fields
+        const stateToSend = conversationState
+          ? {
+              currentQuestionIndex: conversationState.currentQuestionIndex,
+              collectedAnswers: conversationState.collectedAnswers,
+              ...(conversationState.customValues &&
+                Object.keys(conversationState.customValues).length > 0 && {
+                  customValues: conversationState.customValues,
+                }),
+              ...(conversationState.conversationHistory &&
+                conversationState.conversationHistory.length > 0 && {
+                  conversationHistory: conversationState.conversationHistory,
+                }),
+            }
+          : undefined;
+
+        // Send to backend
+        const response = await chatMutation.mutateAsync({
+          phase,
+          userInput: input,
+          conversationState: stateToSend,
+        });
+
+        handleChatResponse(response);
+      } catch (error) {
+        console.error("Failed to send message:", error);
+        addMessage({
+          id: `error-${Date.now()}`,
+          type: "ai",
+          content: "Failed to process your input. Please try again.",
+        });
+      }
+    },
+    [
+      phase,
+      conversationState,
+      chatMutation,
+      addMessage,
+      handleChatResponse,
+    ],
+  );
+
+  const handleOptionClick = useCallback(
+    (option: ChatQuestionOption) => {
+      sendMessage(option.label);
+    },
+    [sendMessage],
+  );
+
+  const handleGenerate = useCallback(async () => {
+    if (!conversationState) return;
+
+    // Add user message
+    addMessage({
+      id: `user-generate-${Date.now()}`,
+      type: "user",
+      content: "Generate Strategy",
+    });
+
+    try {
+      const response = await generateMutation.mutateAsync({
+        phase,
+        collectedAnswers: conversationState.collectedAnswers,
+        customValues: conversationState.customValues,
+        conversationHistory: conversationState.conversationHistory,
+      });
+
+      setGeneratedResult(response);
+
+      // Add result message
+      addMessage({
+        id: `result-${Date.now()}`,
+        type: "ai",
+        content: "Strategy generated successfully!",
+        generatedResult: response,
+      });
+    } catch (error) {
+      console.error("Failed to generate strategy:", error);
+      addMessage({
+        id: `error-${Date.now()}`,
+        type: "ai",
+        content: "Failed to generate strategy. Please try again.",
+      });
+    }
+  }, [phase, conversationState, generateMutation, addMessage]);
+
   const handleRetry = useCallback(() => {
-    if (!phaseConfig || allQuestions.length === 0) return;
+    startConversation();
+  }, [startConversation]);
 
-    setMessages([]);
-    setAnswers({});
-    setCustomValues({});
-    setCurrentQuestionIndex(0);
-    setGeneratedResult(null);
-    setWaitingForCustomInput(null);
-    setInputValue("");
-    setInputError(null);
-
-    const welcomeMessage: Message = {
-      id: "welcome",
-      type: "ai",
-      content: `I'm here to help you generate your ${phase === "betting" ? "free betting" : "free trading"} strategy.`,
-    };
-
-    const firstQuestion = allQuestions[0];
-    const questionMessage: Message = {
-      id: `q-${firstQuestion.id}`,
-      type: "ai",
-      content: firstQuestion.text,
-      questionId: firstQuestion.id,
-      options: firstQuestion.options,
-    };
-
-    setMessages([welcomeMessage, questionMessage]);
-  }, [phaseConfig, allQuestions, phase]);
-
-  // Handle confirm
   const handleConfirm = useCallback(() => {
     if (generatedResult) {
       onConfirm(generatedResult.prompt);
@@ -507,32 +361,40 @@ export function AIPromptDrawer({
     }
   }, [generatedResult, onConfirm, onClose]);
 
-  // Get current question for determining if we need multi-choice confirm
-  const currentQuestion = allQuestions[currentQuestionIndex];
-  const isCurrentMultiChoice = currentQuestion?.type === "multi_choice";
-  const hasMultiChoiceSelection =
-    isCurrentMultiChoice &&
-    currentQuestion &&
-    (answers[currentQuestion.id] as string[])?.length > 0;
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage(inputValue);
+      }
+    },
+    [inputValue, sendMessage],
+  );
 
   if (!isOpen) return null;
+
+  const isLoading = chatMutation.isPending || isStarting;
+  const canSend = !isLoading && !isCompleted && inputValue.trim();
 
   return (
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 z-40 transition-opacity"
+        className="fixed inset-0 bg-black/50 z-[120] transition-opacity"
         onClick={onClose}
       />
 
       {/* Drawer */}
-      <div className="fixed right-0 top-0 bottom-0 w-[360px] bg-[#0a0c14] border-l border-[#1f2937] z-50 flex flex-col">
+      <div className="fixed right-0 top-0 bottom-0 w-[400px] bg-[#0a0c14] border-l border-[#1f2937] z-[121] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#1f2937]">
           <div className="flex items-center gap-2">
             <span className="text-[#6ce182] font-mono text-xs">///</span>
             <span className="text-white font-semibold text-sm tracking-wider">
               AI PROMPT
+            </span>
+            <span className="text-gray-500 text-xs uppercase">
+              {phase === "betting" ? "Betting" : "Trading"}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -559,7 +421,7 @@ export function AIPromptDrawer({
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {isLoadingConfig ? (
+          {isStarting ? (
             <div className="flex items-center justify-center h-32">
               <LoadingSpinner size={24} />
             </div>
@@ -568,8 +430,7 @@ export function AIPromptDrawer({
               <MessageBubble
                 key={message.id}
                 message={message}
-                answers={answers}
-                onOptionSelect={handleOptionSelect}
+                onOptionClick={handleOptionClick}
                 onGenerate={handleGenerate}
                 onRetry={handleRetry}
                 onConfirm={handleConfirm}
@@ -577,83 +438,53 @@ export function AIPromptDrawer({
               />
             ))
           )}
+          {chatMutation.isPending && !isStarting && (
+            <div className="flex gap-2">
+              <div className="shrink-0 mt-1">
+                <AIIcon />
+              </div>
+              <div className="bg-[#15171e] border border-[#1f2937] rounded-lg px-3 py-2">
+                <LoadingSpinner size={16} />
+              </div>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Multi-choice confirm button */}
-        {hasMultiChoiceSelection && !generatedResult && (
-          <div className="px-4 pb-2">
-            <button
-              type="button"
-              className="w-full py-2 bg-[#6ce182] text-black font-semibold text-sm rounded hover:bg-[#5bd174] transition-colors"
-              onClick={() => handleMultiChoiceConfirm(currentQuestion.id)}
-            >
-              Continue
-            </button>
-          </div>
-        )}
-
         {/* Input */}
         <div className="p-4 border-t border-[#1f2937]">
-          {/* Error message */}
-          {inputError && (
-            <div className="mb-2 px-2 py-1.5 bg-red-500/10 border border-red-500/30 rounded text-xs text-red-400">
-              {inputError}
-            </div>
-          )}
-          <div
-            className={`flex items-center gap-2 bg-[#15171e] border rounded px-3 py-2 ${
-              inputError ? "border-red-500/50" : "border-[#1f2937]"
-            }`}
-          >
+          <div className="flex items-center gap-2 bg-[#15171e] border border-[#1f2937] rounded px-3 py-2">
             <input
               ref={inputRef}
-              type={currentCustomInputConfig?.type === "number" ? "text" : "text"}
-              inputMode={currentCustomInputConfig?.type === "number" ? "decimal" : "text"}
+              type="text"
               className="flex-1 bg-transparent text-sm text-white placeholder:text-gray-500 focus:outline-none"
               placeholder={
-                waitingForCustomInput
-                  ? currentCustomInputConfig?.placeholder || "Enter custom value..."
-                  : "Type a message..."
+                isCompleted
+                  ? "Conversation completed"
+                  : "Type your answer or select an option..."
               }
               value={inputValue}
-              onChange={(e) => {
-                const formatted = formatInputValue(e.target.value, currentCustomInputConfig);
-                setInputValue(formatted);
-                // Clear error when user starts typing
-                if (inputError) {
-                  setInputError(null);
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleCustomInputSubmit();
-                }
-              }}
-              disabled={!waitingForCustomInput}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isLoading || isCompleted}
             />
             <button
               type="button"
               className="p-1 text-[#6ce182] hover:text-[#5bd174] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleCustomInputSubmit}
-              disabled={!waitingForCustomInput || !inputValue.trim()}
+              onClick={() => sendMessage(inputValue)}
+              disabled={!canSend}
             >
               <SendIcon />
             </button>
           </div>
-          {/* Input hint */}
-          {waitingForCustomInput && currentCustomInputConfig && (
-            <div className="mt-1.5 text-xs text-gray-500">
-              {currentCustomInputConfig.type === "number" && (
-                <span>
-                  Enter a number
-                  {currentCustomInputConfig.validation?.min !== undefined &&
-                    ` (min: ${currentCustomInputConfig.validation.min})`}
-                  {currentCustomInputConfig.validation?.max !== undefined &&
-                    ` (max: ${currentCustomInputConfig.validation.max})`}
-                </span>
+          {currentQuestion && (
+            <div className="mt-2 text-xs text-gray-500">
+              {currentQuestion.required && (
+                <span className="text-red-400">* </span>
               )}
+              {currentQuestion.questionType === "multi_choice"
+                ? "You can select multiple options"
+                : "Select an option or type your answer"}
             </div>
           )}
         </div>
@@ -665,16 +496,14 @@ export function AIPromptDrawer({
 // Message bubble component
 function MessageBubble({
   message,
-  answers,
-  onOptionSelect,
+  onOptionClick,
   onGenerate,
   onRetry,
   onConfirm,
   isGenerating,
 }: {
-  message: Message;
-  answers: Record<string, string | string[]>;
-  onOptionSelect: (questionId: string, option: WizardOption) => void;
+  message: UIMessage;
+  onOptionClick: (option: ChatQuestionOption) => void;
   onGenerate: () => void;
   onRetry: () => void;
   onConfirm: () => void;
@@ -698,55 +527,82 @@ function MessageBubble({
       </div>
       <div className="flex-1 space-y-2">
         <div className="bg-[#15171e] border border-[#1f2937] rounded-lg px-3 py-2">
-          <p className="text-sm text-gray-300 font-mono leading-relaxed">
+          <p className="text-sm text-gray-300 font-mono leading-relaxed whitespace-pre-wrap">
             {message.content}
           </p>
         </div>
 
         {/* Options */}
-        {message.options && message.questionId && (
+        {message.question?.options && message.question.options.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {message.options.map((option) => {
-              const answer = answers[message.questionId!];
-              const isSelected = Array.isArray(answer)
-                ? answer.includes(option.value)
-                : answer === option.value;
-
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={`px-3 py-1.5 text-xs font-mono rounded border transition-colors ${
-                    isSelected
-                      ? "bg-[#6ce182] border-[#6ce182] text-black"
-                      : "bg-transparent border-[#374151] text-gray-300 hover:border-[#6ce182] hover:text-[#6ce182]"
-                  }`}
-                  onClick={() => onOptionSelect(message.questionId!, option)}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
+            {message.question.options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className="px-3 py-1.5 text-xs font-mono rounded border bg-transparent border-[#374151] text-gray-300 hover:border-[#6ce182] hover:text-[#6ce182] transition-colors"
+                onClick={() => onOptionClick(option)}
+                title={option.description}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         )}
 
-        {/* Generate step */}
-        {message.isGenerateStep && !message.generatedResult && (
-          <button
-            type="button"
-            className="px-4 py-2 bg-transparent border border-[#374151] text-gray-300 text-xs font-mono rounded hover:border-[#6ce182] hover:text-[#6ce182] transition-colors disabled:opacity-50"
-            onClick={onGenerate}
-            disabled={isGenerating}
-          >
-            {isGenerating ? (
-              <span className="flex items-center gap-2">
-                <LoadingSpinner size={12} />
-                Generating...
-              </span>
-            ) : (
-              "Generate Strategy"
-            )}
-          </button>
+        {/* Suggestions */}
+        {message.suggestions && message.suggestions.length > 0 && (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2">
+            <p className="text-xs text-yellow-400 font-semibold mb-1">
+              Suggestions:
+            </p>
+            <ul className="text-xs text-yellow-300/80 space-y-1">
+              {message.suggestions.map((suggestion, index) => (
+                <li key={index}>• {suggestion}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Completed state - show summary and generate button */}
+        {message.isCompleted && message.summary && !message.generatedResult && (
+          <div className="space-y-3">
+            <div className="bg-[#1a1d27] border border-[#6ce182]/30 rounded-lg p-3 space-y-2">
+              <div className="text-xs text-[#6ce182] font-semibold uppercase tracking-wider">
+                YOUR SELECTIONS
+              </div>
+              {Object.entries(message.summary).map(([key, value]) => (
+                <div key={key} className="flex justify-between text-xs">
+                  <span className="text-gray-400">{key}:</span>
+                  <span className="text-white font-mono">{value}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="flex-1 py-2 bg-transparent border border-[#374151] text-gray-300 text-xs font-semibold rounded hover:border-gray-500 transition-colors"
+                onClick={onRetry}
+              >
+                Start Over
+              </button>
+              <button
+                type="button"
+                className="flex-1 py-2 bg-[#6ce182] border border-[#6ce182] text-black text-xs font-semibold rounded hover:bg-[#5bd174] transition-colors disabled:opacity-50"
+                onClick={onGenerate}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <LoadingSpinner size={12} />
+                    Generating...
+                  </span>
+                ) : (
+                  "Generate Strategy"
+                )}
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Generated result */}
@@ -759,14 +615,43 @@ function MessageBubble({
               {Object.entries(message.generatedResult.summary).map(
                 ([key, value]) => (
                   <div key={key} className="flex justify-between text-xs">
-                    <span className="text-gray-400 capitalize">
-                      {key.replace(/([A-Z])/g, " $1").trim()}:
-                    </span>
+                    <span className="text-gray-400">{key}:</span>
                     <span className="text-white font-mono">{value}</span>
                   </div>
                 ),
               )}
+              {message.generatedResult.explanation && (
+                <div className="pt-2 border-t border-[#374151]">
+                  <p className="text-xs text-gray-400">
+                    {message.generatedResult.explanation}
+                  </p>
+                </div>
+              )}
             </div>
+
+            {/* Alternative strategies */}
+            {message.generatedResult.alternatives &&
+              message.generatedResult.alternatives.length > 0 && (
+                <div className="bg-[#15171e] border border-[#1f2937] rounded-lg p-3 space-y-2">
+                  <div className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
+                    ALTERNATIVES
+                  </div>
+                  {message.generatedResult.alternatives.map((alt, index) => (
+                    <div
+                      key={index}
+                      className="text-xs text-gray-300 py-1 border-b border-[#1f2937] last:border-0"
+                    >
+                      <span className="font-semibold">{alt.name}</span>
+                      {alt.description && (
+                        <span className="text-gray-500">
+                          {" "}
+                          - {alt.description}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
             <div className="flex gap-2">
               <button
@@ -774,7 +659,7 @@ function MessageBubble({
                 className="flex-1 py-2 bg-transparent border border-[#374151] text-gray-300 text-xs font-semibold rounded hover:border-gray-500 transition-colors"
                 onClick={onRetry}
               >
-                Retry
+                Start Over
               </button>
               <button
                 type="button"
@@ -790,4 +675,3 @@ function MessageBubble({
     </div>
   );
 }
-

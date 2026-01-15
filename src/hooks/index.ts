@@ -36,6 +36,9 @@ export {
   useAgentTransactions,
   useAgentLogos,
   usePromptTemplate,
+  useUploadAvatar,
+  useChatWizard,
+  useGenerateFromChat,
   agentKeys,
 } from "./use-agents";
 

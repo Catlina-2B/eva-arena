@@ -17,7 +17,7 @@ import {
   AgentDashboardCard,
   WelcomeOnboardingModal,
 } from "@/components/arena";
-import { EditAgentModal, PauseRequiredModal, StartTimingModal } from "@/components/agent";
+import { EditAgentModal, EvolveMeDrawer, PauseRequiredModal, StartTimingModal } from "@/components/agent";
 import {
   useCurrentTrench,
   useLeaderboard,
@@ -122,6 +122,9 @@ export default function ArenaPage() {
 
   // Pause required modal state
   const [isPauseRequiredModalOpen, setIsPauseRequiredModalOpen] = useState(false);
+
+  // Evolve Me drawer state
+  const [isEvolveMeOpen, setIsEvolveMeOpen] = useState(false);
 
   // Toggle agent status mutation
   const toggleAgentStatus = useToggleAgentStatus();
@@ -380,6 +383,7 @@ export default function ArenaPage() {
                 totalPnl={primaryAgent.totalPnl}
                 trenchId={trenchId}
                 turnkeyAddress={primaryAgent.turnkeyAddress}
+                onEvolveMe={() => setIsEvolveMeOpen(true)}
                 onEditName={() => {
                   // If agent is active, show pause required modal first
                   if (primaryAgent.status === "ACTIVE") {
@@ -435,6 +439,21 @@ export default function ArenaPage() {
             setIsEditModalOpen(true);
           }}
           isLoading={toggleAgentStatus.isPending}
+        />
+      )}
+
+      {/* Evolve Me Drawer */}
+      {primaryAgent && agentDetail && (
+        <EvolveMeDrawer
+          isOpen={isEvolveMeOpen}
+          onClose={() => setIsEvolveMeOpen(false)}
+          agentId={primaryAgent.id}
+          currentBettingPrompt={agentDetail.bettingStrategyPrompt || ""}
+          currentTradingPrompt={agentDetail.tradingStrategyPrompt || ""}
+          onSuccess={() => {
+            refetchAgents();
+            refetchAgentDetail();
+          }}
         />
       )}
     </DefaultLayout>

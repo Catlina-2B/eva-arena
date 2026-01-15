@@ -10,14 +10,17 @@ import type {
   AgentWithdrawDto,
   AgentWithdrawResponseDto,
   AvatarUploadResponseDto,
+  ChatWizardRequest,
+  ChatWizardResponse,
   CreateAgentDto,
-  GeneratePromptRequest,
-  GeneratePromptResponse,
+  GenerateFromChatRequest,
+  GenerateFromChatResponse,
+  OptimizeStrategyRequest,
+  OptimizeStrategyResponse,
   PromptTemplateResponseDto,
   TransactionListResponseDto,
   TransactionType,
   UpdateAgentDto,
-  WizardConfigResponse,
 } from "@/types/api";
 
 import { apiClient } from "./client";
@@ -256,25 +259,42 @@ export const agentApi = {
   },
 
   /**
-   * Get strategy wizard configuration
-   * Returns question configuration for both betting and trading phases
+   * Chat-based strategy wizard
+   * 对话式策略向导，通过 AI 引导用户逐步完成策略配置
    */
-  getStrategyWizardConfig: async (): Promise<WizardConfigResponse> => {
-    const response = await apiClient.get<WizardConfigResponse>(
-      "/api/agents/strategy-wizard/config",
+  chatWizard: async (data: ChatWizardRequest): Promise<ChatWizardResponse> => {
+    const response = await apiClient.post<ChatWizardResponse>(
+      "/api/agents/strategy-wizard/chat",
+      data,
     );
 
     return response.data;
   },
 
   /**
-   * Generate strategy prompt based on user answers
+   * Generate strategy from chat wizard
+   * 根据对话向导收集的答案生成策略 Prompt
    */
-  generateStrategyPrompt: async (
-    data: GeneratePromptRequest,
-  ): Promise<GeneratePromptResponse> => {
-    const response = await apiClient.post<GeneratePromptResponse>(
-      "/api/agents/strategy-wizard/generate",
+  generateFromChat: async (
+    data: GenerateFromChatRequest,
+  ): Promise<GenerateFromChatResponse> => {
+    const response = await apiClient.post<GenerateFromChatResponse>(
+      "/api/agents/strategy-wizard/generate-from-chat",
+      data,
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Optimize strategy prompt using AI
+   * 使用 AI 根据用户自然语言输入优化策略 Prompt
+   */
+  optimizeStrategy: async (
+    data: OptimizeStrategyRequest,
+  ): Promise<OptimizeStrategyResponse> => {
+    const response = await apiClient.post<OptimizeStrategyResponse>(
+      "/api/agents/strategy-wizard/optimize",
       data,
     );
 

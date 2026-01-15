@@ -3,8 +3,10 @@ import type {
   AgentPanelDto,
   AgentStatus,
   AgentWithdrawDto,
+  ChatWizardRequest,
   CreateAgentDto,
-  GeneratePromptRequest,
+  GenerateFromChatRequest,
+  OptimizeStrategyRequest,
   TransactionType,
   UpdateAgentDto,
 } from "@/types/api";
@@ -31,7 +33,6 @@ export const agentKeys = {
     [...agentKeys.detail(id), "transactions"] as const,
   logos: () => [...agentKeys.all, "logos"] as const,
   promptTemplate: () => [...agentKeys.all, "promptTemplate"] as const,
-  wizardConfig: () => [...agentKeys.all, "wizardConfig"] as const,
 };
 
 /**
@@ -295,22 +296,33 @@ export function useUploadAvatar() {
 }
 
 /**
- * Hook for getting strategy wizard configuration
+ * Hook for chat-based strategy wizard
+ * 对话式策略向导
  */
-export function useStrategyWizardConfig() {
-  return useQuery({
-    queryKey: agentKeys.wizardConfig(),
-    queryFn: () => agentApi.getStrategyWizardConfig(),
-    staleTime: 60 * 60 * 1000, // 1 hour - config doesn't change often
+export function useChatWizard() {
+  return useMutation({
+    mutationFn: (data: ChatWizardRequest) => agentApi.chatWizard(data),
   });
 }
 
 /**
- * Hook for generating strategy prompt
+ * Hook for generating strategy from chat wizard
+ * 根据对话向导收集的答案生成策略
  */
-export function useGenerateStrategyPrompt() {
+export function useGenerateFromChat() {
   return useMutation({
-    mutationFn: (data: GeneratePromptRequest) =>
-      agentApi.generateStrategyPrompt(data),
+    mutationFn: (data: GenerateFromChatRequest) =>
+      agentApi.generateFromChat(data),
+  });
+}
+
+/**
+ * Hook for optimizing strategy prompt using AI
+ * 使用 AI 根据用户自然语言输入优化策略 Prompt
+ */
+export function useOptimizeStrategy() {
+  return useMutation({
+    mutationFn: (data: OptimizeStrategyRequest) =>
+      agentApi.optimizeStrategy(data),
   });
 }

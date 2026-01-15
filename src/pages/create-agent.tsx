@@ -12,6 +12,14 @@ import {
 } from "@/hooks/use-agents";
 import { useAuthStore } from "@/stores/auth";
 import type { WizardPhase } from "@/types/api";
+import {
+  BETTING_STRATEGY_PRESETS,
+  TRADING_STRATEGY_PRESETS,
+  BETTING_PRESET_BUTTONS,
+  TRADING_PRESET_BUTTONS,
+  type BettingPresetKey,
+  type TradingPresetKey,
+} from "@/constants/strategy-presets";
 
 // Avatar background colors - matching Figma design
 const AVATAR_COLORS = [
@@ -249,6 +257,61 @@ function AIGeneratedButton({ onClick, disabled }: { onClick?: () => void; disabl
   );
 }
 
+// Strategy Preset Button Component
+function StrategyPresetButton({
+  label,
+  isFirst,
+  isActive,
+  onClick,
+}: {
+  label: string;
+  isFirst: boolean;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  // First button or active button uses green background
+  const isPrimary = isFirst || isActive;
+  
+  return (
+    <button
+      type="button"
+      className={`h-8 px-4 text-xs font-medium rounded transition-colors ${
+        isPrimary
+          ? 'bg-[#6ce182] text-black hover:bg-[#5bd174]'
+          : 'bg-transparent border border-[#374151] text-white hover:border-[#6ce182] hover:bg-[#374151]/30'
+      }`}
+      onClick={onClick}
+    >
+      {label}
+    </button>
+  );
+}
+
+// Strategy Preset Buttons Group Component
+function StrategyPresetButtons({
+  presets,
+  activePreset,
+  onSelect,
+}: {
+  presets: readonly { key: string; label: string }[];
+  activePreset?: string;
+  onSelect: (key: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      {presets.map((preset, index) => (
+        <StrategyPresetButton
+          key={preset.key}
+          label={preset.label}
+          isFirst={index === 0 && !activePreset}
+          isActive={activePreset === preset.key}
+          onClick={() => onSelect(preset.key)}
+        />
+      ))}
+    </div>
+  );
+}
+
 // Default filter config for agent creation
 const DEFAULT_FILTER_CONFIG = {
   progress: { min: 0, max: 100 },
@@ -284,6 +347,32 @@ export default function CreateAgentPage() {
   // AI Prompt Drawer state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeDrawerPhase, setActiveDrawerPhase] = useState<WizardPhase>("betting");
+
+  // Strategy preset state
+  const [activeBettingPreset, setActiveBettingPreset] = useState<BettingPresetKey | undefined>();
+  const [activeTradingPreset, setActiveTradingPreset] = useState<TradingPresetKey | undefined>();
+
+  // Handle betting preset selection
+  const handleBettingPresetSelect = useCallback((key: string) => {
+    const presetKey = key as BettingPresetKey;
+    const prompt = BETTING_STRATEGY_PRESETS[presetKey];
+    if (prompt) {
+      setBettingStrategy(prompt);
+      setActiveBettingPreset(presetKey);
+      setHasUserEditedBetting(true);
+    }
+  }, []);
+
+  // Handle trading preset selection
+  const handleTradingPresetSelect = useCallback((key: string) => {
+    const presetKey = key as TradingPresetKey;
+    const prompt = TRADING_STRATEGY_PRESETS[presetKey];
+    if (prompt) {
+      setTradingStrategy(prompt);
+      setActiveTradingPreset(presetKey);
+      setHasUserEditedTrading(true);
+    }
+  }, []);
 
   // Handle AI Generated button click
   const handleOpenAIDrawer = useCallback((phase: WizardPhase) => {
@@ -499,9 +588,16 @@ export default function CreateAgentPage() {
           {/* Betting Strategy Prompt */}
           <div className="flex flex-col gap-2 flex-1 min-h-0">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider">
-                Betting Strategy Prompt
-              </label>
+              <div className="flex items-center gap-3">
+                <label className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider">
+                  Betting Strategy Prompt
+                </label>
+                <StrategyPresetButtons
+                  presets={BETTING_PRESET_BUTTONS}
+                  activePreset={activeBettingPreset}
+                  onSelect={handleBettingPresetSelect}
+                />
+              </div>
               <AIGeneratedButton onClick={() => handleOpenAIDrawer("betting")} />
             </div>
             <div className="flex-1 min-h-[100px] bg-black border border-[#374151]">
@@ -512,17 +608,26 @@ export default function CreateAgentPage() {
                 onChange={(e) => {
                   setBettingStrategy(e.target.value);
                   setHasUserEditedBetting(true);
+                  // Clear active preset when user manually edits
+                  setActiveBettingPreset(undefined);
                 }}
               />
             </div>
-            </div>
+          </div>
 
           {/* Trading Strategy Prompt */}
           <div className="flex flex-col gap-2 flex-1 min-h-0">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider">
-                Trading Strategy Prompt
-              </label>
+              <div className="flex items-center gap-3">
+                <label className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider">
+                  Trading Strategy Prompt
+                </label>
+                <StrategyPresetButtons
+                  presets={TRADING_PRESET_BUTTONS}
+                  activePreset={activeTradingPreset}
+                  onSelect={handleTradingPresetSelect}
+                />
+              </div>
               <AIGeneratedButton onClick={() => handleOpenAIDrawer("trading")} />
             </div>
             <div className="flex-1 min-h-[100px] bg-black border border-[#374151]">
@@ -533,10 +638,12 @@ export default function CreateAgentPage() {
                 onChange={(e) => {
                   setTradingStrategy(e.target.value);
                   setHasUserEditedTrading(true);
+                  // Clear active preset when user manually edits
+                  setActiveTradingPreset(undefined);
                 }}
               />
             </div>
-            </div>
+          </div>
 
             {/* Error Message */}
             {createAgentMutation.isError && (

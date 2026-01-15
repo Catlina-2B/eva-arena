@@ -32,7 +32,10 @@ interface AgentDashboardCardProps {
   isToggling?: boolean;
   onStartSystem?: () => void;
   onPauseSystem?: () => void;
+  /** @deprecated Use onEvolveMe instead */
   onEditName?: () => void;
+  /** Callback when EVOLVE ME button is clicked */
+  onEvolveMe?: () => void;
 }
 
 // Convert transaction type to display action
@@ -279,6 +282,25 @@ function AgentAvatar({ avatar, name }: { avatar?: string; name: string }) {
   );
 }
 
+// Arrow icon for EVOLVE ME button
+function ArrowRightIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={clsx("w-4 h-4", className)}
+      fill="none"
+      viewBox="0 0 16 16"
+    >
+      <path
+        d="M3 8h10M10 4l4 4-4 4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function AgentDashboardCard({
   agent,
   tokenBalance,
@@ -292,6 +314,7 @@ export function AgentDashboardCard({
   onStartSystem,
   onPauseSystem,
   onEditName,
+  onEvolveMe,
 }: AgentDashboardCardProps) {
   const isRunning = agent.status === "running";
   const isPaused = agent.status === "paused";
@@ -353,29 +376,33 @@ export function AgentDashboardCard({
   };
 
   return (
-    <EvaCard>
+    <EvaCard className="relative">
+      {/* Status Badge - Absolute positioned at top right corner */}
+      <div className="absolute top-[-2px] right-[-1px] z-10">
+        <EvaBadge
+          variant={(isPaused || isWaiting) ? "warning" : isRunning ? "success" : "default"}
+        >
+          {(isPaused || isWaiting) ? "PAUSED" : isRunning ? "RUNNING" : "STOPPED"}
+        </EvaBadge>
+      </div>
+
       <EvaCardContent className="py-4">
         {/* Agent Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <AgentAvatar avatar={agent.avatar} name={agent.name} />
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold tracking-wide text-eva-text">
-                {agent.name}
-              </span>
-              <button
-                className="text-eva-text-dim hover:text-eva-text transition-colors p-1"
-                onClick={onEditName}
-              >
-                <EditIcon />
-              </button>
-            </div>
+        <div className="flex items-center gap-3 mb-4">
+          <AgentAvatar avatar={agent.avatar} name={agent.name} />
+          <div className="flex justify-between w-full">
+            <span className="text-lg font-bold tracking-wide text-eva-text">
+              {agent.name}
+            </span>
+            {/* EVOLVE ME Button - Green filled style */}
+            <button
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#6ce182] text-black text-xs font-semibold uppercase tracking-wider hover:bg-[#5bd174] transition-colors rounded-xs"
+              onClick={onEvolveMe || onEditName}
+            >
+              EVOLVE ME
+              <ArrowRightIcon className="text-black" />
+            </button>
           </div>
-          <EvaBadge
-            variant={(isPaused || isWaiting) ? "warning" : isRunning ? "success" : "default"}
-          >
-            {(isPaused || isWaiting) ? "PAUSED" : isRunning ? "RUNNING" : "STOPPED"}
-          </EvaBadge>
         </div>
 
         {/* Balance Stats */}

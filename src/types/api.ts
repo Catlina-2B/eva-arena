@@ -508,67 +508,116 @@ export interface UserPnlTimelineResponseDto {
   timeline: PnlTimelineItemDto[];
 }
 
-// ============== Strategy Wizard Types ==============
+// ============== Chat Wizard Types (对话式策略向导) ==============
 
-export type QuestionType = "single_choice" | "multi_choice" | "text_input";
 export type WizardPhase = "betting" | "trading";
+export type QuestionType = "single_choice" | "multi_choice" | "text_input";
+export type ChatWizardStatus = "continue" | "retry" | "completed" | "off_topic";
 
-export interface CustomInputConfig {
-  type: "number" | "text";
-  placeholder?: string;
-  validation?: {
-    min?: number;
-    max?: number;
-  };
+/** 对话消息 */
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+  questionId?: string;
 }
 
-export interface WizardOption {
+/** 对话状态（用于前端回传） */
+export interface ConversationState {
+  currentQuestionIndex: number;
+  collectedAnswers: Record<string, string | string[]>;
+  customValues?: Record<string, string>;
+  conversationHistory?: ChatMessage[];
+}
+
+/** 问题选项 */
+export interface ChatQuestionOption {
   value: string;
   label: string;
   description?: string;
 }
 
-export interface WizardQuestion {
-  id: string;
-  text: string;
-  type: QuestionType;
+/** 当前/下一个问题 */
+export interface ChatQuestion {
+  questionId: string;
+  questionText: string;
+  questionType: QuestionType;
+  options?: ChatQuestionOption[];
   required: boolean;
-  options?: WizardOption[];
-  customInput?: CustomInputConfig;
 }
 
-export interface WizardStep {
-  id: string;
-  title: string;
-  questions: WizardQuestion[];
+/** 解析出的答案 */
+export interface ParsedAnswer {
+  questionId: string;
+  value: string | string[];
+  customValue?: string;
 }
 
-export interface PhaseWizardConfig {
+/** 对话式策略向导请求 */
+export interface ChatWizardRequest {
   phase: WizardPhase;
-  title: string;
-  description: string;
-  steps: WizardStep[];
+  userInput: string;
+  conversationState?: ConversationState;
 }
 
-export interface WizardConfigResponse {
-  betting: PhaseWizardConfig;
-  trading: PhaseWizardConfig;
-}
-
-export interface GeneratePromptRequest {
-  phase: WizardPhase;
-  answers: Record<string, string | string[]>;
+/** 对话式策略向导响应 */
+export interface ChatWizardResponse {
+  status: ChatWizardStatus;
+  message: string;
+  parsedAnswer?: ParsedAnswer;
+  nextQuestion?: ChatQuestion;
+  currentQuestion?: ChatQuestion;
+  collectedAnswers?: Record<string, string | string[]>;
   customValues?: Record<string, string>;
+  summary?: Record<string, string>;
+  suggestions?: string[];
+  conversationState: ConversationState;
 }
 
-export interface PromptAlternative {
+/** 从对话生成策略请求 */
+export interface GenerateFromChatRequest {
+  phase: WizardPhase;
+  collectedAnswers: Record<string, string | string[]>;
+  customValues?: Record<string, string>;
+  conversationHistory?: ChatMessage[];
+}
+
+/** 替代策略版本 */
+export interface AlternativePrompt {
   name: string;
+  description?: string;
   prompt: string;
 }
 
-export interface GeneratePromptResponse {
+/** 从对话生成策略响应 */
+export interface GenerateFromChatResponse {
   prompt: string;
   summary: Record<string, string>;
   explanation?: string;
-  alternatives?: PromptAlternative[];
+  alternatives?: AlternativePrompt[];
+}
+
+// ============== Strategy Optimize Types (LLM-powered) ==============
+
+/** 策略优化阶段 */
+export type StrategyOptimizePhase = "betting" | "trading" | "unknown";
+
+/** 策略优化请求 */
+export interface OptimizeStrategyRequest {
+  userInput: string;
+}
+
+/** 策略优化响应 */
+export interface OptimizeStrategyResponse {
+  /** 识别出的策略阶段 */
+  phase: StrategyOptimizePhase;
+  /** 是否成功优化 */
+  isValid: boolean;
+  /** 优化后的完整 Prompt（仅当 isValid 为 true） */
+  optimizedPrompt?: string;
+  /** 修改说明 */
+  changeSummary?: string;
+  /** 错误消息（当 isValid 为 false） */
+  errorMessage?: string;
+  /** 建议（当输入无效时给用户的建议） */
+  suggestions?: string[];
 }

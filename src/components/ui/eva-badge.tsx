@@ -39,7 +39,7 @@ export function EvaBadge({
   return (
     <span
       className={clsx(
-        "inline-flex items-center rounded border font-medium uppercase tracking-wider",
+        "inline-flex items-center border font-medium uppercase tracking-wider",
         variantStyles[variant],
         sizeStyles[size],
         className,
