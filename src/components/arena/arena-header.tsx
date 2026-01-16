@@ -14,9 +14,9 @@ const phaseConfig: Record<
   ArenaPhase,
   { label: string; blocks: [number, number] }
 > = {
-  betting: { label: "Betting Phase", blocks: [0, 300] },
-  trading: { label: "Trading Phase", blocks: [300, 2700] },
-  liquidation: { label: "Liquidation Phase", blocks: [2700, 3000] },
+  betting: { label: "Betting Phase", blocks: [0, 150] },
+  trading: { label: "Trading Phase", blocks: [150, 1350] },
+  liquidation: { label: "Liquidation Phase", blocks: [1350, 1500] },
 };
 
 export function ArenaHeader({ round }: ArenaHeaderProps) {
@@ -104,8 +104,8 @@ export function ArenaHeader({ round }: ArenaHeaderProps) {
           <div className="border border-eva-primary p-1">
             <div className="flex gap-1">
               {Array.from({ length: 10 }).map((_, i) => {
-                // 第一格总是填满，之后每超过 i * 300 就填满对应的格子
-                const isFilled = i === 0 || currentBlock > i * 300;
+                // 第一格总是填满，之后每超过 i * 150 就填满对应的格子
+                const isFilled = i === 0 || currentBlock > i * 150;
 
                 return (
                   <div

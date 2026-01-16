@@ -12,9 +12,9 @@ const phaseConfig: Record<
   ArenaPhase,
   { label: string; blocks: [number, number] }
 > = {
-  betting: { label: "Betting Phase", blocks: [0, 300] },
-  trading: { label: "Trading Phase", blocks: [300, 2700] },
-  liquidation: { label: "Liquidation Phase", blocks: [2700, 3000] },
+  betting: { label: "Betting Phase", blocks: [0, 150] },
+  trading: { label: "Trading Phase", blocks: [150, 1350] },
+  liquidation: { label: "Liquidation Phase", blocks: [1350, 1500] },
 };
 
 export function PhaseProgress({ round }: PhaseProgressProps) {
@@ -72,11 +72,11 @@ export function PhaseProgress({ round }: PhaseProgressProps) {
           {/* Phase dividers */}
           <div
             className="absolute top-0 bottom-0 w-px bg-eva-border"
-            style={{ left: "10%" }} // 300/3000
+            style={{ left: "10%" }} // 150/1500
           />
           <div
             className="absolute top-0 bottom-0 w-px bg-eva-border"
-            style={{ left: "90%" }} // 2700/3000
+            style={{ left: "90%" }} // 1350/1500
           />
 
           {/* Segments background */}

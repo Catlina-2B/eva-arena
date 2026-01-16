@@ -19,10 +19,10 @@ import type {
  * Based on Solana's ~400ms block time
  */
 export const BLOCK_TIMING = {
-  BIDDING_BLOCKS: 300, // First 300 blocks (~2 min)
-  TRADING_BLOCKS: 2400, // Next 2400 blocks (~16 min)
-  LIQUIDATION_BLOCKS: 300, // Final 300 blocks (~2 min)
-  TOTAL_BLOCKS: 3000, // Total round duration
+  BIDDING_BLOCKS: 150, // First 150 blocks (~1 min)
+  TRADING_BLOCKS: 1200, // Next 1200 blocks (~8 min)
+  LIQUIDATION_BLOCKS: 150, // Final 150 blocks (~1 min)
+  TOTAL_BLOCKS: 1500, // Total round duration
   MS_PER_BLOCK: 400, // ~400ms per block on Solana
 };
 
@@ -51,9 +51,9 @@ export function statusToPhase(status: string): ArenaPhase {
  * Determine phase based on current block number
  *
  * Phase boundaries:
- * - betting: 0 - 299 (前 300 区块)
- * - trading: 300 - 2699 (中间 2400 区块)
- * - liquidation: 2700 - 3000 (最后 300 区块)
+ * - betting: 0 - 149 (前 150 区块)
+ * - trading: 150 - 1349 (中间 1200 区块)
+ * - liquidation: 1350 - 1500 (最后 150 区块)
  */
 function blockToPhase(currentBlock: number): ArenaPhase {
   if (currentBlock < BLOCK_TIMING.BIDDING_BLOCKS) {
@@ -76,9 +76,9 @@ function blockToPhase(currentBlock: number): ArenaPhase {
  * - Otherwise, fall back to backend status
  *
  * Block boundaries:
- * - BIDDING/betting: 0-299 (前 300 区块)
- * - TRADING/trading: 300-2699 (中间 2400 区块)
- * - ENDED/liquidation: 2700-3000 (最后 300 区块)
+ * - BIDDING/betting: 0-149 (前 150 区块)
+ * - TRADING/trading: 150-1349 (中间 1200 区块)
+ * - ENDED/liquidation: 1350-1500 (最后 150 区块)
  *
  * @param trench - Trench detail from API
  * @param currentSlot - Current Solana slot from RPC (optional, falls back to time-based estimate)
@@ -93,7 +93,7 @@ export function calculateBlockProgress(
 } {
   const biddingStart = parseInt(trench.biddingStartBlock);
 
-  // Total blocks includes all phases: betting (300) + trading (2400) + liquidation (300) = 3000
+  // Total blocks includes all phases: betting (150) + trading (1200) + liquidation (150) = 1500
   const totalBlocks = BLOCK_TIMING.TOTAL_BLOCKS;
 
   // Calculate current block using Solana slot
