@@ -1,5 +1,3 @@
-import { useAuthStore } from "@/stores/auth";
-
 // Lock Icon SVG
 const LockIcon = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -46,21 +44,21 @@ const XMarkIcon = () => (
 export interface NotInWhitelistPromptProps {
   /** Optional message to display */
   message?: string;
+  /** Connected wallet address */
+  walletAddress?: string;
+  /** Callback when user wants to disconnect */
+  onDisconnect?: () => void;
 }
 
 export function NotInWhitelistPrompt({
   message,
+  walletAddress,
+  onDisconnect,
 }: NotInWhitelistPromptProps) {
-  const { logout, user } = useAuthStore();
-
   // Truncate address for display
-  const displayAddress = user?.publicKey
-    ? `${user.publicKey.slice(0, 6)}...${user.publicKey.slice(-4)}`
+  const displayAddress = walletAddress
+    ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
     : "";
-
-  const handleDisconnect = () => {
-    logout();
-  };
 
   return (
     <div className="relative w-[416px] bg-[rgba(21,23,30,0.8)] border border-[rgba(245,158,11,0.3)] p-[33px] shadow-[0px_0px_50px_0px_rgba(0,0,0,0.5)]">
@@ -90,41 +88,45 @@ export function NotInWhitelistPrompt({
         {/* Info Box */}
         <div className="w-full mb-6 bg-[rgba(245,158,11,0.05)] border-l-2 border-[rgba(245,158,11,0.5)] px-4 py-4">
           <p className="text-sm text-[#fbbf24] leading-normal">
-            {message || "您当前不在 Alpha 测试白名单内，暂时无法访问此功能。"}
+            {message || "You are not on the Alpha testing whitelist and cannot access this feature at this time."}
           </p>
         </div>
 
         {/* Connected Address */}
-        <div className="w-full mb-6 p-3 bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.1)] rounded">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-eva-text-dim uppercase tracking-wider">
-              Connected Wallet
-            </span>
-            <span className="text-sm text-eva-text font-mono">
-              {displayAddress}
-            </span>
+        {displayAddress && (
+          <div className="w-full mb-6 p-3 bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.1)] rounded">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-eva-text-dim uppercase tracking-wider">
+                Connected Wallet
+              </span>
+              <span className="text-sm text-eva-text font-mono">
+                {displayAddress}
+              </span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Info text */}
         <div className="w-full mb-6 text-center">
           <p className="text-xs text-eva-text-dim leading-relaxed">
-            Alpha 测试阶段仅对白名单用户开放。如需获取访问权限，请联系官方获取邀请。
+            The Alpha testing phase is only available to whitelisted users. Please <a href="https://forms.gle/6t1XbFqwe2vZncES8" target="_blank">contact us</a> to request access.
           </p>
         </div>
 
         {/* Disconnect Button */}
-        <button
-          className="w-full h-12 bg-transparent border border-[rgba(255,255,255,0.2)] rounded flex items-center justify-center gap-2 hover:border-[rgba(255,255,255,0.4)] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
-          onClick={handleDisconnect}
-        >
-          <span className="text-eva-text-dim">
-            <XMarkIcon />
-          </span>
-          <span className="text-sm font-semibold text-eva-text-dim uppercase tracking-[1.2px]">
-            Disconnect Wallet
-          </span>
-        </button>
+        {onDisconnect && (
+          <button
+            className="w-full h-12 bg-transparent border border-[rgba(255,255,255,0.2)] rounded flex items-center justify-center gap-2 hover:border-[rgba(255,255,255,0.4)] hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+            onClick={onDisconnect}
+          >
+            <span className="text-eva-text-dim">
+              <XMarkIcon />
+            </span>
+            <span className="text-sm font-semibold text-eva-text-dim uppercase tracking-[1.2px]">
+              Disconnect Wallet
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );

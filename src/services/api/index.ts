@@ -19,6 +19,3 @@ export type {
   WalletTransactionListResponseDto,
   GetTransactionsQueryDto,
 } from "./wallet";
-
-export { whitelistApi } from "./whitelist";
-export type { WhitelistCheckResponseDto } from "./whitelist";
