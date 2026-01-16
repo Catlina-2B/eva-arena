@@ -1,6 +1,6 @@
 import type { TransactionType, TrenchStatus } from "@/types/api";
 
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 import { trenchApi } from "@/services/api";
 import { useAuthStore } from "@/stores/auth";
@@ -33,6 +33,8 @@ export const trenchKeys = {
   pnlTimeline: () => [...trenchKeys.all, "pnlTimeline"] as const,
   history: (params?: { page?: number; limit?: number }) =>
     [...trenchKeys.all, "history", params] as const,
+  historyInfinite: (limit: number) =>
+    [...trenchKeys.all, "historyInfinite", limit] as const,
 };
 
 /**
@@ -223,6 +225,36 @@ export function useTrenchHistory(params?: { page?: number; limit?: number }) {
   return useQuery({
     queryKey: trenchKeys.history(params),
     queryFn: () => trenchApi.getTrenchHistory(params),
+    enabled: isAuthenticated,
+  });
+}
+
+/**
+ * Hook for getting user's trench participation history with infinite scrolling
+ *
+ * Returns history ordered by time descending with pagination support.
+ * Automatically fetches next page when scrolling to the bottom.
+ *
+ * @param limit - Number of items per page (default: 10)
+ */
+export function useTrenchHistoryInfinite(limit: number = 10) {
+  const { isAuthenticated } = useAuthStore();
+
+  return useInfiniteQuery({
+    queryKey: trenchKeys.historyInfinite(limit),
+    queryFn: async ({ pageParam }) => {
+      return trenchApi.getTrenchHistory({ page: pageParam, limit });
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const currentTotal = lastPage.page * lastPage.limit;
+
+      if (currentTotal >= lastPage.total) {
+        return undefined; // No more pages
+      }
+
+      return lastPage.page + 1;
+    },
     enabled: isAuthenticated,
   });
 }

@@ -170,7 +170,7 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
   const chartMarkers = useMemo((): SeriesMarker<Time>[] => {
     return userTradeMarkers.map((marker) => ({
       time: marker.time as Time,
-      position: marker.type === "buy" ? "belowBar" : "aboveBar",
+      position: "inBar" as const,
       color: marker.type === "buy" ? "#34d399" : "#f87171",
       shape: "circle",
       size: 1.5,
@@ -533,7 +533,7 @@ function TradeTooltip({ marker, position, containerRef }: TradeTooltipProps) {
       return `${(amount / 1_000_000).toFixed(2)}M`;
     }
     if (amount >= 1_000) {
-      return `${(amount / 1_000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+      return `${(amount / 1_000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}K`;
     }
     return amount.toFixed(0);
   };
@@ -595,6 +595,15 @@ function TradeTooltip({ marker, position, containerRef }: TradeTooltipProps) {
             </span>
             <span className="font-mono text-[10px] text-zinc-300 font-bold">
               {marker.solAmount.toFixed(2)} SOL
+            </span>
+          </div>
+          {/* Price row */}
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-[10px] text-zinc-400 font-medium">
+              Price
+            </span>
+            <span className="font-mono text-[10px] text-zinc-300 font-bold">
+              {marker.tokenAmount > 0 ? formatSmallNumber(marker.solAmount / marker.tokenAmount, 4, 4, true) : "—"} SOL
             </span>
           </div>
         </div>

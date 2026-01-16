@@ -1,6 +1,6 @@
-import type { ActivityItem } from "@/types";
+import { useState } from "react";
 
-import clsx from "clsx";
+import type { ActivityItem } from "@/types";
 
 import {
   EvaCard,
@@ -12,39 +12,95 @@ import {
 } from "@/components/ui";
 import { formatTimeAgo } from "@/services/mock";
 import { formatSmallNumber } from "@/lib/trench-utils";
+import { AgentDetailModal, type AgentDetailData } from "./agent-detail-modal";
 
 interface LiveActivityProps {
   activities: ActivityItem[];
+  trenchId?: number;
+  onLoadAgentDetail?: (userAddress: string) => Promise<AgentDetailData | null>;
 }
 
-export function LiveActivity({ activities }: LiveActivityProps) {
+export function LiveActivity({ activities, trenchId, onLoadAgentDetail }: LiveActivityProps) {
+  // Modal state
+  const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
+  const [agentDetailData, setAgentDetailData] = useState<AgentDetailData | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Handle agent name click
+  const handleAgentClick = async (activity: ActivityItem) => {
+    setSelectedActivity(activity);
+    setIsModalOpen(true);
+    setAgentDetailData(null);
+
+    // Load detail data if callback is provided
+    if (onLoadAgentDetail) {
+      try {
+        const data = await onLoadAgentDetail(activity.userAddress);
+        setAgentDetailData(data);
+      } catch (error) {
+        console.error("Failed to load agent detail:", error);
+      }
+    }
+  };
+
+  // Handle modal close
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedActivity(null);
+    setAgentDetailData(null);
+  };
 
   return (
-    <EvaCard>
-      <EvaCardContent noPadding>
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-t-2 border-t-eva-secondary">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-eva-secondary animate-pulse" />
-            <h3 className="text-sm font-semibold tracking-wider uppercase text-eva-text">
-              Live Activity
-            </h3>
+    <>
+      <EvaCard>
+        <EvaCardContent noPadding>
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-t-2 border-t-eva-secondary">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 bg-eva-secondary animate-pulse" />
+              <h3 className="text-sm font-semibold tracking-wider uppercase text-eva-text">
+                Live Activity
+              </h3>
+            </div>
           </div>
-        </div>
 
-        {/* Activity list */}
-        <div className="max-h-80 overflow-y-auto">
-          {activities.map((activity) => (
-            <ActivityRow key={activity.id} activity={activity} />
-          ))}
-        </div>
-      </EvaCardContent>
-    </EvaCard>
+          {/* Activity list */}
+          <div className="max-h-80 overflow-y-auto">
+            {activities.map((activity) => (
+              <ActivityRow 
+                key={activity.id} 
+                activity={activity} 
+                onAgentClick={handleAgentClick}
+              />
+            ))}
+          </div>
+        </EvaCardContent>
+      </EvaCard>
+
+      {/* Agent Detail Modal */}
+      <AgentDetailModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        agent={selectedActivity ? {
+          rank: 0,
+          agentId: selectedActivity.agentId,
+          agentName: selectedActivity.agentName,
+          userAddress: selectedActivity.userAddress,
+          tokenAmount: 0,
+          pnlSol: 0,
+          prizeAmount: 0,
+          supplyPercentage: 0,
+        } : null}
+        trenchId={trenchId}
+        detailData={agentDetailData}
+      />
+    </>
   );
 }
 
 interface ActivityRowProps {
   activity: ActivityItem;
+  onAgentClick?: (activity: ActivityItem) => void;
 }
 
 function getActivityBadge(type: string) {
@@ -62,9 +118,15 @@ function getActivityBadge(type: string) {
   }
 }
 
-function ActivityRow({ activity }: ActivityRowProps) {
+function ActivityRow({ activity, onAgentClick }: ActivityRowProps) {
   const isDepositOrWithdraw =
     activity.type === "deposit" || activity.type === "withdraw";
+
+  const handleNameClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onAgentClick?.(activity);
+  };
 
   return (
     <>
@@ -98,9 +160,12 @@ function ActivityRow({ activity }: ActivityRowProps) {
         </div>
         <div className="flex items-center gap-3 text-right">
           <div>
-            <a className="text-sm text-[#D357E0] hover:underline" href="#">
+            <button 
+              className="text-sm text-[#D357E0] hover:underline cursor-pointer bg-transparent border-none p-0 text-right"
+              onClick={handleNameClick}
+            >
               {activity.agentName}
-            </a>
+            </button>
             <div className="text-xs text-eva-text-dim">
               {formatTimeAgo(activity.timestamp)}
             </div>

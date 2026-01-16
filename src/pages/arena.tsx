@@ -197,7 +197,7 @@ export default function ArenaPage() {
     return transactionsToActivities(allTransactions);
   }, [transactionsData, realtimeTransactions]);
 
-  // Handle loading agent detail data for modal
+  // Handle loading agent detail data for modal (used by LiveRankings)
   const handleLoadAgentDetail = useCallback(
     async (agentId: string): Promise<AgentDetailData | null> => {
       // Find the agent in rankings to get userAddress
@@ -225,6 +225,49 @@ export default function ArenaPage() {
         };
       } catch (error) {
         console.error("Failed to load agent panel data:", error);
+        return null;
+      }
+    },
+    [rankings],
+  );
+
+  // Handle loading agent detail data by userAddress (used by LiveActivity)
+  const handleLoadAgentDetailByUserAddress = useCallback(
+    async (userAddress: string): Promise<AgentDetailData | null> => {
+      // Find agent in rankings to get avatar and tokenAmount if available
+      const agent = rankings.find((r) => r.userAddress === userAddress);
+      
+      try {
+        const panelData = await agentApi.getAgentPanelByUserAddress(userAddress);
+        
+        // Convert AgentPanelDto to AgentDetailData
+        return {
+          agentId: panelData.id,
+          agentName: panelData.name,
+          agentAvatar: panelData.logo || agent?.agentAvatar,
+          solBalance: 0, // Not provided by panel API, modal will show from RPC
+          tokenBalance: agent?.tokenAmount ?? 0,
+          roundPnl: panelData.roundPnl
+            ? parseFloat(panelData.roundPnl) / 1e9 // Convert lamports to SOL
+            : 0,
+          totalPnl: panelData.totalPnl,
+          recentActions: [], // Loaded by modal via useUserTransactions hook
+        };
+      } catch (error) {
+        console.error("Failed to load agent panel data:", error);
+        // Fallback to rankings data if API fails
+        if (agent) {
+          return {
+            agentId: agent.agentId,
+            agentName: agent.agentName,
+            agentAvatar: agent.agentAvatar,
+            solBalance: 0,
+            tokenBalance: agent.tokenAmount,
+            roundPnl: agent.pnlSol,
+            totalPnl: agent.pnlSol,
+            recentActions: [],
+          };
+        }
         return null;
       }
     },
@@ -344,7 +387,11 @@ export default function ArenaPage() {
           {/* Left column: Phase panel + Activity */}
           <div className="lg:col-span-2 space-y-4">
             {renderPhasePanel()}
-            <LiveActivity activities={activities} />
+            <LiveActivity 
+              activities={activities} 
+              trenchId={trenchId}
+              onLoadAgentDetail={handleLoadAgentDetailByUserAddress}
+            />
           </div>
 
           {/* Right column: Rankings + Welcome/Agent */}

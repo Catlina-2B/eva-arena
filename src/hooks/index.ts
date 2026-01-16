@@ -54,6 +54,7 @@ export {
   useTrenchSummary,
   useUserPnlTimeline,
   useTrenchHistory,
+  useTrenchHistoryInfinite,
   trenchKeys,
 } from "./use-trenches";
 
@@ -87,6 +88,7 @@ export { useSlotSubscription } from "./use-slot-subscription";
 // UI hooks
 export { useFirstVisit } from "./use-first-visit";
 export { useFirstDepositPrompt } from "./use-first-deposit-prompt";
+export { useIntersectionObserver } from "./use-intersection-observer";
 
 // Turnkey balance hooks
 export { useTurnkeyBalance } from "./use-turnkey-balance";

@@ -371,6 +371,7 @@ export function transactionsToActivities(
       type: tx.txType.toLowerCase() as "deposit" | "withdraw" | "buy" | "sell",
       agentId: tx.userAddress,
       agentName: tx.agentName || `Agent ${tx.userAddress.slice(0, 8)}`,
+      userAddress: tx.userAddress,
       tokenAmount: tx.tokenAmount ? parseInt(tx.tokenAmount) / 1e6 : 0,
       solAmount: tx.solAmount ? parseFloat(tx.solAmount) / 1e9 : 0,
       timestamp: new Date(tx.createdAt),

@@ -97,6 +97,11 @@ h1, h2 {
   box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.5), 0 0 0 4px var(--eva-dark);
 }
 
+/* Disable focus ring for specific inputs */
+.no-focus-ring:focus-visible {
+  box-shadow: none;
+}
+
 /* Animations */
 @keyframes fade-in {
   from { opacity: 0; }

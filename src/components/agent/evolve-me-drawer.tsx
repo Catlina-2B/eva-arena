@@ -391,7 +391,7 @@ export function EvolveMeDrawer({
             <input
               ref={inputRef}
               type="text"
-              className="flex-1 bg-transparent text-sm text-white placeholder:text-gray-500 focus:outline-none font-mono"
+              className="flex-1 bg-transparent text-sm text-white placeholder:text-gray-500 focus:outline-none no-focus-ring font-mono"
               placeholder="Tell me how to improve your strategy..."
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}

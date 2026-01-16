@@ -457,7 +457,7 @@ export function AIPromptDrawer({
             <input
               ref={inputRef}
               type="text"
-              className="flex-1 bg-transparent text-sm text-white placeholder:text-gray-500 focus:outline-none"
+              className="flex-1 bg-transparent text-sm text-white placeholder:text-gray-500 focus:outline-none no-focus-ring"
               placeholder={
                 isCompleted
                   ? "Conversation completed"

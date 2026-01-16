@@ -262,6 +262,9 @@ export function AgentDetailModal({
   const tokenBalance = detailData?.tokenBalance ?? agent.tokenAmount;
   const roundPnl = detailData?.roundPnl ?? agent.pnlSol;
   const totalPnl = detailData?.totalPnl ?? agent.pnlSol;
+  // Use detailData avatar if available, otherwise fallback to agent avatar
+  const agentAvatar = detailData?.agentAvatar ?? agent.agentAvatar;
+  const agentName = detailData?.agentName ?? agent.agentName;
 
   const handleExternalLink = (signature: string) => {
     if (onViewTransaction) {
@@ -316,10 +319,10 @@ export function AgentDetailModal({
               {/* Avatar */}
               <div className="relative w-16 h-16 border border-[rgba(108,225,130,0.3)] bg-[rgba(108,225,130,0.05)] flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 bg-[rgba(108,225,130,0.1)] blur-md" />
-                {agent.agentAvatar ? (
+                {agentAvatar ? (
                   <img
-                    src={agent.agentAvatar}
-                    alt={agent.agentName}
+                    src={agentAvatar}
+                    alt={agentName}
                     className="relative w-full h-full object-cover"
                   />
                 ) : (
@@ -335,7 +338,7 @@ export function AgentDetailModal({
                   Robot
                 </span>
                 <h2 className="text-3xl text-white font-mono uppercase tracking-tight">
-                  {agent.agentName}
+                  {agentName}
                 </h2>
               </div>
             </div>

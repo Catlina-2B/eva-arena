@@ -85,6 +85,8 @@ export interface ActivityItem {
   type: "deposit" | "withdraw" | "buy" | "sell";
   agentId: string;
   agentName: string;
+  /** User/turnkey address for querying agent details */
+  userAddress: string;
   tokenAmount: number;
   solAmount: number;
   timestamp: Date;

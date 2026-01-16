@@ -7,7 +7,7 @@ import type {
   TrenchHistoryItemDto,
 } from "@/types/api";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useAccount } from "@particle-network/connectkit";
 
@@ -20,7 +20,7 @@ import {
   useMyAgents,
   useAgent,
   useAgentPanel,
-  useTrenchHistory,
+  useTrenchHistoryInfinite,
   useUserTransactions,
   useToggleAgentStatus,
   useAgentWithdraw,
@@ -28,6 +28,7 @@ import {
   useTurnkeyBalance,
   useFirstDepositPrompt,
   useCurrentTrench,
+  useIntersectionObserver,
 } from "@/hooks";
 import { useIsAuthenticated } from "@/hooks/use-auth";
 import { useAuthStore } from "@/stores/auth";
@@ -943,12 +944,28 @@ export default function MyAgentPage() {
   // Subscribe to Turnkey wallet balance updates via WebSocket
   const { balance: turnkeyBalance } = useTurnkeyBalance(turnkeyAddress);
 
-  // Fetch user trench history
+  // Fetch user trench history with infinite scrolling
   const {
     data: historyData,
     isLoading: isHistoryLoading,
     error: historyError,
-  } = useTrenchHistory({ limit: 10 });
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useTrenchHistoryInfinite(10);
+
+  // Infinite scroll detection
+  const [loadMoreRef, isLoadMoreVisible] = useIntersectionObserver<HTMLDivElement>({
+    enabled: hasNextPage && !isFetchingNextPage,
+    rootMargin: "200px", // Start loading 200px before reaching the bottom
+  });
+
+  // Trigger load more when scrolling to bottom
+  useEffect(() => {
+    if (isLoadMoreVisible && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [isLoadMoreVisible, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Fetch current trench (one-time, no polling) to determine current batch indicator
   const { data: currentTrench } = useCurrentTrench({ polling: false });
@@ -958,11 +975,13 @@ export default function MyAgentPage() {
   const { data: pnlTimelineData, isLoading: isPnlTimelineLoading } =
     useUserPnlTimeline();
 
-  // Convert history items to history rounds
+  // Convert history items to history rounds (flatten all pages)
   const historyRounds = useMemo(() => {
-    if (!historyData?.history) return [];
+    if (!historyData?.pages) return [];
 
-    return historyData.history.map(historyItemToRound);
+    return historyData.pages
+      .flatMap((page) => page.history)
+      .map(historyItemToRound);
   }, [historyData]);
 
   // Set first round as expanded by default
@@ -1219,9 +1238,34 @@ export default function MyAgentPage() {
                   />
                 </EvaCard>
               ))}
+
+              {/* Load More Trigger */}
+              {hasNextPage && (
+                <div ref={loadMoreRef} className="flex justify-center py-4">
+                  {isFetchingNextPage ? (
+                    <div className="flex items-center gap-2 text-eva-text-dim">
+                      <div className="w-4 h-4 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
+                      <span className="text-xs font-mono">LOADING MORE...</span>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-eva-text-dim font-mono">
+                      Scroll for more
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Empty State */}
               {!isHistoryLoading && historyRounds.length === 0 && (
                 <div className="text-center py-8 text-eva-text-dim">
                   No round history yet. Start trading to see your history here.
+                </div>
+              )}
+
+              {/* End of List */}
+              {!hasNextPage && historyRounds.length > 0 && !isHistoryLoading && (
+                <div className="text-center py-4 text-xs text-eva-text-dim font-mono">
+                  — END OF HISTORY —
                 </div>
               )}
             </div>
