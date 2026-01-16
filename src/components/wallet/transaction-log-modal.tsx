@@ -35,7 +35,7 @@ const statusStyles: Record<WalletTransactionStatus, string> = {
 function shortenSignature(signature: string): string {
   if (signature.length <= 10) return signature;
   // Display as 0x format as per Figma design
-  return `0x${signature.slice(0, 2)}...${signature.slice(-3)}`;
+  return `${signature.slice(0, 2)}...${signature.slice(-3)}`;
 }
 
 export function TransactionLogModal({
@@ -191,7 +191,7 @@ export function TransactionLogModal({
 
                       {/* HASH / ID */}
                       <a
-                        href={`${SOLANA_EXPLORER_URL}/${tx.signature}`}
+                        href={`${SOLANA_EXPLORER_URL}/${tx.signature}?cluster=devnet`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 text-sm font-mono text-eva-text-dim hover:text-eva-text transition-colors"

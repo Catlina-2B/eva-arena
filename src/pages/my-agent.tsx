@@ -15,6 +15,7 @@ import DefaultLayout from "@/layouts/default";
 import { EvaCard, EvaCardContent, EvaButton, EvaBadge } from "@/components/ui";
 import { DepositModal, EditAgentModal, FirstDepositPromptModal, PauseRequiredModal, StartTimingModal, WithdrawModal } from "@/components/agent";
 import { ConnectWalletPrompt } from "@/components/wallet/connect-wallet-prompt";
+import { TransactionLogModal } from "@/components/wallet/transaction-log-modal";
 import { ReasoningModal } from "@/components/arena/reasoning-modal";
 import {
   useMyAgents,
@@ -909,6 +910,7 @@ export default function MyAgentPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isStartTimingModalOpen, setIsStartTimingModalOpen] = useState(false);
   const [isPauseRequiredModalOpen, setIsPauseRequiredModalOpen] = useState(false);
+  const [isTransactionLogModalOpen, setIsTransactionLogModalOpen] = useState(false);
   const [hoverPnl, setHoverPnl] = useState<number | null>(null);
 
   // First deposit prompt state
@@ -1112,6 +1114,7 @@ export default function MyAgentPage() {
                         <button
                           className="text-xs font-mono text-eva-text-dim hover:text-eva-primary transition-colors cursor-pointer"
                           type="button"
+                          onClick={() => setIsTransactionLogModalOpen(true)}
                         >
                           VIEW_TRANSACTIONS &gt;&gt;
                         </button>
@@ -1348,6 +1351,12 @@ export default function MyAgentPage() {
           setIsDepositModalOpen(true);
         }}
         onSkip={dismissFirstDepositPrompt}
+      />
+
+      {/* Transaction Log Modal */}
+      <TransactionLogModal
+        isOpen={isTransactionLogModalOpen}
+        onClose={() => setIsTransactionLogModalOpen(false)}
       />
     </DefaultLayout>
   );

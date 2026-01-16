@@ -109,7 +109,7 @@ export function NotInWhitelistPrompt({
         {/* Info text */}
         <div className="w-full mb-6 text-center">
           <p className="text-xs text-eva-text-dim leading-relaxed">
-            The Alpha testing phase is only available to whitelisted users. Please <a href="https://forms.gle/6t1XbFqwe2vZncES8" target="_blank">contact us</a> to request access.
+            The Alpha testing phase is only available to whitelisted users. Please <a href="https://forms.gle/6t1XbFqwe2vZncES8" target="_blank" className="underline">contact us</a> to request access.
           </p>
         </div>
 
