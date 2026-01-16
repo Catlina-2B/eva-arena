@@ -610,16 +610,11 @@ function MessageBubble({
           <div className="space-y-3">
             <div className="bg-[#1a1d27] border border-[#6ce182]/30 rounded-lg p-3 space-y-2">
               <div className="text-xs text-[#6ce182] font-semibold uppercase tracking-wider">
-                STRATEGY GENERATED
+                GENERATED PROMPT
               </div>
-              {Object.entries(message.generatedResult.summary).map(
-                ([key, value]) => (
-                  <div key={key} className="flex justify-between text-xs">
-                    <span className="text-gray-400">{key}:</span>
-                    <span className="text-white font-mono">{value}</span>
-                  </div>
-                ),
-              )}
+              <div className="text-xs text-white font-mono whitespace-pre-wrap break-words max-h-48 overflow-y-auto">
+                {message.generatedResult.prompt}
+              </div>
               {message.generatedResult.explanation && (
                 <div className="pt-2 border-t border-[#374151]">
                   <p className="text-xs text-gray-400">
