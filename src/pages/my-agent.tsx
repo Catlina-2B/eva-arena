@@ -315,6 +315,7 @@ function TradeHistoryTable({
       type: typeMap[tx.txType] || "buy",
       agentId: tx.agentName || "",
       agentName: tx.agentName || "",
+      userAddress: tx.userAddress,
       tokenAmount: tx.tokenAmount ? parseFloat(tx.tokenAmount) / 1e6 : 0,
       solAmount: tx.solAmount ? parseFloat(tx.solAmount) / 1e9 : 0,
       timestamp: tx.blockTime ? new Date(tx.blockTime * 1000) : new Date(tx.createdAt),

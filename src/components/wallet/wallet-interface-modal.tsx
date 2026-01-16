@@ -4,6 +4,7 @@ import { useDisconnect } from "@particle-network/connectkit";
 
 import { EvaButton } from "@/components/ui";
 import { DepositModal, WithdrawModal } from "@/components/agent";
+import { TransactionLogModal } from "./transaction-log-modal";
 import { useAgentPanel, useMyAgents, useAgentWithdraw } from "@/hooks";
 import { useTurnkeyBalanceStore } from "@/stores/turnkey-balance";
 import { useAuthStore } from "@/stores/auth";
@@ -23,6 +24,7 @@ export function WalletInterfaceModal({
   const [copied, setCopied] = useState(false);
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [isTransactionLogOpen, setIsTransactionLogOpen] = useState(false);
 
   // 从 auth store 获取 turnkey 地址
   const { user } = useAuthStore();
@@ -230,7 +232,10 @@ export function WalletInterfaceModal({
 
             {/* View Transactions Link */}
             <div className="text-center">
-              <button className="text-sm text-eva-text-dim hover:text-eva-primary transition-colors font-mono">
+              <button
+                className="text-sm text-eva-text-dim hover:text-eva-primary transition-colors font-mono"
+                onClick={() => setIsTransactionLogOpen(true)}
+              >
                 {"[ VIEW_TRANSACTIONS ]"}
               </button>
             </div>
@@ -261,6 +266,12 @@ export function WalletInterfaceModal({
           });
           refetchPanel();
         }}
+      />
+
+      {/* Transaction Log Modal */}
+      <TransactionLogModal
+        isOpen={isTransactionLogOpen}
+        onClose={() => setIsTransactionLogOpen(false)}
       />
     </Fragment>,
     document.body

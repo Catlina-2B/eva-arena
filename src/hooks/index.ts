@@ -92,3 +92,6 @@ export { useIntersectionObserver } from "./use-intersection-observer";
 
 // Turnkey balance hooks
 export { useTurnkeyBalance } from "./use-turnkey-balance";
+
+// Wallet hooks
+export { useWalletTransactions, walletKeys } from "./use-wallet-transactions";
