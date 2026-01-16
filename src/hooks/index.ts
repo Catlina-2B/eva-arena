@@ -95,3 +95,10 @@ export { useTurnkeyBalance } from "./use-turnkey-balance";
 
 // Wallet hooks
 export { useWalletTransactions, walletKeys } from "./use-wallet-transactions";
+
+// Whitelist hooks
+export { useWhitelistCheck, whitelistKeys } from "./use-whitelist-check";
+export type {
+  UseWhitelistCheckOptions,
+  UseWhitelistCheckReturn,
+} from "./use-whitelist-check";
