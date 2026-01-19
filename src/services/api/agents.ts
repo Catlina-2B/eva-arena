@@ -18,6 +18,8 @@ import type {
   OptimizeStrategyRequest,
   OptimizeStrategyResponse,
   PromptTemplateResponseDto,
+  ThinkReasonListResponseDto,
+  ThinkReasonQueryDto,
   TransactionListResponseDto,
   TransactionType,
   UpdateAgentDto,
@@ -296,6 +298,21 @@ export const agentApi = {
     const response = await apiClient.post<OptimizeStrategyResponse>(
       "/api/agents/strategy-wizard/optimize",
       data,
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Get agent think reasons (decision history)
+   * 获取 Agent 的思考记录（LLM 决策历史）
+   */
+  getThinkReasons: async (
+    params?: ThinkReasonQueryDto,
+  ): Promise<ThinkReasonListResponseDto> => {
+    const response = await apiClient.get<ThinkReasonListResponseDto>(
+      "/api/agents/think-reasons",
+      { params },
     );
 
     return response.data;

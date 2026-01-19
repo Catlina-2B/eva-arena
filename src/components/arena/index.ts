@@ -12,3 +12,5 @@ export * from "./create-agent-card";
 export * from "./agent-dashboard-card";
 export * from "./welcome-onboarding-modal";
 export * from "./agent-detail-modal";
+export * from "./floating-think-button";
+export * from "./think-list-panel";

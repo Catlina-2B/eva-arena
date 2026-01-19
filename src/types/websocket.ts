@@ -8,12 +8,15 @@ export enum WsEventType {
   // Client -> Server
   SUBSCRIBE_TRENCH = "subscribeTrench",
   UNSUBSCRIBE_TRENCH = "unsubscribeTrench",
+  SUBSCRIBE_USER = "subscribeUser",
+  UNSUBSCRIBE_USER = "unsubscribeUser",
 
   // Server -> Client
   TRENCH_UPDATE = "trenchUpdate",
   PRICE_UPDATE = "priceUpdate",
   TRANSACTION = "transaction",
   LEADERBOARD_UPDATE = "leaderboardUpdate",
+  AGENT_THINK_REASON = "agentThinkReason",
   ERROR = "error",
 }
 
@@ -34,6 +37,16 @@ export interface SubscribeTrenchDto {
 export interface SubscribeTrenchResponse {
   success: boolean;
   trenchId: number;
+  room: string;
+}
+
+export interface SubscribeUserDto {
+  turnkeyAddress: string;
+}
+
+export interface SubscribeUserResponse {
+  success: boolean;
+  turnkeyAddress: string;
   room: string;
 }
 
@@ -111,4 +124,26 @@ export interface LeaderboardUpdateEventDto {
 export interface WsErrorEventDto {
   code: string;
   message: string;
+}
+
+/**
+ * Agent Think Reason Event - Real-time thinking status
+ * Status:
+ * - thinking: Agent is currently thinking
+ * - action: Agent decided to execute trade
+ * - inaction: Agent decided to HOLD
+ */
+export type AgentThinkReasonStatus = "thinking" | "action" | "inaction";
+
+export interface AgentThinkReasonEventDto {
+  id?: number;
+  /** User's turnkey address (from WS) or userAddress (from API) */
+  turnkeyAddress?: string;
+  userAddress?: string;
+  trenchId: string;
+  phase?: "bidding" | "trading" | "liquidation";
+  status: AgentThinkReasonStatus;
+  content?: string;
+  action?: string;
+  createdAt?: string;
 }

@@ -95,3 +95,13 @@ export { useTurnkeyBalance } from "./use-turnkey-balance";
 
 // Wallet hooks
 export { useWalletTransactions, walletKeys } from "./use-wallet-transactions";
+
+// Think reason hooks
+export {
+  useThinkReasons,
+  useLatestThinkReason,
+  useThinkReasonsInfinite,
+  thinkReasonKeys,
+} from "./use-think-reasons";
+export { useAgentThinkReason } from "./use-agent-think-reason";
+export type { ThinkingStatus } from "./use-agent-think-reason";

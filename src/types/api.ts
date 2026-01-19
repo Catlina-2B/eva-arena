@@ -621,3 +621,64 @@ export interface OptimizeStrategyResponse {
   /** 建议（当输入无效时给用户的建议） */
   suggestions?: string[];
 }
+
+// ============== Think Reason Types (Agent 思考记录) ==============
+
+/** 思考状态 */
+export type ThinkReasonStatus = "ACTION" | "INACTION";
+
+/** 思考阶段 */
+export type ThinkReasonPhase = "bidding" | "trading";
+
+/** Token 使用统计 */
+export interface TokenUsageDto {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
+/** 单条思考记录 */
+export interface ThinkReasonDto {
+  /** 记录 ID */
+  id: number;
+  /** 用户地址 (turnkey) */
+  userAddress: string;
+  /** Trench ID (链上，如 "2441") */
+  trenchId: string;
+  /** 阶段：bidding 或 trading */
+  phase: ThinkReasonPhase;
+  /** 思考状态：ACTION(执行交易) 或 INACTION(未执行) */
+  status: ThinkReasonStatus;
+  /** 发送给 LLM 的 Prompt */
+  prompt?: string;
+  /** LLM 原始响应 */
+  rawResponse?: string;
+  /** 思考内容（分析 + 理由） */
+  content: string;
+  /** 执行动作描述（如 "HOLD:0", "BUY:50%"） */
+  action?: string;
+  /** Token 使用统计 */
+  tokenUsage?: TokenUsageDto;
+  /** 估算成本（USD） */
+  estimatedCost?: number;
+  /** 创建时间 */
+  createdAt: string;
+}
+
+/** 思考记录列表响应 */
+export interface ThinkReasonListResponseDto {
+  thinkReasons: ThinkReasonDto[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+/** 思考记录查询参数 */
+export interface ThinkReasonQueryDto {
+  /** 按 Trench ID 过滤 */
+  trenchId?: string;
+  /** 页码（从 1 开始） */
+  page?: number;
+  /** 每页数量（最大 100） */
+  limit?: number;
+}

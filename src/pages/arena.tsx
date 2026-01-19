@@ -16,6 +16,8 @@ import {
   CreateAgentCard,
   AgentDashboardCard,
   WelcomeOnboardingModal,
+  FloatingThinkButton,
+  ThinkListPanel,
 } from "@/components/arena";
 import { EditAgentModal, EvolveMeDrawer, PauseRequiredModal, StartTimingModal } from "@/components/agent";
 import {
@@ -125,6 +127,9 @@ export default function ArenaPage() {
 
   // Evolve Me drawer state
   const [isEvolveMeOpen, setIsEvolveMeOpen] = useState(false);
+
+  // Think list panel state
+  const [isThinkPanelOpen, setIsThinkPanelOpen] = useState(false);
 
   // Toggle agent status mutation
   const toggleAgentStatus = useToggleAgentStatus();
@@ -502,6 +507,20 @@ export default function ArenaPage() {
             refetchAgentDetail();
           }}
         />
+      )}
+
+      {/* Floating Think Button & Panel - Only show when authenticated with agent */}
+      {isAuthenticated && hasAgent && (
+        <>
+          <FloatingThinkButton
+            isOpen={isThinkPanelOpen}
+            onToggle={() => setIsThinkPanelOpen(!isThinkPanelOpen)}
+          />
+          <ThinkListPanel
+            isOpen={isThinkPanelOpen}
+            onClose={() => setIsThinkPanelOpen(false)}
+          />
+        </>
       )}
     </DefaultLayout>
   );

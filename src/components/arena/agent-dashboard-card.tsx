@@ -1,11 +1,12 @@
-import type { Agent } from "@/types";
+import type { Agent, ActivityItem } from "@/types";
 import type { TransactionDto, TransactionType } from "@/types/api";
 
 import clsx from "clsx";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { EvaCard, EvaCardContent, EvaBadge, EvaButton } from "@/components/ui";
-import { useUserTransactions } from "@/hooks";
+import { useUserTransactions, useLatestThinkReason, useAgentThinkReason } from "@/hooks";
+import { ReasoningModal } from "./reasoning-modal";
 
 // Execution log entry type
 export interface ExecutionLogEntry {
@@ -301,6 +302,25 @@ function ArrowRightIcon({ className }: { className?: string }) {
   );
 }
 
+// Lightbulb icon for thinking
+function LightbulbIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={clsx("w-4 h-4", className)}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      />
+    </svg>
+  );
+}
+
 export function AgentDashboardCard({
   agent,
   tokenBalance,
@@ -320,6 +340,17 @@ export function AgentDashboardCard({
   const isPaused = agent.status === "paused";
   const isWaiting = agent.status === "waiting";
 
+  // State for reasoning modal
+  const [isReasoningModalOpen, setIsReasoningModalOpen] = useState(false);
+
+  // Fetch latest think reason from API (for historical data)
+  const { data: latestThinkReason, isLoading: isThinkReasonLoading } = 
+    useLatestThinkReason({ polling: true });
+
+  // Subscribe to real-time thinking status via WebSocket
+  const { status: thinkingStatus, latestEvent: wsThinkEvent } = 
+    useAgentThinkReason(turnkeyAddress);
+
   // Fetch user's transactions for this trench using agent's turnkey address
   const { data: transactionsData, isLoading: isTransactionsLoading } =
     useUserTransactions(trenchId, { 
@@ -327,6 +358,52 @@ export function AgentDashboardCard({
       limit: 10, 
       txType: ['BUY', 'SELL', 'DEPOSIT', 'WITHDRAW', 'PRIZE'] 
     });
+
+  // Convert think reason to ActivityItem for ReasoningModal
+  // Prefer WebSocket event data if available with content, otherwise use API data
+  const thinkReasonActivity: ActivityItem | null = useMemo(() => {
+    // If WS event has content, use it
+    if (wsThinkEvent?.content && wsThinkEvent.id) {
+      return {
+        id: String(wsThinkEvent.id),
+        type: "buy" as const,
+        agentId: "",
+        agentName: agent.name,
+        userAddress: wsThinkEvent.userAddress,
+        tokenAmount: 0,
+        solAmount: 0,
+        timestamp: new Date(wsThinkEvent.createdAt || Date.now()),
+        signature: "",
+        reason: {
+          id: wsThinkEvent.id,
+          content: wsThinkEvent.content,
+          action: wsThinkEvent.action || (wsThinkEvent.status === "action" ? "Execute Trade" : "Hold Position"),
+          createdAt: wsThinkEvent.createdAt || new Date().toISOString(),
+        },
+      };
+    }
+    // Otherwise use API data
+    if (latestThinkReason) {
+      return {
+        id: String(latestThinkReason.id),
+        type: "buy" as const,
+        agentId: "",
+        agentName: agent.name,
+        userAddress: latestThinkReason.userAddress,
+        tokenAmount: 0,
+        solAmount: 0,
+        timestamp: new Date(latestThinkReason.createdAt),
+        signature: "",
+        reason: {
+          id: latestThinkReason.id,
+          content: latestThinkReason.content,
+          action: latestThinkReason.action || (latestThinkReason.status === "ACTION" ? "Execute Trade" : "Hold Position"),
+          createdAt: latestThinkReason.createdAt,
+        },
+      };
+    }
+    return null;
+  }, [wsThinkEvent, latestThinkReason, agent.name]);
 
   // Convert transactions to execution log entries
   const executionLogs = useMemo(() => {
@@ -511,6 +588,51 @@ export function AgentDashboardCard({
           <div className="text-[10px] text-eva-text-dim uppercase tracking-wider mb-2">
             EXECUTION LOGS
           </div>
+
+          {/* Thinking Status - Show at top of execution logs */}
+          <div className="mb-2">
+            {thinkingStatus === "thinking" ? (
+              <button
+                className="w-full flex items-center justify-between p-2 bg-eva-dark/50 border border-eva-border rounded text-left"
+                onClick={() => latestThinkReason && setIsReasoningModalOpen(true)}
+              >
+                <span className="text-sm text-eva-text">Thinking</span>
+                <div className="w-4 h-4 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
+              </button>
+            ) : thinkingStatus === "inaction" ? (
+              <button
+                className="w-full flex items-center justify-between p-2 bg-eva-dark/50 border border-eva-border rounded hover:bg-eva-card-hover hover:border-eva-primary/50 transition-colors text-left"
+                onClick={() => setIsReasoningModalOpen(true)}
+              >
+                <span className="text-sm text-eva-text">Inaction</span>
+                <LightbulbIcon className="text-eva-text-dim" />
+              </button>
+            ) : thinkingStatus === "action" ? (
+              <button
+                className="w-full flex items-center justify-between p-2 bg-eva-dark/50 border border-eva-border rounded hover:bg-eva-card-hover hover:border-eva-primary/50 transition-colors text-left"
+                onClick={() => setIsReasoningModalOpen(true)}
+              >
+                <span className="text-sm text-eva-text">Action</span>
+                <LightbulbIcon className="text-eva-primary" />
+              </button>
+            ) : isThinkReasonLoading ? (
+              <div className="flex items-center gap-2 p-2 bg-eva-dark/50 border border-eva-border rounded">
+                <div className="w-3 h-3 border border-eva-primary border-t-transparent rounded-full animate-spin" />
+                <span className="text-xs text-eva-text-dim">Loading...</span>
+              </div>
+            ) : latestThinkReason ? (
+              <button
+                className="w-full flex items-center justify-between p-2 bg-eva-dark/50 border border-eva-border rounded hover:bg-eva-card-hover hover:border-eva-primary/50 transition-colors text-left"
+                onClick={() => setIsReasoningModalOpen(true)}
+              >
+                <span className="text-sm text-eva-text">
+                  {latestThinkReason.status === "ACTION" ? "Action" : "Inaction"}
+                </span>
+                <LightbulbIcon className={latestThinkReason.status === "ACTION" ? "text-eva-primary" : "text-eva-text-dim"} />
+              </button>
+            ) : null}
+          </div>
+
           <div className="space-y-1.5 max-h-40 overflow-y-auto">
             {isTransactionsLoading ? (
               <div className="flex items-center justify-center py-4">
@@ -543,6 +665,13 @@ export function AgentDashboardCard({
             )}
           </div>
         </div>
+
+        {/* Reasoning Modal */}
+        <ReasoningModal
+          isOpen={isReasoningModalOpen}
+          onClose={() => setIsReasoningModalOpen(false)}
+          activity={thinkReasonActivity}
+        />
       </EvaCardContent>
     </EvaCard>
   );
