@@ -29,7 +29,7 @@ const config = createConfig({
 
   plugins: [
     wallet({
-      visible: true,
+      visible: false,
       entryPosition: EntryPosition.BR, // 右下角显示钱包入口
     }),
   ],

@@ -385,9 +385,13 @@ export default function CreateAgentPage() {
     if (activeDrawerPhase === "betting") {
       setBettingStrategy(prompt);
       setHasUserEditedBetting(true);
+      // Clear active preset when AI generates a new prompt
+      setActiveBettingPreset(undefined);
     } else {
       setTradingStrategy(prompt);
       setHasUserEditedTrading(true);
+      // Clear active preset when AI generates a new prompt
+      setActiveTradingPreset(undefined);
     }
   }, [activeDrawerPhase]);
 
@@ -471,22 +475,18 @@ export default function CreateAgentPage() {
           </div>
 
           {/* Avatar Preview Card */}
-          <div className="relative flex-1 min-h-[400px]">
-            <div 
-              className="absolute inset-0 border border-[#6ce182] overflow-hidden"
-              style={{
-                background: `linear-gradient(to bottom, #02120a 0%, ${selectedBgColor}40 50%, #544273 100%)`,
-              }}
-            >
-              {/* Selected Avatar Image (Large version for preview) */}
-              {selectedLargeLogoUrl && (
-                <img
-                  alt="Selected avatar"
-                  className="absolute inset-0 w-full h-full object-cover object-center"
-                  src={selectedLargeLogoUrl}
-                />
-              )}
-            </div>
+          <div 
+            className="relative flex-1 min-h-[400px] border border-[#6ce182] overflow-hidden"
+            style={{ background: 'black' }}
+          >
+            {/* Selected Avatar Image (Large version for preview) */}
+            {selectedLargeLogoUrl && (
+              <img
+                alt="Selected avatar"
+                className="absolute inset-0 w-full h-full object-cover object-center"
+                src={selectedLargeLogoUrl}
+              />
+            )}
           </div>
         </div>
 
@@ -656,18 +656,6 @@ export default function CreateAgentPage() {
 
             {/* Bottom Bar - Info & Action */}
               <div className="flex items-center gap-4">
-            {/* Frequency */}
-            <div className="flex-1 h-[54px] bg-[#15171e] border border-[#1f2937] px-[17px] flex items-center justify-between">
-              <span className="text-xs font-medium text-[#6b7280] uppercase tracking-wider">
-                    Frequency
-                  </span>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-[#6ce182]">
-                    10s Tick
-                  </span>
-                <ClockIcon />
-              </div>
-                </div>
 
             {/* Creation Fee */}
             <div className="flex-1 h-[54px] bg-[#15171e] border border-[#1f2937] px-[17px] flex items-center justify-between">

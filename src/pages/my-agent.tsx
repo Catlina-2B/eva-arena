@@ -344,6 +344,13 @@ function TradeHistoryTable({
     return `${dateStr} ${timeStr}`;
   };
 
+  // Paginate transactions for display
+  const paginatedTransactions = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return transactions.slice(startIndex, endIndex);
+  }, [transactions, currentPage, itemsPerPage]);
+
   const formatTokenAmount = (amount: string | null) => {
     if (!amount) return "-";
     const value = parseFloat(amount) / 1e6; // Convert from lamports
@@ -419,7 +426,7 @@ function TradeHistoryTable({
             </tr>
           </thead>
           <tbody>
-            {transactions.map((tx) => (
+            {paginatedTransactions.map((tx) => (
               <tr
                 key={tx.signature}
                 className="border-b border-eva-border/50 hover:bg-eva-card-hover transition-colors"

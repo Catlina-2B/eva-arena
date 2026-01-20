@@ -111,7 +111,7 @@ export function ReasoningModal({
               <div className="bg-black/30 border border-eva-border/50 rounded p-3">
                 <div className="flex items-center gap-2 font-mono text-xs">
                   <span className="text-blue-400 uppercase">EXECUTE</span>
-                  <span className="text-eva-text">{displayAction}</span>
+                  <span className="text-eva-text">{displayAction == 'HOLD' ? '--' : displayAction}</span>
                 </div>
               </div>
             </div>
