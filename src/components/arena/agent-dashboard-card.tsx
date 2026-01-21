@@ -2,7 +2,7 @@ import type { Agent, ActivityItem } from "@/types";
 import type { TransactionDto, TransactionType } from "@/types/api";
 
 import clsx from "clsx";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 
 import { EvaCard, EvaCardContent, EvaBadge, EvaButton } from "@/components/ui";
 import { useUserTransactions, useLatestThinkReason, useAgentThinkReason } from "@/hooks";
@@ -37,6 +37,8 @@ interface AgentDashboardCardProps {
   onEditName?: () => void;
   /** Callback when EVOLVE ME button is clicked */
   onEvolveMe?: () => void;
+  /** When true, removes outer card styling for embedding in tabs */
+  embedded?: boolean;
 }
 
 // Convert transaction type to display action
@@ -321,6 +323,25 @@ function LightbulbIcon({ className }: { className?: string }) {
   );
 }
 
+// Chevron icon for accordion
+function ChevronIcon({ className, isExpanded }: { className?: string; isExpanded: boolean }) {
+  return (
+    <svg
+      className={clsx("w-4 h-4 transition-transform duration-200", isExpanded && "rotate-180", className)}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        d="M19 9l-7 7-7-7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      />
+    </svg>
+  );
+}
+
 export function AgentDashboardCard({
   agent,
   tokenBalance,
@@ -335,6 +356,7 @@ export function AgentDashboardCard({
   onPauseSystem,
   onEditName,
   onEvolveMe,
+  embedded = false,
 }: AgentDashboardCardProps) {
   const isRunning = agent.status === "running";
   const isPaused = agent.status === "paused";
@@ -343,13 +365,28 @@ export function AgentDashboardCard({
   // State for reasoning modal
   const [isReasoningModalOpen, setIsReasoningModalOpen] = useState(false);
 
+  // State for reasoning accordion expansion
+  const [isReasoningExpanded, setIsReasoningExpanded] = useState(false);
+
+  // Track previous reasoning id to detect new reasoning
+  const prevReasoningIdRef = useRef<number | null>(null);
+
   // Fetch latest think reason from API (for historical data)
-  const { data: latestThinkReason, isLoading: isThinkReasonLoading } = 
+  const { data: latestThinkReason, isLoading: isThinkReasonLoading } =
     useLatestThinkReason({ polling: true });
 
   // Subscribe to real-time thinking status via WebSocket
-  const { status: thinkingStatus, latestEvent: wsThinkEvent } = 
+  const { status: thinkingStatus, latestEvent: wsThinkEvent } =
     useAgentThinkReason(turnkeyAddress);
+
+  // Auto-expand when new reasoning arrives
+  useEffect(() => {
+    const currentId = wsThinkEvent?.id || latestThinkReason?.id || null;
+    if (currentId && currentId !== prevReasoningIdRef.current) {
+      setIsReasoningExpanded(true);
+      prevReasoningIdRef.current = currentId;
+    }
+  }, [wsThinkEvent?.id, latestThinkReason?.id]);
 
   // Fetch user's transactions for this trench using agent's turnkey address
   const { data: transactionsData, isLoading: isTransactionsLoading } =
@@ -452,10 +489,10 @@ export function AgentDashboardCard({
     return `${address.slice(0, 4)}...${address.slice(-4)}`;
   };
 
-  return (
-    <EvaCard className="relative">
+  const content = (
+    <>
       {/* Status Badge - Absolute positioned at top right corner */}
-      <div className="absolute top-[-2px] right-[-1px] z-10">
+      <div className={clsx("absolute z-10", embedded ? "top-2 right-2" : "top-[-2px] right-[-1px]")}>
         <EvaBadge
           variant={(isPaused || isWaiting) ? "warning" : isRunning ? "success" : "default"}
         >
@@ -463,80 +500,80 @@ export function AgentDashboardCard({
         </EvaBadge>
       </div>
 
-      <EvaCardContent className="py-4">
+      <div className={clsx(embedded ? "p-4" : "py-4")}>
         {/* Agent Header */}
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-3">
           <AgentAvatar avatar={agent.avatar} name={agent.name} />
-          <div className="flex justify-between w-full">
+          <div className="flex-1">
             <span className="text-lg font-bold tracking-wide text-eva-text">
               {agent.name}
             </span>
-            {/* EVOLVE ME Button - Green filled style */}
-            <button
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#6ce182] text-black text-xs font-semibold uppercase tracking-wider hover:bg-[#5bd174] transition-colors rounded-xs"
-              onClick={onEvolveMe || onEditName}
-            >
-              EVOLVE ME
-              <ArrowRightIcon className="text-black" />
-            </button>
           </div>
         </div>
 
-        {/* Balance Stats */}
-        <div className="grid grid-cols-2 gap-3 mb-4">
-          {/* Token Balance */}
-          <div className="bg-eva-dark/50 border border-eva-border rounded-lg p-3">
-            <div className="text-[10px] text-eva-text-dim uppercase tracking-wider mb-1">
-              TOKEN BAL
-            </div>
-            <div className="font-mono text-xl font-semibold text-eva-text">
-              {formatTokenNumber(tokenBalance)}
-            </div>
-            <div className="text-xs font-mono text-purple-400">
-              {((tokenBalance / 1_000_000_000) * 100).toFixed(2)}%
-            </div>
-          </div>
-
-          {/* SOL Balance */}
-          <div className="bg-eva-dark/50 border border-eva-border rounded-lg p-3">
-            <div className="text-[10px] text-eva-text-dim uppercase tracking-wider mb-1">
-              SOL BAL
-            </div>
-            <div className="font-mono text-xl font-semibold text-eva-text">
-              {formatNumber(solBalance)}
-            </div>
-          </div>
+        {/* Evolve CTA - Question-guided */}
+        <div className="mb-4 p-3 bg-gradient-to-r from-eva-primary/5 to-transparent border border-eva-border rounded-lg">
+          <p className="text-xs text-eva-text-dim mb-2">
+            Want me to trade differently?
+          </p>
+          <button
+            className="flex items-center gap-2 text-eva-primary hover:text-eva-primary-dim transition-colors group"
+            onClick={onEvolveMe || onEditName}
+          >
+            <span className="text-sm font-medium">Teach Me</span>
+            <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+          </button>
         </div>
 
-        {/* PNL Stats */}
-        <div className="space-y-2 py-3 border-y border-eva-border mb-4">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] text-eva-text-dim uppercase tracking-wider">
-              TOTAL PNL
-            </span>
-            <span
-              className={clsx(
-                "font-mono text-sm font-semibold",
-                totalPnl >= 0 ? "text-eva-primary" : "text-eva-danger",
-              )}
-            >
-              {totalPnl >= 0 ? "+" : ""}
-              {formatNumber(totalPnl)} SOL
-            </span>
+        {/* Balance & PNL Stats - Compact Layout */}
+        <div className="bg-eva-dark/50 border border-eva-border rounded-lg p-3 mb-4">
+          {/* Balance Row */}
+          <div className="flex items-center justify-between mb-3 pb-3 border-b border-eva-border/50">
+            <div className="flex items-center gap-1">
+              <span className="font-mono text-lg font-semibold text-eva-text">
+                {formatTokenNumber(tokenBalance)}
+              </span>
+              <span className="text-[10px] text-eva-text-dim uppercase">TOKEN</span>
+              <span className="text-xs font-mono text-purple-400 ml-1">
+                ({((tokenBalance / 1_000_000_000) * 100).toFixed(2)}%)
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="font-mono text-lg font-semibold text-eva-text">
+                {formatNumber(solBalance)}
+              </span>
+              <span className="text-[10px] text-eva-text-dim uppercase">SOL</span>
+            </div>
           </div>
+
+          {/* PNL Row */}
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-eva-text-dim uppercase tracking-wider">
-              ROUND PNL
-            </span>
-            <span
-              className={clsx(
-                "font-mono text-sm font-semibold",
-                roundPnl >= 0 ? "text-eva-primary" : "text-eva-danger",
-              )}
-            >
-              {roundPnl >= 0 ? "+" : ""}
-              {formatNumber(roundPnl)} SOL
-            </span>
+            <div>
+              <div className="text-[10px] text-eva-text-dim uppercase tracking-wider mb-1">
+                Total PNL
+              </div>
+              <span
+                className={clsx(
+                  "font-mono text-xl font-semibold",
+                  totalPnl >= 0 ? "text-eva-primary" : "text-eva-danger",
+                )}
+              >
+                {totalPnl >= 0 ? "+" : ""}{formatNumber(totalPnl)} SOL
+              </span>
+            </div>
+            <div>
+              <div className="text-[10px] text-eva-text-dim uppercase tracking-wider mb-1 text-right">
+                Round PNL
+              </div>
+              <span
+                className={clsx(
+                  "font-mono text-xl font-semibold",
+                  roundPnl >= 0 ? "text-eva-primary" : "text-eva-danger",
+                )}
+              >
+                {roundPnl >= 0 ? "+" : ""}{formatNumber(roundPnl)} SOL
+              </span>
+            </div>
           </div>
         </div>
 
@@ -583,54 +620,114 @@ export function AgentDashboardCard({
           )}
         </button>
 
+        {/* Agent Reasoning - Independent Block */}
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <LightbulbIcon className="text-eva-primary" />
+            <span className="text-[10px] text-eva-text-dim uppercase tracking-wider">
+              AGENT REASONING
+            </span>
+          </div>
+
+          {thinkingStatus === "thinking" ? (
+            <div className="bg-eva-dark/50 border border-eva-primary/30 rounded-lg overflow-hidden">
+              <div className="flex items-center gap-3 p-3">
+                <div className="w-5 h-5 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-eva-text">Thinking...</span>
+              </div>
+            </div>
+          ) : (thinkingStatus === "action" || thinkingStatus === "inaction" || latestThinkReason) ? (
+            <div className={clsx(
+              "bg-eva-dark/50 border rounded-lg overflow-hidden transition-colors",
+              thinkingStatus === "action" || latestThinkReason?.status === "ACTION"
+                ? "border-eva-primary/50"
+                : "border-eva-border"
+            )}>
+              {/* Accordion Header */}
+              <button
+                className="w-full flex items-center justify-between p-3 hover:bg-eva-card-hover transition-colors text-left"
+                onClick={() => setIsReasoningExpanded(!isReasoningExpanded)}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-eva-text-dim">Latest:</span>
+                  <span className={clsx(
+                    "text-sm font-medium",
+                    thinkingStatus === "action" || latestThinkReason?.status === "ACTION"
+                      ? "text-eva-primary"
+                      : "text-eva-text"
+                  )}>
+                    {thinkReasonActivity?.reason?.action || (
+                      thinkingStatus === "action" || latestThinkReason?.status === "ACTION"
+                        ? "Execute Trade"
+                        : "Hold"
+                    )}
+                  </span>
+                </div>
+                <ChevronIcon isExpanded={isReasoningExpanded} className="text-eva-text-dim" />
+              </button>
+
+              {/* Accordion Content */}
+              <div
+                className={clsx(
+                  "transition-all duration-300 ease-in-out overflow-hidden",
+                  isReasoningExpanded ? "max-h-56 opacity-100" : "max-h-0 opacity-0"
+                )}
+              >
+                <div className="px-3 pb-3 border-t border-eva-border/50">
+                  {/* Chain of Thought - Bullet Points */}
+                  <div className="mt-3">
+                    <div className="text-[10px] text-eva-text-dim uppercase tracking-wider mb-2">
+                      Chain of Thought
+                    </div>
+                    {thinkReasonActivity?.reason?.content ? (
+                      <ul className="space-y-2 max-h-32 overflow-y-auto pr-1">
+                        {thinkReasonActivity.reason.content
+                          .split(/\n+|(?<=[.!?])\s{2,}|(?<=[.!?])\s+(?=[A-Z])/)
+                          .filter((point: string) => point.trim().length > 0)
+                          .slice(0, 4)
+                          .map((point: string, index: number) => (
+                            <li key={index} className="flex items-start gap-2 p-1.5 rounded bg-eva-dark/50 border-l-2 border-eva-primary/40">
+                              <span className="text-eva-primary text-[10px] font-bold mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-eva-primary/20 flex items-center justify-center">
+                                {index + 1}
+                              </span>
+                              <span className="text-xs text-eva-text leading-relaxed">{point.trim()}</span>
+                            </li>
+                          ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-eva-text-dim">No reasoning available</p>
+                    )}
+                  </div>
+
+                  {/* View More Link */}
+                  <button
+                    className="mt-3 text-[10px] text-eva-primary hover:text-eva-primary-dim transition-colors uppercase tracking-wider"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsReasoningModalOpen(true);
+                    }}
+                  >
+                    View Full Details →
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : isThinkReasonLoading ? (
+            <div className="flex items-center gap-2 p-3 bg-eva-dark/50 border border-eva-border rounded-lg">
+              <div className="w-4 h-4 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs text-eva-text-dim">Loading reasoning...</span>
+            </div>
+          ) : (
+            <div className="p-3 bg-eva-dark/50 border border-eva-border rounded-lg">
+              <span className="text-xs text-eva-text-dim">No reasoning data yet</span>
+            </div>
+          )}
+        </div>
+
         {/* Execution Logs */}
         <div>
           <div className="text-[10px] text-eva-text-dim uppercase tracking-wider mb-2">
-            EXECUTION LOGS
-          </div>
-
-          {/* Thinking Status - Show at top of execution logs */}
-          <div className="mb-2">
-            {thinkingStatus === "thinking" ? (
-              <button
-                className="w-full flex items-center justify-between p-2 bg-eva-dark/50 border border-eva-border rounded text-left"
-                onClick={() => latestThinkReason && setIsReasoningModalOpen(true)}
-              >
-                <span className="text-sm text-eva-text">Thinking</span>
-                <div className="w-4 h-4 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
-              </button>
-            ) : thinkingStatus === "inaction" ? (
-              <button
-                className="w-full flex items-center justify-between p-2 bg-eva-dark/50 border border-eva-border rounded hover:bg-eva-card-hover hover:border-eva-primary/50 transition-colors text-left"
-                onClick={() => setIsReasoningModalOpen(true)}
-              >
-                <span className="text-sm text-eva-text">Inaction</span>
-                <LightbulbIcon className="text-eva-text-dim" />
-              </button>
-            ) : thinkingStatus === "action" ? (
-              <button
-                className="w-full flex items-center justify-between p-2 bg-eva-dark/50 border border-eva-border rounded hover:bg-eva-card-hover hover:border-eva-primary/50 transition-colors text-left"
-                onClick={() => setIsReasoningModalOpen(true)}
-              >
-                <span className="text-sm text-eva-text">Action</span>
-                <LightbulbIcon className="text-eva-primary" />
-              </button>
-            ) : isThinkReasonLoading ? (
-              <div className="flex items-center gap-2 p-2 bg-eva-dark/50 border border-eva-border rounded">
-                <div className="w-3 h-3 border border-eva-primary border-t-transparent rounded-full animate-spin" />
-                <span className="text-xs text-eva-text-dim">Loading...</span>
-              </div>
-            ) : latestThinkReason ? (
-              <button
-                className="w-full flex items-center justify-between p-2 bg-eva-dark/50 border border-eva-border rounded hover:bg-eva-card-hover hover:border-eva-primary/50 transition-colors text-left"
-                onClick={() => setIsReasoningModalOpen(true)}
-              >
-                <span className="text-sm text-eva-text">
-                  {latestThinkReason.status === "ACTION" ? "Action" : "Inaction"}
-                </span>
-                <LightbulbIcon className={latestThinkReason.status === "ACTION" ? "text-eva-primary" : "text-eva-text-dim"} />
-              </button>
-            ) : null}
+            MY TRADES
           </div>
 
           <div className="space-y-1.5 max-h-40 overflow-y-auto">
@@ -672,7 +769,17 @@ export function AgentDashboardCard({
           onClose={() => setIsReasoningModalOpen(false)}
           activity={thinkReasonActivity}
         />
-      </EvaCardContent>
+      </div>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="relative">{content}</div>;
+  }
+
+  return (
+    <EvaCard className="relative">
+      <EvaCardContent>{content}</EvaCardContent>
     </EvaCard>
   );
 }

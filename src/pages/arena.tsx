@@ -131,6 +131,9 @@ export default function ArenaPage() {
   // Think list panel state
   const [isThinkPanelOpen, setIsThinkPanelOpen] = useState(false);
 
+  // Right sidebar tab state
+  const [rightSidebarTab, setRightSidebarTab] = useState<"agent" | "rankings">("agent");
+
   // Toggle agent status mutation
   const toggleAgentStatus = useToggleAgentStatus();
 
@@ -399,54 +402,102 @@ export default function ArenaPage() {
             />
           </div>
 
-          {/* Right column: Rankings + Welcome/Agent */}
+          {/* Right column: Tabs for Agent/Rankings */}
           <div className="space-y-4">
-            <LiveRankings 
-              rankings={rankings}
-              currentUser={currentUserRanking}
-              thirdPlaceTokenAmount={thirdPlaceTokenAmount}
-              isSkipped={currentRound.phase === "trading" && !currentRound.hasBets}
-              isBettingPhase={currentRound.phase === "betting"}
-              trenchId={trenchId}
-              onLoadAgentDetail={handleLoadAgentDetail}
-            />
-            {!isAuthenticated && <WelcomeCard />}
-            {isAuthenticated && !hasAgent && <CreateAgentCard />}
-            {isAuthenticated && hasAgent && primaryAgent && (
-              <AgentDashboardCard
-                agent={{
-                  id: primaryAgent.id,
-                  name: primaryAgent.name,
-                  avatar: primaryAgent.logo,
-                  createdAt: new Date(primaryAgent.createdAt),
-                  status:
-                    primaryAgent.status === "ACTIVE" ? "running" : primaryAgent.status === "WAITING" ? "waiting" : "paused",
-                  balance: turnkeyBalance || primaryAgent.currentBalance,
-                  totalDeposit: 0, // Would need to fetch from panel
-                  totalWithdraw: 0,
-                  pnl: primaryAgent.totalPnl,
-                  frequency: parseInt(primaryAgent.frequency) || 10,
-                }}
-                isToggling={toggleAgentStatus.isPending}
-                roundPnl={trenchData?.pnlSol ? parseFloat(trenchData.pnlSol) / 1e9 : 0}
-                solBalance={turnkeyBalance || primaryAgent.currentBalance}
-                tokenBalance={trenchData?.tokenBalance ? parseFloat(trenchData.tokenBalance) / 1e6 : 0}
-                tokenChangePercent={(trenchData?.tokenBalance ? parseFloat(trenchData.tokenBalance) / 1e9 : 0) * 100}
-                totalPnl={primaryAgent.totalPnl}
-                trenchId={trenchId}
-                turnkeyAddress={primaryAgent.turnkeyAddress}
-                onEvolveMe={() => setIsEvolveMeOpen(true)}
-                onEditName={() => {
-                  // If agent is active, show pause required modal first
-                  if (primaryAgent.status === "ACTIVE") {
-                    setIsPauseRequiredModalOpen(true);
-                  } else {
-                    setIsEditModalOpen(true);
-                  }
-                }}
-                onPauseSystem={() => toggleAgentStatus.mutate({ id: primaryAgent.id })}
-                onStartSystem={() => setIsStartTimingModalOpen(true)}
-              />
+            {/* Show tabs only when user has an agent */}
+            {isAuthenticated && hasAgent ? (
+              <div className="bg-eva-card border border-eva-border rounded-lg overflow-hidden">
+                {/* Tab Headers */}
+                <div className="flex border-b border-eva-border">
+                  <button
+                    className={`flex-1 px-4 py-3 text-xs font-semibold uppercase tracking-wider transition-colors ${
+                      rightSidebarTab === "agent"
+                        ? "text-eva-primary border-b-2 border-eva-primary bg-eva-dark/50"
+                        : "text-eva-text-dim hover:text-eva-text hover:bg-eva-dark/30"
+                    }`}
+                    onClick={() => setRightSidebarTab("agent")}
+                  >
+                    My Agent
+                  </button>
+                  <button
+                    className={`flex-1 px-4 py-3 text-xs font-semibold uppercase tracking-wider transition-colors ${
+                      rightSidebarTab === "rankings"
+                        ? "text-eva-primary border-b-2 border-eva-primary bg-eva-dark/50"
+                        : "text-eva-text-dim hover:text-eva-text hover:bg-eva-dark/30"
+                    }`}
+                    onClick={() => setRightSidebarTab("rankings")}
+                  >
+                    Rankings
+                  </button>
+                </div>
+
+                {/* Tab Content */}
+                <div>
+                  {rightSidebarTab === "agent" && primaryAgent && (
+                    <AgentDashboardCard
+                      agent={{
+                        id: primaryAgent.id,
+                        name: primaryAgent.name,
+                        avatar: primaryAgent.logo,
+                        createdAt: new Date(primaryAgent.createdAt),
+                        status:
+                          primaryAgent.status === "ACTIVE" ? "running" : primaryAgent.status === "WAITING" ? "waiting" : "paused",
+                        balance: turnkeyBalance || primaryAgent.currentBalance,
+                        totalDeposit: 0,
+                        totalWithdraw: 0,
+                        pnl: primaryAgent.totalPnl,
+                        frequency: parseInt(primaryAgent.frequency) || 10,
+                      }}
+                      isToggling={toggleAgentStatus.isPending}
+                      roundPnl={trenchData?.pnlSol ? parseFloat(trenchData.pnlSol) / 1e9 : 0}
+                      solBalance={turnkeyBalance || primaryAgent.currentBalance}
+                      tokenBalance={trenchData?.tokenBalance ? parseFloat(trenchData.tokenBalance) / 1e6 : 0}
+                      tokenChangePercent={(trenchData?.tokenBalance ? parseFloat(trenchData.tokenBalance) / 1e9 : 0) * 100}
+                      totalPnl={primaryAgent.totalPnl}
+                      trenchId={trenchId}
+                      turnkeyAddress={primaryAgent.turnkeyAddress}
+                      onEvolveMe={() => setIsEvolveMeOpen(true)}
+                      onEditName={() => {
+                        if (primaryAgent.status === "ACTIVE") {
+                          setIsPauseRequiredModalOpen(true);
+                        } else {
+                          setIsEditModalOpen(true);
+                        }
+                      }}
+                      onPauseSystem={() => toggleAgentStatus.mutate({ id: primaryAgent.id })}
+                      onStartSystem={() => setIsStartTimingModalOpen(true)}
+                      embedded={true}
+                    />
+                  )}
+                  {rightSidebarTab === "rankings" && (
+                    <LiveRankings
+                      rankings={rankings}
+                      currentUser={currentUserRanking}
+                      thirdPlaceTokenAmount={thirdPlaceTokenAmount}
+                      isSkipped={currentRound.phase === "trading" && !currentRound.hasBets}
+                      isBettingPhase={currentRound.phase === "betting"}
+                      trenchId={trenchId}
+                      onLoadAgentDetail={handleLoadAgentDetail}
+                      embedded={true}
+                    />
+                  )}
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* No tabs - show rankings and welcome/create card separately */}
+                <LiveRankings
+                  rankings={rankings}
+                  currentUser={currentUserRanking}
+                  thirdPlaceTokenAmount={thirdPlaceTokenAmount}
+                  isSkipped={currentRound.phase === "trading" && !currentRound.hasBets}
+                  isBettingPhase={currentRound.phase === "betting"}
+                  trenchId={trenchId}
+                  onLoadAgentDetail={handleLoadAgentDetail}
+                />
+                {!isAuthenticated && <WelcomeCard />}
+                {isAuthenticated && !hasAgent && <CreateAgentCard />}
+              </>
             )}
           </div>
         </div>

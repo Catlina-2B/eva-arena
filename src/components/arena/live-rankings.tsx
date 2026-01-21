@@ -67,6 +67,8 @@ interface LiveRankingsProps {
   trenchId?: number;
   /** Optional callback to load agent detail data */
   onLoadAgentDetail?: (agentId: string) => Promise<AgentDetailData | null>;
+  /** When true, removes outer card styling for embedding in tabs */
+  embedded?: boolean;
 }
 
 export function LiveRankings({
@@ -77,6 +79,7 @@ export function LiveRankings({
   isBettingPhase = false,
   trenchId,
   onLoadAgentDetail,
+  embedded = false,
 }: LiveRankingsProps) {
   // Modal state
   const [selectedAgent, setSelectedAgent] = useState<AgentRanking | null>(null);
@@ -116,13 +119,18 @@ export function LiveRankings({
   };
 
   return (
-    <div className="border border-eva-border overflow-hidden relative">
-      {/* Header badge */}
-      <div className="absolute -top-1 right-0">
-        <span className="text-[10px] text-[#9CA3AF] uppercase tracking-[0.15em] font-mono bg-gray-800 px-2 py-1">
-          Live Rankings
-        </span>
-      </div>
+    <div className={clsx(
+      "overflow-hidden relative",
+      !embedded && "border border-eva-border"
+    )}>
+      {/* Header badge - only show when not embedded */}
+      {!embedded && (
+        <div className="absolute -top-1 right-0">
+          <span className="text-[10px] text-[#9CA3AF] uppercase tracking-[0.15em] font-mono bg-gray-800 px-2 py-1">
+            Live Rankings
+          </span>
+        </div>
+      )}
 
       {isSkipped ? (
         // Empty state when round is skipped
