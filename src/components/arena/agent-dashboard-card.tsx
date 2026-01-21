@@ -2,11 +2,88 @@ import type { Agent, ActivityItem } from "@/types";
 import type { TransactionDto, TransactionType } from "@/types/api";
 
 import clsx from "clsx";
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 
 import { EvaCard, EvaCardContent, EvaBadge, EvaButton } from "@/components/ui";
 import { useUserTransactions, useLatestThinkReason, useAgentThinkReason } from "@/hooks";
 import { ReasoningModal } from "./reasoning-modal";
+
+// Animated number component for PNL changes
+function AnimatedNumber({
+  value,
+  formatFn,
+  className,
+  flashOnChange = true,
+}: {
+  value: number;
+  formatFn: (n: number) => string;
+  className?: string;
+  flashOnChange?: boolean;
+}) {
+  const [displayValue, setDisplayValue] = useState(value);
+  const [isFlashing, setIsFlashing] = useState(false);
+  const prevValueRef = useRef(value);
+
+  useEffect(() => {
+    if (value !== prevValueRef.current) {
+      // Trigger flash animation
+      if (flashOnChange) {
+        setIsFlashing(true);
+        setTimeout(() => setIsFlashing(false), 600);
+      }
+
+      // Animate number change
+      const startValue = prevValueRef.current;
+      const endValue = value;
+      const duration = 500;
+      const startTime = Date.now();
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        // Ease out cubic
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        const currentValue = startValue + (endValue - startValue) * easeProgress;
+        setDisplayValue(currentValue);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          setDisplayValue(endValue);
+        }
+      };
+
+      requestAnimationFrame(animate);
+      prevValueRef.current = value;
+    }
+  }, [value, flashOnChange]);
+
+  return (
+    <span
+      className={clsx(
+        className,
+        "transition-all duration-300",
+        isFlashing && (value >= 0 ? "animate-pulse text-eva-primary scale-105" : "animate-pulse text-eva-danger scale-105")
+      )}
+    >
+      {formatFn(displayValue)}
+    </span>
+  );
+}
+
+// Thinking dots animation component
+function ThinkingDots() {
+  const [dots, setDots] = useState(".");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? "." : prev + ".");
+    }, 400);
+    return () => clearInterval(interval);
+  }, []);
+
+  return <span className="inline-block w-6 text-left">{dots}</span>;
+}
 
 // Execution log entry type
 export interface ExecutionLogEntry {
@@ -368,6 +445,9 @@ export function AgentDashboardCard({
   // State for reasoning accordion expansion
   const [isReasoningExpanded, setIsReasoningExpanded] = useState(false);
 
+  // State for new reasoning pulse animation
+  const [isReasoningPulsing, setIsReasoningPulsing] = useState(false);
+
   // Track previous reasoning id to detect new reasoning
   const prevReasoningIdRef = useRef<number | null>(null);
 
@@ -379,22 +459,29 @@ export function AgentDashboardCard({
   const { status: thinkingStatus, latestEvent: wsThinkEvent } =
     useAgentThinkReason(turnkeyAddress);
 
-  // Auto-expand when new reasoning arrives
+  // Auto-expand and pulse when new reasoning arrives
   useEffect(() => {
     const currentId = wsThinkEvent?.id || latestThinkReason?.id || null;
     if (currentId && currentId !== prevReasoningIdRef.current) {
       setIsReasoningExpanded(true);
+      // Trigger pulse animation
+      setIsReasoningPulsing(true);
+      setTimeout(() => setIsReasoningPulsing(false), 2000);
       prevReasoningIdRef.current = currentId;
     }
   }, [wsThinkEvent?.id, latestThinkReason?.id]);
 
   // Fetch user's transactions for this trench using agent's turnkey address
   const { data: transactionsData, isLoading: isTransactionsLoading } =
-    useUserTransactions(trenchId, { 
+    useUserTransactions(trenchId, {
       userAddress: turnkeyAddress,
-      limit: 10, 
-      txType: ['BUY', 'SELL', 'DEPOSIT', 'WITHDRAW', 'PRIZE'] 
+      limit: 10,
+      txType: ['BUY', 'SELL', 'DEPOSIT', 'WITHDRAW', 'PRIZE']
     });
+
+  // Track new transactions for slide-in animation
+  const [newTradeIds, setNewTradeIds] = useState<Set<string>>(new Set());
+  const prevTradeIdsRef = useRef<Set<string>>(new Set());
 
   // Convert think reason to ActivityItem for ReasoningModal
   // Prefer WebSocket event data if available with content, otherwise use API data
@@ -448,6 +535,28 @@ export function AgentDashboardCard({
 
     return transactionsData.transactions.map(transactionToLogEntry);
   }, [transactionsData]);
+
+  // Detect new transactions for slide-in animation
+  useEffect(() => {
+    if (executionLogs.length > 0) {
+      const currentIds = new Set(executionLogs.map(log => log.id));
+      const newIds = new Set<string>();
+
+      currentIds.forEach(id => {
+        if (!prevTradeIdsRef.current.has(id)) {
+          newIds.add(id);
+        }
+      });
+
+      if (newIds.size > 0) {
+        setNewTradeIds(newIds);
+        // Clear animation after delay
+        setTimeout(() => setNewTradeIds(new Set()), 1500);
+      }
+
+      prevTradeIdsRef.current = currentIds;
+    }
+  }, [executionLogs]);
 
   // Format number with commas
   const formatNumber = (num: number | undefined | null) => {
@@ -552,27 +661,35 @@ export function AgentDashboardCard({
               <div className="text-[10px] text-eva-text-dim uppercase tracking-wider mb-1">
                 Total PNL
               </div>
-              <span
-                className={clsx(
-                  "font-mono text-xl font-semibold",
-                  totalPnl >= 0 ? "text-eva-primary" : "text-eva-danger",
-                )}
-              >
-                {totalPnl >= 0 ? "+" : ""}{formatNumber(totalPnl)} SOL
-              </span>
+              <div className={clsx(
+                "font-mono text-xl font-semibold",
+                totalPnl >= 0 ? "text-eva-primary" : "text-eva-danger",
+              )}>
+                {totalPnl >= 0 ? "+" : ""}
+                <AnimatedNumber
+                  value={totalPnl}
+                  formatFn={formatNumber}
+                  className="inline"
+                />
+                {" SOL"}
+              </div>
             </div>
             <div>
               <div className="text-[10px] text-eva-text-dim uppercase tracking-wider mb-1 text-right">
                 Round PNL
               </div>
-              <span
-                className={clsx(
-                  "font-mono text-xl font-semibold",
-                  roundPnl >= 0 ? "text-eva-primary" : "text-eva-danger",
-                )}
-              >
-                {roundPnl >= 0 ? "+" : ""}{formatNumber(roundPnl)} SOL
-              </span>
+              <div className={clsx(
+                "font-mono text-xl font-semibold text-right",
+                roundPnl >= 0 ? "text-eva-primary" : "text-eva-danger",
+              )}>
+                {roundPnl >= 0 ? "+" : ""}
+                <AnimatedNumber
+                  value={roundPnl}
+                  formatFn={formatNumber}
+                  className="inline"
+                />
+                {" SOL"}
+              </div>
             </div>
           </div>
         </div>
@@ -630,18 +747,24 @@ export function AgentDashboardCard({
           </div>
 
           {thinkingStatus === "thinking" ? (
-            <div className="bg-eva-dark/50 border border-eva-primary/30 rounded-lg overflow-hidden">
+            <div className="bg-eva-dark/50 border border-eva-primary/30 rounded-lg overflow-hidden animate-pulse">
               <div className="flex items-center gap-3 p-3">
-                <div className="w-5 h-5 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm text-eva-text">Thinking...</span>
+                <div className="relative">
+                  <div className="w-5 h-5 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
+                  <div className="absolute inset-0 w-5 h-5 border-2 border-eva-primary/20 rounded-full animate-ping" />
+                </div>
+                <span className="text-sm text-eva-text">
+                  Thinking<ThinkingDots />
+                </span>
               </div>
             </div>
           ) : (thinkingStatus === "action" || thinkingStatus === "inaction" || latestThinkReason) ? (
             <div className={clsx(
-              "bg-eva-dark/50 border rounded-lg overflow-hidden transition-colors",
+              "bg-eva-dark/50 border rounded-lg overflow-hidden transition-all duration-500",
               thinkingStatus === "action" || latestThinkReason?.status === "ACTION"
                 ? "border-eva-primary/50"
-                : "border-eva-border"
+                : "border-eva-border",
+              isReasoningPulsing && "ring-2 ring-eva-primary/50 ring-offset-2 ring-offset-eva-darker shadow-lg shadow-eva-primary/20"
             )}>
               {/* Accordion Header */}
               <button
@@ -740,10 +863,16 @@ export function AgentDashboardCard({
                 No transactions yet
               </div>
             ) : (
-              executionLogs.map((log) => (
+              executionLogs.map((log, index) => (
                 <div
                   key={log.id}
-                  className="grid grid-cols-3 text-xs py-1"
+                  className={clsx(
+                    "grid grid-cols-3 text-xs py-1.5 px-2 rounded transition-all duration-500",
+                    newTradeIds.has(log.id) && "animate-slide-in bg-eva-primary/10 border-l-2 border-eva-primary"
+                  )}
+                  style={{
+                    animationDelay: newTradeIds.has(log.id) ? `${index * 100}ms` : '0ms'
+                  }}
                 >
                   {/* Left: EVA Round Number */}
                   <span className="font-mono text-eva-text-dim text-[10px]">
@@ -754,7 +883,10 @@ export function AgentDashboardCard({
                     <TxTypeBadge txType={log.txType} />
                   </div>
                   {/* Right: Action + Amount */}
-                  <span className="font-mono text-eva-text-dim text-[10px] justify-self-end">
+                  <span className={clsx(
+                    "font-mono text-[10px] justify-self-end",
+                    newTradeIds.has(log.id) ? "text-eva-primary font-medium" : "text-eva-text-dim"
+                  )}>
                     {log.action} {log.amount.toFixed(4)} SOL
                   </span>
                 </div>
