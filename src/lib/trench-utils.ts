@@ -241,6 +241,7 @@ function calculateWinners(
       tokenAmount,
       prizeAmount,
       supplyPercentage,
+      isCurrentUser: participant.isCurrentUser,
     });
   }
 

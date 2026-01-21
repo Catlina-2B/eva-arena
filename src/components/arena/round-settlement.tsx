@@ -103,16 +103,24 @@ export function RoundSettlement({ round, currentUserAgent }: RoundSettlementProp
 
               <div className="space-y-3">
                 {/* Top 3 winners */}
-                {top3Winners.map((winner) => (
+                {top3Winners.map((winner) => {
+                  const isCurrentUserWinner = winner.isCurrentUser;
+                  return (
                   <div
                     key={winner.rank}
-                    className="flex items-center justify-between p-[13px] rounded-sm border border-[rgba(255,255,255,0.05)]"
+                    className={`flex items-center justify-between p-[13px] rounded-sm border ${
+                      isCurrentUserWinner 
+                        ? "border-eva-primary bg-eva-primary/10" 
+                        : "border-[rgba(255,255,255,0.05)]"
+                    }`}
                     style={{
-                      background: winner.rank === 1 
-                        ? "rgba(255,255,255,0.03)" 
-                        : winner.rank === 2 
-                          ? "rgba(255,255,255,0.02)" 
-                          : "rgba(255,255,255,0.01)",
+                      background: isCurrentUserWinner 
+                        ? undefined 
+                        : winner.rank === 1 
+                          ? "rgba(255,255,255,0.03)" 
+                          : winner.rank === 2 
+                            ? "rgba(255,255,255,0.02)" 
+                            : "rgba(255,255,255,0.01)",
                     }}
                   >
                     <div className="flex items-center gap-3">
@@ -136,7 +144,8 @@ export function RoundSettlement({ round, currentUserAgent }: RoundSettlementProp
                       </span>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
 
                 {/* Others row */}
                 <div className="flex items-center justify-between px-3 py-1">

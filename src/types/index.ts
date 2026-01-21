@@ -50,6 +50,8 @@ export interface Winner {
   prizeAmount: number;
   /** Token 供应百分比 */
   supplyPercentage: number;
+  /** 是否是当前用户的 agent */
+  isCurrentUser?: boolean;
 }
 
 export interface AgentRanking {
