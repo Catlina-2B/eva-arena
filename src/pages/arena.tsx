@@ -1,7 +1,7 @@
 import type { ArenaRound, AgentRanking } from "@/types";
 import type { AgentDetailData } from "@/components/arena/agent-detail-modal";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 
 import DefaultLayout from "@/layouts/default";
 import {
@@ -134,6 +134,10 @@ export default function ArenaPage() {
   // Right sidebar tab state
   const [rightSidebarTab, setRightSidebarTab] = useState<"agent" | "rankings">("agent");
 
+  // Rank change tracking
+  const previousRankRef = useRef<number | undefined>(undefined);
+  const [rankChange, setRankChange] = useState<number>(0);
+
   // Toggle agent status mutation
   const toggleAgentStatus = useToggleAgentStatus();
 
@@ -204,6 +208,39 @@ export default function ArenaPage() {
       totalAgents: rankings.length,
     };
   }, [primaryAgent?.turnkeyAddress, rankings, thirdPlaceTokenAmount]);
+
+  // Track rank changes
+  useEffect(() => {
+    const currentRank = userAgentRankingInfo.rank;
+
+    if (currentRank === undefined) {
+      previousRankRef.current = undefined;
+      setRankChange(0);
+      return;
+    }
+
+    const previousRank = previousRankRef.current;
+
+    // Only track changes after we have a previous rank (not on initial load)
+    if (previousRank !== undefined && previousRank !== currentRank) {
+      const change = previousRank - currentRank; // Positive = improved
+      setRankChange(change);
+    }
+
+    // Update previous rank
+    previousRankRef.current = currentRank;
+  }, [userAgentRankingInfo.rank]);
+
+  // Auto-clear rank change indicator after 30 seconds
+  useEffect(() => {
+    if (rankChange === 0) return;
+
+    const timer = setTimeout(() => {
+      setRankChange(0);
+    }, 30000);
+
+    return () => clearTimeout(timer);
+  }, [rankChange]);
 
   const activities = useMemo(() => {
     if (!USE_REAL_DATA) return mockActivities;
@@ -492,6 +529,7 @@ export default function ArenaPage() {
                       rank={userAgentRankingInfo.rank}
                       gapToTop3={userAgentRankingInfo.gapToTop3}
                       totalAgents={userAgentRankingInfo.totalAgents}
+                      rankChange={rankChange}
                       onEvolveMe={() => setIsEvolveMeOpen(true)}
                       onEditName={() => {
                         if (primaryAgent.status === "ACTIVE") {
@@ -611,6 +649,7 @@ export default function ArenaPage() {
           />
         </>
       )}
+
     </DefaultLayout>
   );
 }

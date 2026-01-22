@@ -122,6 +122,8 @@ interface AgentDashboardCardProps {
   gapToTop3?: number;
   /** Total number of agents in the competition */
   totalAgents?: number;
+  /** Rank change from previous (positive = improved, negative = dropped) */
+  rankChange?: number;
 }
 
 // Convert transaction type to display action
@@ -444,6 +446,7 @@ export function AgentDashboardCard({
   rank,
   gapToTop3,
   totalAgents,
+  rankChange,
 }: AgentDashboardCardProps) {
   const isRunning = agent.status === "running";
   const isPaused = agent.status === "paused";
@@ -640,6 +643,15 @@ export function AgentDashboardCard({
                     )}>
                       #{rank} {rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉"}
                     </span>
+                    {/* Rank change indicator */}
+                    {rankChange !== undefined && rankChange !== 0 && (
+                      <span className={clsx(
+                        "text-[10px] font-mono font-semibold flex items-center gap-0.5",
+                        rankChange > 0 ? "text-eva-success" : "text-eva-danger"
+                      )}>
+                        {rankChange > 0 ? "↑" : "↓"}{Math.abs(rankChange)}
+                      </span>
+                    )}
                     <span className="text-[10px] text-eva-text-dim">
                       Prize {rank === 1 ? "50%" : rank === 2 ? "30%" : "15%"}
                     </span>
@@ -649,6 +661,15 @@ export function AgentDashboardCard({
                     <span className="text-sm font-mono text-eva-text-dim">
                       #{rank}
                     </span>
+                    {/* Rank change indicator */}
+                    {rankChange !== undefined && rankChange !== 0 && (
+                      <span className={clsx(
+                        "text-[10px] font-mono font-semibold flex items-center gap-0.5",
+                        rankChange > 0 ? "text-eva-success" : "text-eva-danger"
+                      )}>
+                        {rankChange > 0 ? "↑" : "↓"}{Math.abs(rankChange)}
+                      </span>
+                    )}
                     {gapToTop3 !== undefined && gapToTop3 > 0 && (
                       <span className="text-[10px] text-eva-warning">
                         ↑ {formatTokenNumber(gapToTop3)} to Top 3
