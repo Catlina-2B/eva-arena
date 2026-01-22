@@ -116,6 +116,12 @@ interface AgentDashboardCardProps {
   onEvolveMe?: () => void;
   /** When true, removes outer card styling for embedding in tabs */
   embedded?: boolean;
+  /** Agent's current rank in the leaderboard (1-based) */
+  rank?: number;
+  /** Token amount needed to reach top 3 (only relevant when rank > 3) */
+  gapToTop3?: number;
+  /** Total number of agents in the competition */
+  totalAgents?: number;
 }
 
 // Convert transaction type to display action
@@ -419,6 +425,7 @@ function ChevronIcon({ className, isExpanded }: { className?: string; isExpanded
   );
 }
 
+
 export function AgentDashboardCard({
   agent,
   tokenBalance,
@@ -434,6 +441,9 @@ export function AgentDashboardCard({
   onEditName,
   onEvolveMe,
   embedded = false,
+  rank,
+  gapToTop3,
+  totalAgents,
 }: AgentDashboardCardProps) {
   const isRunning = agent.status === "running";
   const isPaused = agent.status === "paused";
@@ -610,13 +620,44 @@ export function AgentDashboardCard({
       </div>
 
       <div className={clsx(embedded ? "p-4" : "py-4")}>
-        {/* Agent Header */}
+        {/* Agent Header with Ranking */}
         <div className="flex items-center gap-3 mb-3">
           <AgentAvatar avatar={agent.avatar} name={agent.name} />
-          <div className="flex-1">
-            <span className="text-lg font-bold tracking-wide text-eva-text">
+          <div className="flex-1 min-w-0">
+            <span className="text-lg font-bold tracking-wide text-eva-text block truncate">
               {agent.name}
             </span>
+            {/* Inline Ranking Info */}
+            {rank !== undefined && (
+              <div className="flex items-center gap-2 mt-0.5">
+                {rank <= 3 ? (
+                  <>
+                    <span className={clsx(
+                      "text-sm font-bold font-mono",
+                      rank === 1 ? "text-yellow-400" :
+                      rank === 2 ? "text-gray-300" :
+                      "text-orange-400"
+                    )}>
+                      #{rank} {rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉"}
+                    </span>
+                    <span className="text-[10px] text-eva-text-dim">
+                      Prize {rank === 1 ? "50%" : rank === 2 ? "30%" : "15%"}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-sm font-mono text-eva-text-dim">
+                      #{rank}
+                    </span>
+                    {gapToTop3 !== undefined && gapToTop3 > 0 && (
+                      <span className="text-[10px] text-eva-warning">
+                        ↑ {formatTokenNumber(gapToTop3)} to Top 3
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

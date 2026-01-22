@@ -174,6 +174,37 @@ export default function ArenaPage() {
     return getThirdPlaceTokenAmount(leaderboardData);
   }, [leaderboardData]);
 
+  // Calculate user's agent ranking info
+  const userAgentRankingInfo = useMemo(() => {
+    if (!primaryAgent?.turnkeyAddress || rankings.length === 0) {
+      return { rank: undefined, gapToTop3: undefined, totalAgents: undefined };
+    }
+
+    // Find user's rank in the rankings list
+    const userRankIndex = rankings.findIndex(
+      (r) => r.userAddress === primaryAgent.turnkeyAddress
+    );
+
+    if (userRankIndex === -1) {
+      return { rank: undefined, gapToTop3: undefined, totalAgents: rankings.length };
+    }
+
+    const rank = userRankIndex + 1; // Convert 0-based index to 1-based rank
+    const userTokenAmount = rankings[userRankIndex]?.tokenAmount ?? 0;
+
+    // Calculate gap to top 3 (difference from 3rd place)
+    let gapToTop3 = 0;
+    if (rank > 3 && thirdPlaceTokenAmount > 0) {
+      gapToTop3 = Math.max(0, thirdPlaceTokenAmount - userTokenAmount);
+    }
+
+    return {
+      rank,
+      gapToTop3,
+      totalAgents: rankings.length,
+    };
+  }, [primaryAgent?.turnkeyAddress, rankings, thirdPlaceTokenAmount]);
+
   const activities = useMemo(() => {
     if (!USE_REAL_DATA) return mockActivities;
     // Combine real-time and fetched transactions, deduplicating by ID
@@ -456,6 +487,9 @@ export default function ArenaPage() {
                       totalPnl={primaryAgent.totalPnl}
                       trenchId={trenchId}
                       turnkeyAddress={primaryAgent.turnkeyAddress}
+                      rank={userAgentRankingInfo.rank}
+                      gapToTop3={userAgentRankingInfo.gapToTop3}
+                      totalAgents={userAgentRankingInfo.totalAgents}
                       onEvolveMe={() => setIsEvolveMeOpen(true)}
                       onEditName={() => {
                         if (primaryAgent.status === "ACTIVE") {
