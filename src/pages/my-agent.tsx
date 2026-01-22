@@ -157,30 +157,26 @@ function PnlChart({ timeline, isLoading, onHoverChange }: PnlChartProps) {
   // Empty state - show flat line
   if (dataPoints.length === 0) {
     return (
-      <svg
-        className="w-full h-full"
-        preserveAspectRatio="none"
-        viewBox={`0 0 ${width} ${height}`}
-      >
-        <line
-          stroke="#00ff88"
-          strokeOpacity="0.3"
-          strokeWidth="2"
-          x1={padding}
-          x2={width - padding}
-          y1={height / 2}
-          y2={height / 2}
-        />
-        <text
-          className="text-[10px]"
-          fill="#666"
-          textAnchor="middle"
-          x={width / 2}
-          y={height / 2 + 20}
+      <div className="relative w-full h-full">
+        <svg
+          className="w-full h-full"
+          preserveAspectRatio="none"
+          viewBox={`0 0 ${width} ${height}`}
         >
-          No PNL data
-        </text>
-      </svg>
+          <line
+            stroke="#00ff88"
+            strokeOpacity="0.3"
+            strokeWidth="2"
+            x1={padding}
+            x2={width - padding}
+            y1={height / 2}
+            y2={height / 2}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center pt-8">
+          <span className="text-[10px] text-[#666]">No PNL data</span>
+        </div>
+      </div>
     );
   }
 

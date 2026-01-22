@@ -90,6 +90,9 @@ export function LiveRankings({
   const [selectedAgent, setSelectedAgent] = useState<AgentRanking | null>(null);
   const [agentDetailData, setAgentDetailData] = useState<AgentDetailData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Collapse state - when collapsed, only show Top 1
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Map activities by userAddress for quick lookup - get latest activity per user
   const activityByUser = useMemo(() => {
@@ -140,14 +143,37 @@ export function LiveRankings({
       "overflow-hidden relative",
       !embedded && "border border-eva-border"
     )}>
-      {/* Header badge - only show when not embedded */}
-      {!embedded && (
-        <div className="absolute -top-1 right-0">
-          <span className="text-[10px] text-[#9CA3AF] uppercase tracking-[0.15em] font-mono bg-gray-800 px-2 py-1">
+      {/* Header with collapse button */}
+      <div className="flex items-center justify-between px-3 pt-3 pb-2">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 bg-eva-primary animate-pulse" />
+          <span className="text-[10px] text-[#9CA3AF] uppercase tracking-[0.15em] font-mono">
             Live Rankings
           </span>
         </div>
-      )}
+        <button
+          className="flex items-center gap-1 text-[10px] text-eva-text-dim hover:text-eva-text transition-colors font-mono uppercase tracking-wider"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
+          {isCollapsed ? "Expand" : "Collapse"}
+          <svg
+            className={clsx(
+              "w-3 h-3 transition-transform",
+              isCollapsed && "rotate-180"
+            )}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M19 9l-7 7-7-7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+            />
+          </svg>
+        </button>
+      </div>
 
       {isSkipped ? (
         // Empty state when round is skipped
@@ -167,10 +193,11 @@ export function LiveRankings({
         </div>
       ) : (
         <>
-          {/* Top 3 Rankings list */}
-          <div className="p-3 pt-8 space-y-4">
+          {/* Rankings list */}
+          <div className="px-3 pb-3 space-y-4">
             <div className="space-y-4">
-              {rankings.slice(0, 3).map((agent) => (
+              {/* When collapsed, only show Top 1; when expanded, show Top 3 */}
+              {rankings.slice(0, isCollapsed ? 1 : 3).map((agent) => (
                 <RankingRow
                   key={agent.agentId}
                   agent={agent}
@@ -182,8 +209,8 @@ export function LiveRankings({
               ))}
             </div>
 
-            {/* Current user section (when not in top 3) */}
-            {showCurrentUserSection && (
+            {/* Current user section (when not in top 3) - hide when collapsed */}
+            {!isCollapsed && showCurrentUserSection && (
               <div className="space-y-4">
                 {/* Gap to Podium divider */}
                 <div className="border-l border-eva-border pl-4 h-12 flex items-center">
@@ -217,8 +244,8 @@ export function LiveRankings({
             )}
           </div>
 
-          {/* Footer note (only show when current user section is not shown) */}
-          {!showCurrentUserSection && (
+          {/* Footer note (only show when current user section is not shown and not collapsed) */}
+          {!isCollapsed && !showCurrentUserSection && (
             <div className="px-3 pb-3">
               <div className="px-3 py-3 border border-eva-border text-xs text-eva-text-dim flex items-center gap-2 bg-eva-darker/50">
                 <InfoIcon />
