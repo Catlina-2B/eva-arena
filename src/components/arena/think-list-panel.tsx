@@ -92,7 +92,7 @@ export function ThinkListPanel({ isOpen, onClose }: ThinkListPanelProps) {
 
   // 按轮次分组
   const groupedByRound = useMemo(() => {
-    const groups: Map<number, ThinkReasonDto[]> = new Map();
+    const groups: Map<string, ThinkReasonDto[]> = new Map();
 
     for (const reason of reasons) {
       const trenchId = reason.trenchId;
@@ -104,7 +104,7 @@ export function ThinkListPanel({ isOpen, onClose }: ThinkListPanelProps) {
 
     // 按 trenchId 降序排列（最新的轮次在前）
     return Array.from(groups.entries())
-      .sort((a, b) => b[0] - a[0])
+      .sort((a, b) => parseInt(b[0], 10) - parseInt(a[0], 10))
       .map(([trenchId, items]) => ({
         trenchId,
         items,
@@ -114,7 +114,7 @@ export function ThinkListPanel({ isOpen, onClose }: ThinkListPanelProps) {
   }, [reasons]);
 
   // 展开/折叠状态
-  const [expandedRounds, setExpandedRounds] = useState<Set<number>>(new Set());
+  const [expandedRounds, setExpandedRounds] = useState<Set<string>>(new Set());
 
   // 当面板打开时，只展开当前（最新）轮次
   useEffect(() => {
@@ -123,7 +123,7 @@ export function ThinkListPanel({ isOpen, onClose }: ThinkListPanelProps) {
     }
   }, [isOpen, groupedByRound.length > 0 ? groupedByRound[0]?.trenchId : null]);
 
-  const toggleRound = (trenchId: number) => {
+  const toggleRound = (trenchId: string) => {
     setExpandedRounds(prev => {
       const next = new Set(prev);
       if (next.has(trenchId)) {

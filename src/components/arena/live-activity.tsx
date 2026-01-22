@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import type { ActivityItem } from "@/types";
+import type { ActivityItem, AgentRanking } from "@/types";
 
 import {
   EvaCard,
@@ -9,6 +9,7 @@ import {
   WithdrawBadge,
   BuyBadge,
   SellBadge,
+  RankBadge,
 } from "@/components/ui";
 import { formatTimeAgo } from "@/services/mock";
 import { formatSmallNumber } from "@/lib/trench-utils";
@@ -18,9 +19,15 @@ interface LiveActivityProps {
   activities: ActivityItem[];
   trenchId?: number;
   onLoadAgentDetail?: (userAddress: string) => Promise<AgentDetailData | null>;
+  /** Top 3 rankings to display in header */
+  rankings?: AgentRanking[];
+  /** Total prize pool in SOL */
+  prizePool?: number;
 }
 
-export function LiveActivity({ activities, trenchId, onLoadAgentDetail }: LiveActivityProps) {
+export function LiveActivity({ activities, trenchId, onLoadAgentDetail, rankings = [], prizePool = 0 }: LiveActivityProps) {
+  // Get top 3 from rankings
+  const top3 = rankings.slice(0, 3);
   // Modal state
   const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
   const [agentDetailData, setAgentDetailData] = useState<AgentDetailData | null>(null);
@@ -62,7 +69,49 @@ export function LiveActivity({ activities, trenchId, onLoadAgentDetail }: LiveAc
                 Live Activity
               </h3>
             </div>
+            {/* Prize Pool */}
+            {prizePool > 0 && (
+              <div className="text-right">
+                <span className="text-[10px] text-eva-text-dim font-mono uppercase tracking-wider">Prize Pool</span>
+                <div className="text-sm font-mono font-semibold text-[#EAB308]">{prizePool.toFixed(2)} SOL</div>
+              </div>
+            )}
           </div>
+
+          {/* Mini Leaderboard - Top 3 Horizontal */}
+          {top3.length > 0 && (
+            <div className="px-3 py-2 border-b border-eva-border bg-eva-dark/30">
+              <div className="grid grid-cols-3 gap-2">
+                {top3.map((agent) => (
+                  <div
+                    key={agent.agentId}
+                    className="py-2 px-2 bg-eva-darker/50 rounded"
+                  >
+                    {/* Row 1: Rank + Name (left aligned) */}
+                    <div className="flex items-center gap-1.5">
+                      <RankBadge rank={agent.rank} />
+                      <span className="text-[11px] font-medium text-white truncate">
+                        {agent.agentName}
+                      </span>
+                    </div>
+                    {/* Row 2: Token & Percent */}
+                    <div className="flex items-center justify-between mt-1.5 text-[10px] font-mono">
+                      <span className="text-eva-text-dim">
+                        {formatSmallNumber(agent.tokenAmount)}
+                      </span>
+                      <span className="text-eva-primary">
+                        {agent.supplyPercentage.toFixed(1)}%
+                      </span>
+                    </div>
+                    {/* Row 3: Prize */}
+                    <div className="text-[11px] font-mono font-medium text-[#EAB308] mt-1">
+                      +{agent.prizeAmount.toFixed(2)} SOL
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Activity list */}
           <div className="max-h-80 overflow-y-auto">

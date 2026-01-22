@@ -426,10 +426,12 @@ export default function ArenaPage() {
           {/* Left column: Phase panel + Activity */}
           <div className="lg:col-span-2 space-y-4">
             {renderPhasePanel()}
-            <LiveActivity 
-              activities={activities} 
+            <LiveActivity
+              activities={activities}
               trenchId={trenchId}
               onLoadAgentDetail={handleLoadAgentDetailByUserAddress}
+              rankings={rankings}
+              prizePool={currentRound.totalPrizePool}
             />
           </div>
 
@@ -513,6 +515,7 @@ export default function ArenaPage() {
                       trenchId={trenchId}
                       onLoadAgentDetail={handleLoadAgentDetail}
                       embedded={true}
+                      activities={activities}
                     />
                   )}
                 </div>
@@ -528,6 +531,7 @@ export default function ArenaPage() {
                   isBettingPhase={currentRound.phase === "betting"}
                   trenchId={trenchId}
                   onLoadAgentDetail={handleLoadAgentDetail}
+                  activities={activities}
                 />
                 {!isAuthenticated && <WelcomeCard />}
                 {isAuthenticated && !hasAgent && <CreateAgentCard />}

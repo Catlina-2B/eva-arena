@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
-import type { AgentRanking } from "@/types";
+import type { AgentRanking, ActivityItem } from "@/types";
 
 import clsx from "clsx";
 
-import { RankBadge } from "@/components/ui";
+import { RankBadge, DepositBadge, WithdrawBadge, BuyBadge, SellBadge } from "@/components/ui";
 import { HeartFilledIcon } from "@/components/icons";
+import { formatTimeAgo } from "@/services/mock";
+import { formatSmallNumber } from "@/lib/trench-utils";
 import { AgentDetailModal, type AgentDetailData } from "./agent-detail-modal";
 
 // System Idle icon for empty state
@@ -69,6 +71,8 @@ interface LiveRankingsProps {
   onLoadAgentDetail?: (agentId: string) => Promise<AgentDetailData | null>;
   /** When true, removes outer card styling for embedding in tabs */
   embedded?: boolean;
+  /** Live activities to display inline with rankings */
+  activities?: ActivityItem[];
 }
 
 export function LiveRankings({
@@ -80,11 +84,24 @@ export function LiveRankings({
   trenchId,
   onLoadAgentDetail,
   embedded = false,
+  activities = [],
 }: LiveRankingsProps) {
   // Modal state
   const [selectedAgent, setSelectedAgent] = useState<AgentRanking | null>(null);
   const [agentDetailData, setAgentDetailData] = useState<AgentDetailData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Map activities by userAddress for quick lookup - get latest activity per user
+  const activityByUser = useMemo(() => {
+    const map = new Map<string, ActivityItem>();
+    // Activities are already sorted by time (newest first), so first occurrence is latest
+    for (const activity of activities) {
+      if (!map.has(activity.userAddress)) {
+        map.set(activity.userAddress, activity);
+      }
+    }
+    return map;
+  }, [activities]);
 
   // Only show current user section if they exist and are not in top 3
   const showCurrentUserSection = currentUser && currentUser.rank > 3;
@@ -160,6 +177,7 @@ export function LiveRankings({
                   isBettingPhase={isBettingPhase}
                   isCurrentUser={agent.isCurrentUser}
                   onClick={handleAgentClick}
+                  latestActivity={agent.userAddress ? activityByUser.get(agent.userAddress) : undefined}
                 />
               ))}
             </div>
@@ -179,7 +197,12 @@ export function LiveRankings({
                 </div>
 
                 {/* Current user ranking row */}
-                <RankingRow agent={currentUser} isBettingPhase={isBettingPhase} onClick={handleAgentClick} />
+                <RankingRow
+                  agent={currentUser}
+                  isBettingPhase={isBettingPhase}
+                  onClick={handleAgentClick}
+                  latestActivity={currentUser.userAddress ? activityByUser.get(currentUser.userAddress) : undefined}
+                />
 
                 {/* Prize distribution info */}
                 <div className="bg-[rgba(31,41,55,0.3)] border border-eva-border flex items-center gap-2 px-3 py-2">
@@ -260,9 +283,11 @@ interface RankingRowProps {
   isCurrentUser?: boolean;
   /** Click handler for opening agent detail */
   onClick?: (agent: AgentRanking) => void;
+  /** Latest activity for this agent */
+  latestActivity?: ActivityItem;
 }
 
-function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onClick }: RankingRowProps) {
+function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onClick, latestActivity }: RankingRowProps) {
   const isFirst = agent.rank === 1;
   const isTop3CurrentUser = isCurrentUser && agent.rank <= 3;
 
@@ -273,40 +298,47 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
   // Betting phase layout: show avatar, bet amount, and allocation percentage
   if (isBettingPhase) {
     return (
-      <div
-        className={clsx(
-          "flex items-center justify-between p-[13px] border border-[#374151] transition-colors cursor-pointer",
-          isTop3CurrentUser ? "border-eva-primary bg-eva-primary/10" : "bg-[#15171e]",
-          "hover:bg-eva-card-hover"
-        )}
-        onClick={handleClick}
-      >
-        <div className="flex items-center gap-3">
-          <RankBadge rank={agent.rank} />
-          <AgentAvatarIcon avatar={agent.agentAvatar} name={agent.agentName} />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-white">
-                {agent.agentName}
-              </span>
-              {agent.isOwned && (
-                <HeartFilledIcon className="w-4 h-4 text-eva-danger" />
-              )}
+      <div className="border border-[#374151] bg-[#15171e]">
+        <div
+          className={clsx(
+            "flex items-center justify-between p-[13px] transition-colors cursor-pointer",
+            isTop3CurrentUser && "border-eva-primary bg-eva-primary/10",
+            "hover:bg-eva-card-hover"
+          )}
+          onClick={handleClick}
+        >
+          <div className="flex items-center gap-3">
+            <RankBadge rank={agent.rank} />
+            <AgentAvatarIcon avatar={agent.agentAvatar} name={agent.agentName} />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-white">
+                  {agent.agentName}
+                </span>
+                {agent.isOwned && (
+                  <HeartFilledIcon className="w-4 h-4 text-eva-danger" />
+                )}
+              </div>
+              <div className="text-[11px] text-eva-text-dim font-mono">
+                Bet {agent.betAmount?.toFixed(2) ?? "0.00"} SOL
+              </div>
             </div>
-            <div className="text-[11px] text-eva-text-dim font-mono">
-              Bet {agent.betAmount?.toFixed(2) ?? "0.00"} SOL
+          </div>
+
+          <div className="text-right">
+            <div className="text-sm font-mono font-medium text-eva-primary">
+              +{((agent.allocationPercent ?? 0) / 2).toFixed(1)}%
+            </div>
+            <div className="text-[10px] text-eva-text-dim font-mono uppercase tracking-wider">
+              Alloc
             </div>
           </div>
         </div>
 
-        <div className="text-right">
-          <div className="text-sm font-mono font-medium text-eva-primary">
-            +{((agent.allocationPercent ?? 0) / 2).toFixed(1)}%
-          </div>
-          <div className="text-[10px] text-eva-text-dim font-mono uppercase tracking-wider">
-            Alloc
-          </div>
-        </div>
+        {/* Inline activity for this agent */}
+        {latestActivity && (
+          <InlineActivity activity={latestActivity} />
+        )}
       </div>
     );
   }
@@ -327,45 +359,87 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
 
   // Default trading/liquidation phase layout
   return (
-    <div
-      className={clsx(
-        "flex items-center justify-between p-[13px] border border-[#374151] transition-colors cursor-pointer",
-        isTop3CurrentUser ? "border-eva-primary bg-eva-primary/10" : "bg-[#15171e]",
-        "hover:bg-eva-card-hover"
-      )}
-      onClick={handleClick}
-    >
-      <div className="flex items-center gap-3">
-        <RankBadge rank={agent.rank} />
-        <AgentAvatarIcon avatar={agent.agentAvatar} name={agent.agentName} />
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-white">
-              {agent.agentName}
-            </span>
-            {agent.isOwned && (
-              <HeartFilledIcon className="w-4 h-4 text-eva-danger" />
-            )}
+    <div className="border border-[#374151] bg-[#15171e]">
+      <div
+        className={clsx(
+          "flex items-center justify-between p-[13px] transition-colors cursor-pointer",
+          isTop3CurrentUser && "border-eva-primary bg-eva-primary/10",
+          "hover:bg-eva-card-hover"
+        )}
+        onClick={handleClick}
+      >
+        <div className="flex items-center gap-3">
+          <RankBadge rank={agent.rank} />
+          <AgentAvatarIcon avatar={agent.agentAvatar} name={agent.agentName} />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-white">
+                {agent.agentName}
+              </span>
+              {agent.isOwned && (
+                <HeartFilledIcon className="w-4 h-4 text-eva-danger" />
+              )}
+            </div>
+            <div className="text-[11px] text-eva-text-dim font-mono">
+              {formatTokenAmount(agent.tokenAmount)} • {agent.supplyPercentage.toFixed(1)}%
+            </div>
           </div>
-          <div className="text-[11px] text-eva-text-dim font-mono">
-            {formatTokenAmount(agent.tokenAmount)} • {agent.supplyPercentage.toFixed(1)}%
+        </div>
+
+        <div className="text-right">
+          <div
+            className={clsx(
+              "text-sm font-mono font-medium",
+              agent.prizeAmount >= 0 ? "text-[#EAB308]" : "text-eva-danger"
+            )}
+          >
+            {agent.prizeAmount >= 0 ? "+" : ""}{agent.prizeAmount.toFixed(2)} SOL
+          </div>
+          <div className="text-[10px] text-eva-text-dim font-mono uppercase tracking-wider">
+            Prize
           </div>
         </div>
       </div>
 
-      <div className="text-right">
-        <div
-          className={clsx(
-            "text-sm font-mono font-medium",
-            agent.prizeAmount >= 0 ? "text-[#EAB308]" : "text-eva-danger"
-          )}
-        >
-          {agent.prizeAmount >= 0 ? "+" : ""}{agent.prizeAmount.toFixed(2)} SOL
-        </div>
-        <div className="text-[10px] text-eva-text-dim font-mono uppercase tracking-wider">
-          Prize
-        </div>
-      </div>
+      {/* Inline activity for this agent */}
+      {latestActivity && (
+        <InlineActivity activity={latestActivity} />
+      )}
+    </div>
+  );
+}
+
+// Compact inline activity display
+function InlineActivity({ activity }: { activity: ActivityItem }) {
+  const isDepositOrWithdraw = activity.type === "deposit" || activity.type === "withdraw";
+
+  const getBadge = () => {
+    switch (activity.type) {
+      case "deposit": return <DepositBadge />;
+      case "withdraw": return <WithdrawBadge />;
+      case "buy": return <BuyBadge />;
+      case "sell": return <SellBadge />;
+      default: return null;
+    }
+  };
+
+  const getActionText = () => {
+    if (isDepositOrWithdraw) {
+      return `${formatSmallNumber(activity.solAmount)} SOL`;
+    }
+    return `${activity.tokenAmount.toLocaleString()} tokens @ ${formatSmallNumber(activity.solAmount)} SOL`;
+  };
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 bg-eva-dark/50 border-t border-[#374151]/50">
+      <span className="text-eva-text-dim text-[10px]">└</span>
+      <div className="scale-75 origin-left">{getBadge()}</div>
+      <span className="text-[10px] text-eva-text-dim font-mono truncate">
+        {getActionText()}
+      </span>
+      <span className="text-[10px] text-eva-text-dim/60 ml-auto">
+        {formatTimeAgo(activity.timestamp)}
+      </span>
     </div>
   );
 }
