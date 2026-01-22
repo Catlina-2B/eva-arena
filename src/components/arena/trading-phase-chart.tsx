@@ -479,18 +479,19 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
                 </span>
               </div>
             </div>
+
           </div>
 
           {/* Chart container */}
           <div className="px-4 pb-4">
             <div className="relative">
               {/* Always render chart container for proper initialization */}
-              <div 
-                ref={chartContainerRef} 
+              <div
+                ref={chartContainerRef}
                 className="w-full"
                 style={{ height: 300, visibility: (isLoading || filteredData.length === 0) ? 'hidden' : 'visible' }}
               />
-              
+
               {/* User Trade Tooltip */}
               {hoveredMarker && tooltipPosition && (
                 <TradeTooltip
@@ -508,7 +509,7 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
                   type={pulsePosition.type}
                 />
               )}
-              
+
               {/* Loading overlay */}
               {isLoading && (
                 <div className="absolute inset-0 w-full h-[300px] flex items-center justify-center bg-eva-dark">
@@ -520,7 +521,7 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
                   </div>
                 </div>
               )}
-              
+
               {/* Empty data overlay */}
               {!isLoading && filteredData.length === 0 && (
                 <div className="absolute inset-0 w-full h-[300px] flex items-center justify-center bg-eva-dark">
