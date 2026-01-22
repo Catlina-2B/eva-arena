@@ -48,6 +48,9 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
   const [hoveredMarker, setHoveredMarker] = useState<UserTradeMarker | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
 
+  // Pulse marker position for latest trade
+  const [pulsePosition, setPulsePosition] = useState<{ x: number; y: number; type: "buy" | "sell" } | null>(null);
+
   // Use database primary key ID for API calls
   const trenchDbId = round.trenchDbId;
   // Use on-chain trench ID for WebSocket subscription
@@ -282,32 +285,102 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
     }
   }, [chartMarkers]);
 
-  // Handle crosshair move for tooltip display
+  // Update pulse position for latest marker
   useEffect(() => {
-    if (!chartRef.current || !chartContainerRef.current || userTradeMarkers.length === 0) {
+    if (!chartRef.current || !seriesRef.current || userTradeMarkers.length === 0) {
+      setPulsePosition(null);
       return;
     }
 
     const chart = chartRef.current;
-    const container = chartContainerRef.current;
+    const series = seriesRef.current;
+    const latestMarker = userTradeMarkers[userTradeMarkers.length - 1];
+
+    const updatePulsePosition = () => {
+      try {
+        // Get time coordinate
+        const timeCoordinate = chart.timeScale().timeToCoordinate(latestMarker.time as Time);
+        if (timeCoordinate === null) {
+          setPulsePosition(null);
+          return;
+        }
+
+        // Get price coordinate
+        const priceCoordinate = series.priceToCoordinate(latestMarker.price);
+        if (priceCoordinate === null) {
+          setPulsePosition(null);
+          return;
+        }
+
+        setPulsePosition({
+          x: timeCoordinate,
+          y: priceCoordinate,
+          type: latestMarker.type,
+        });
+      } catch {
+        setPulsePosition(null);
+      }
+    };
+
+    // Initial position
+    updatePulsePosition();
+
+    // Update on chart changes
+    const handleVisibleTimeRangeChange = () => {
+      updatePulsePosition();
+    };
+
+    chart.timeScale().subscribeVisibleTimeRangeChange(handleVisibleTimeRangeChange);
+
+    return () => {
+      chart.timeScale().unsubscribeVisibleTimeRangeChange(handleVisibleTimeRangeChange);
+    };
+  }, [userTradeMarkers, filteredData]);
+
+  // Handle crosshair move for tooltip display
+  useEffect(() => {
+    if (!chartRef.current || !seriesRef.current || userTradeMarkers.length === 0) {
+      return;
+    }
+
+    const chart = chartRef.current;
+    const series = seriesRef.current;
 
     const handleCrosshairMove = (param: { time?: Time; point?: { x: number; y: number } }) => {
-      if (!param.time || !param.point) {
+      if (!param.point) {
         setHoveredMarker(null);
         setTooltipPosition(null);
         return;
       }
 
-      // Find if there's a marker at this time (within a small tolerance)
-      const hoveredTime = param.time as number;
-      const tolerance = 60; // 60 seconds tolerance
+      const mouseX = param.point.x;
+      const mouseY = param.point.y;
+      const maxDistance = 30; // Maximum pixel distance to show tooltip
 
-      const marker = userTradeMarkers.find(
-        (m) => Math.abs(m.time - hoveredTime) < tolerance
-      );
+      let closestMarker: UserTradeMarker | null = null;
+      let closestDistance = maxDistance;
 
-      if (marker) {
-        setHoveredMarker(marker);
+      // Find the marker closest to the mouse position (using pixel coordinates)
+      for (const m of userTradeMarkers) {
+        // Convert marker time and price to pixel coordinates
+        const markerX = chart.timeScale().timeToCoordinate(m.time as Time);
+        const markerY = series.priceToCoordinate(m.price);
+
+        if (markerX === null || markerY === null) continue;
+
+        // Calculate Euclidean distance from mouse to marker
+        const distance = Math.sqrt(
+          Math.pow(mouseX - markerX, 2) + Math.pow(mouseY - markerY, 2)
+        );
+
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestMarker = m;
+        }
+      }
+
+      if (closestMarker) {
+        setHoveredMarker(closestMarker);
         setTooltipPosition({ x: param.point.x, y: param.point.y });
       } else {
         setHoveredMarker(null);
@@ -406,18 +479,19 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
                 </span>
               </div>
             </div>
+
           </div>
 
           {/* Chart container */}
           <div className="px-4 pb-4">
             <div className="relative">
               {/* Always render chart container for proper initialization */}
-              <div 
-                ref={chartContainerRef} 
+              <div
+                ref={chartContainerRef}
                 className="w-full"
                 style={{ height: 300, visibility: (isLoading || filteredData.length === 0) ? 'hidden' : 'visible' }}
               />
-              
+
               {/* User Trade Tooltip */}
               {hoveredMarker && tooltipPosition && (
                 <TradeTooltip
@@ -426,7 +500,16 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
                   containerRef={chartContainerRef}
                 />
               )}
-              
+
+              {/* Pulse animation for latest trade marker */}
+              {pulsePosition && !isLoading && filteredData.length > 0 && (
+                <PulseMarker
+                  x={pulsePosition.x}
+                  y={pulsePosition.y}
+                  type={pulsePosition.type}
+                />
+              )}
+
               {/* Loading overlay */}
               {isLoading && (
                 <div className="absolute inset-0 w-full h-[300px] flex items-center justify-center bg-eva-dark">
@@ -438,7 +521,7 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
                   </div>
                 </div>
               )}
-              
+
               {/* Empty data overlay */}
               {!isLoading && filteredData.length === 0 && (
                 <div className="absolute inset-0 w-full h-[300px] flex items-center justify-center bg-eva-dark">
@@ -480,6 +563,103 @@ function CornerDecoration({ position }: CornerDecorationProps) {
       <svg fill="none" height="32" viewBox="0 0 32 32" width="32">
         <path d="M0 0 L32 0 L32 2 L2 2 L2 32 L0 32 Z" fill="#00ff88" />
       </svg>
+    </div>
+  );
+}
+
+// Pulse marker component for latest trade
+interface PulseMarkerProps {
+  x: number;
+  y: number;
+  type: "buy" | "sell";
+}
+
+function PulseMarker({ x, y, type }: PulseMarkerProps) {
+  const isBuy = type === "buy";
+  const color = isBuy ? "#34d399" : "#f87171";
+  const glowColor = isBuy ? "rgba(52, 211, 153, 0.4)" : "rgba(248, 113, 113, 0.4)";
+
+  return (
+    <div
+      className="absolute pointer-events-none z-40"
+      style={{
+        left: x,
+        top: y,
+        transform: "translate(-50%, -50%)",
+      }}
+    >
+      {/* Keyframe styles */}
+      <style>{`
+        @keyframes pulse-ring {
+          0% { transform: scale(1); opacity: 0.6; }
+          100% { transform: scale(2.5); opacity: 0; }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.3); opacity: 0.2; }
+        }
+      `}</style>
+
+      {/* Outer pulse ring - expanding */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 20,
+          height: 20,
+          left: -10,
+          top: -10,
+          backgroundColor: glowColor,
+          animation: "pulse-ring 1.5s ease-out infinite",
+        }}
+      />
+      {/* Second pulse ring - staggered */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 20,
+          height: 20,
+          left: -10,
+          top: -10,
+          backgroundColor: glowColor,
+          animation: "pulse-ring 1.5s ease-out infinite 0.5s",
+        }}
+      />
+      {/* Middle glow ring */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 14,
+          height: 14,
+          left: -7,
+          top: -7,
+          backgroundColor: glowColor,
+          animation: "pulse-glow 2s ease-in-out infinite",
+        }}
+      />
+      {/* Center dot */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 8,
+          height: 8,
+          left: -4,
+          top: -4,
+          backgroundColor: color,
+          boxShadow: `0 0 8px ${color}, 0 0 16px ${glowColor}`,
+        }}
+      />
+      {/* Inner bright core */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 4,
+          height: 4,
+          left: -2,
+          top: -2,
+          backgroundColor: "#ffffff",
+          opacity: 0.9,
+        }}
+      />
     </div>
   );
 }

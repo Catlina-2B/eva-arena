@@ -69,7 +69,7 @@ export function WithdrawBadge() {
 
 export function BuyBadge() {
   return (
-    <span className="inline-flex items-center px-2 py-1.5 text-xs font-medium uppercase tracking-wider bg-[#064E3B] text-[#6CE182] border-none rounded">
+    <span className="inline-flex items-center justify-center w-12 py-1.5 text-xs font-medium uppercase tracking-wider bg-[#064E3B] text-[#6CE182] border-none rounded">
       Buy
     </span>
   );
@@ -77,7 +77,7 @@ export function BuyBadge() {
 
 export function SellBadge() {
   return (
-    <span className="inline-flex items-center px-2 py-1.5 text-xs font-medium uppercase tracking-wider bg-[#7F1D1D] text-[#F87171] border-none rounded">
+    <span className="inline-flex items-center justify-center w-12 py-1.5 text-xs font-medium uppercase tracking-wider bg-[#7F1D1D] text-[#F87171] border-none rounded">
       Sell
     </span>
   );

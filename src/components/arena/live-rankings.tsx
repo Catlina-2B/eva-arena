@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
-import type { AgentRanking } from "@/types";
+import type { AgentRanking, ActivityItem } from "@/types";
 
 import clsx from "clsx";
 
-import { RankBadge } from "@/components/ui";
+import { RankBadge, DepositBadge, WithdrawBadge, BuyBadge, SellBadge } from "@/components/ui";
 import { HeartFilledIcon } from "@/components/icons";
+import { formatTimeAgo } from "@/services/mock";
+import { formatSmallNumber } from "@/lib/trench-utils";
 import { AgentDetailModal, type AgentDetailData } from "./agent-detail-modal";
 
 // System Idle icon for empty state
@@ -67,6 +69,10 @@ interface LiveRankingsProps {
   trenchId?: number;
   /** Optional callback to load agent detail data */
   onLoadAgentDetail?: (agentId: string) => Promise<AgentDetailData | null>;
+  /** When true, removes outer card styling for embedding in tabs */
+  embedded?: boolean;
+  /** Live activities to display inline with rankings */
+  activities?: ActivityItem[];
 }
 
 export function LiveRankings({
@@ -77,11 +83,28 @@ export function LiveRankings({
   isBettingPhase = false,
   trenchId,
   onLoadAgentDetail,
+  embedded = false,
+  activities = [],
 }: LiveRankingsProps) {
   // Modal state
   const [selectedAgent, setSelectedAgent] = useState<AgentRanking | null>(null);
   const [agentDetailData, setAgentDetailData] = useState<AgentDetailData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // Collapse state - when collapsed, only show Top 1
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Map activities by userAddress for quick lookup - get latest activity per user
+  const activityByUser = useMemo(() => {
+    const map = new Map<string, ActivityItem>();
+    // Activities are already sorted by time (newest first), so first occurrence is latest
+    for (const activity of activities) {
+      if (!map.has(activity.userAddress)) {
+        map.set(activity.userAddress, activity);
+      }
+    }
+    return map;
+  }, [activities]);
 
   // Only show current user section if they exist and are not in top 3
   const showCurrentUserSection = currentUser && currentUser.rank > 3;
@@ -116,12 +139,40 @@ export function LiveRankings({
   };
 
   return (
-    <div className="border border-eva-border overflow-hidden relative">
-      {/* Header badge */}
-      <div className="absolute -top-1 right-0">
-        <span className="text-[10px] text-[#9CA3AF] uppercase tracking-[0.15em] font-mono bg-gray-800 px-2 py-1">
-          Live Rankings
-        </span>
+    <div className={clsx(
+      "overflow-hidden relative",
+      !embedded && "border border-eva-border"
+    )}>
+      {/* Header with collapse button */}
+      <div className="flex items-center justify-between px-3 pt-3 pb-2">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 bg-eva-primary animate-pulse" />
+          <span className="text-[10px] text-[#9CA3AF] uppercase tracking-[0.15em] font-mono">
+            Live Rankings
+          </span>
+        </div>
+        <button
+          className="flex items-center gap-1 text-[10px] text-eva-text-dim hover:text-eva-text transition-colors font-mono uppercase tracking-wider"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+        >
+          {isCollapsed ? "Expand" : "Collapse"}
+          <svg
+            className={clsx(
+              "w-3 h-3 transition-transform",
+              isCollapsed && "rotate-180"
+            )}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M19 9l-7 7-7-7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+            />
+          </svg>
+        </button>
       </div>
 
       {isSkipped ? (
@@ -142,22 +193,24 @@ export function LiveRankings({
         </div>
       ) : (
         <>
-          {/* Top 3 Rankings list */}
-          <div className="p-3 pt-8 space-y-4">
+          {/* Rankings list */}
+          <div className="px-3 pb-3 space-y-4">
             <div className="space-y-4">
-              {rankings.slice(0, 3).map((agent) => (
+              {/* When collapsed, only show Top 1; when expanded, show Top 3 */}
+              {rankings.slice(0, isCollapsed ? 1 : 3).map((agent) => (
                 <RankingRow
                   key={agent.agentId}
                   agent={agent}
                   isBettingPhase={isBettingPhase}
                   isCurrentUser={agent.isCurrentUser}
                   onClick={handleAgentClick}
+                  latestActivity={agent.userAddress ? activityByUser.get(agent.userAddress) : undefined}
                 />
               ))}
             </div>
 
-            {/* Current user section (when not in top 3) */}
-            {showCurrentUserSection && (
+            {/* Current user section (when not in top 3) - hide when collapsed */}
+            {!isCollapsed && showCurrentUserSection && (
               <div className="space-y-4">
                 {/* Gap to Podium divider */}
                 <div className="border-l border-eva-border pl-4 h-12 flex items-center">
@@ -171,7 +224,12 @@ export function LiveRankings({
                 </div>
 
                 {/* Current user ranking row */}
-                <RankingRow agent={currentUser} isBettingPhase={isBettingPhase} onClick={handleAgentClick} />
+                <RankingRow
+                  agent={currentUser}
+                  isBettingPhase={isBettingPhase}
+                  onClick={handleAgentClick}
+                  latestActivity={currentUser.userAddress ? activityByUser.get(currentUser.userAddress) : undefined}
+                />
 
                 {/* Prize distribution info */}
                 <div className="bg-[rgba(31,41,55,0.3)] border border-eva-border flex items-center gap-2 px-3 py-2">
@@ -186,8 +244,8 @@ export function LiveRankings({
             )}
           </div>
 
-          {/* Footer note (only show when current user section is not shown) */}
-          {!showCurrentUserSection && (
+          {/* Footer note (only show when current user section is not shown and not collapsed) */}
+          {!isCollapsed && !showCurrentUserSection && (
             <div className="px-3 pb-3">
               <div className="px-3 py-3 border border-eva-border text-xs text-eva-text-dim flex items-center gap-2 bg-eva-darker/50">
                 <InfoIcon />
@@ -252,9 +310,11 @@ interface RankingRowProps {
   isCurrentUser?: boolean;
   /** Click handler for opening agent detail */
   onClick?: (agent: AgentRanking) => void;
+  /** Latest activity for this agent */
+  latestActivity?: ActivityItem;
 }
 
-function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onClick }: RankingRowProps) {
+function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onClick, latestActivity }: RankingRowProps) {
   const isFirst = agent.rank === 1;
   const isTop3CurrentUser = isCurrentUser && agent.rank <= 3;
 
@@ -265,40 +325,47 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
   // Betting phase layout: show avatar, bet amount, and allocation percentage
   if (isBettingPhase) {
     return (
-      <div
-        className={clsx(
-          "flex items-center justify-between p-[13px] border border-[#374151] transition-colors cursor-pointer",
-          isTop3CurrentUser ? "border-eva-primary bg-eva-primary/10" : "bg-[#15171e]",
-          "hover:bg-eva-card-hover"
-        )}
-        onClick={handleClick}
-      >
-        <div className="flex items-center gap-3">
-          <RankBadge rank={agent.rank} />
-          <AgentAvatarIcon avatar={agent.agentAvatar} name={agent.agentName} />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-white">
-                {agent.agentName}
-              </span>
-              {agent.isOwned && (
-                <HeartFilledIcon className="w-4 h-4 text-eva-danger" />
-              )}
+      <div className="border border-[#374151] bg-[#15171e]">
+        <div
+          className={clsx(
+            "flex items-center justify-between p-[13px] transition-colors cursor-pointer",
+            isTop3CurrentUser && "border-eva-primary bg-eva-primary/10",
+            "hover:bg-eva-card-hover"
+          )}
+          onClick={handleClick}
+        >
+          <div className="flex items-center gap-3">
+            <RankBadge rank={agent.rank} />
+            <AgentAvatarIcon avatar={agent.agentAvatar} name={agent.agentName} />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-white">
+                  {agent.agentName}
+                </span>
+                {agent.isOwned && (
+                  <HeartFilledIcon className="w-4 h-4 text-eva-danger" />
+                )}
+              </div>
+              <div className="text-[11px] text-eva-text-dim font-mono">
+                Bet {agent.betAmount?.toFixed(2) ?? "0.00"} SOL
+              </div>
             </div>
-            <div className="text-[11px] text-eva-text-dim font-mono">
-              Bet {agent.betAmount?.toFixed(2) ?? "0.00"} SOL
+          </div>
+
+          <div className="text-right">
+            <div className="text-sm font-mono font-medium text-eva-primary">
+              +{((agent.allocationPercent ?? 0) / 2).toFixed(1)}%
+            </div>
+            <div className="text-[10px] text-eva-text-dim font-mono uppercase tracking-wider">
+              Alloc
             </div>
           </div>
         </div>
 
-        <div className="text-right">
-          <div className="text-sm font-mono font-medium text-eva-primary">
-            +{((agent.allocationPercent ?? 0) / 2).toFixed(1)}%
-          </div>
-          <div className="text-[10px] text-eva-text-dim font-mono uppercase tracking-wider">
-            Alloc
-          </div>
-        </div>
+        {/* Inline activity for this agent */}
+        {latestActivity && (
+          <InlineActivity activity={latestActivity} />
+        )}
       </div>
     );
   }
@@ -319,45 +386,87 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
 
   // Default trading/liquidation phase layout
   return (
-    <div
-      className={clsx(
-        "flex items-center justify-between p-[13px] border border-[#374151] transition-colors cursor-pointer",
-        isTop3CurrentUser ? "border-eva-primary bg-eva-primary/10" : "bg-[#15171e]",
-        "hover:bg-eva-card-hover"
-      )}
-      onClick={handleClick}
-    >
-      <div className="flex items-center gap-3">
-        <RankBadge rank={agent.rank} />
-        <AgentAvatarIcon avatar={agent.agentAvatar} name={agent.agentName} />
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-white">
-              {agent.agentName}
-            </span>
-            {agent.isOwned && (
-              <HeartFilledIcon className="w-4 h-4 text-eva-danger" />
-            )}
+    <div className="border border-[#374151] bg-[#15171e]">
+      <div
+        className={clsx(
+          "flex items-center justify-between p-[13px] transition-colors cursor-pointer",
+          isTop3CurrentUser && "border-eva-primary bg-eva-primary/10",
+          "hover:bg-eva-card-hover"
+        )}
+        onClick={handleClick}
+      >
+        <div className="flex items-center gap-3">
+          <RankBadge rank={agent.rank} />
+          <AgentAvatarIcon avatar={agent.agentAvatar} name={agent.agentName} />
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-white">
+                {agent.agentName}
+              </span>
+              {agent.isOwned && (
+                <HeartFilledIcon className="w-4 h-4 text-eva-danger" />
+              )}
+            </div>
+            <div className="text-[11px] text-eva-text-dim font-mono">
+              {formatTokenAmount(agent.tokenAmount)} • {agent.supplyPercentage.toFixed(1)}%
+            </div>
           </div>
-          <div className="text-[11px] text-eva-text-dim font-mono">
-            {formatTokenAmount(agent.tokenAmount)} • {agent.supplyPercentage.toFixed(1)}%
+        </div>
+
+        <div className="text-right">
+          <div
+            className={clsx(
+              "text-sm font-mono font-medium",
+              agent.prizeAmount >= 0 ? "text-[#EAB308]" : "text-eva-danger"
+            )}
+          >
+            {agent.prizeAmount >= 0 ? "+" : ""}{agent.prizeAmount.toFixed(2)} SOL
+          </div>
+          <div className="text-[10px] text-eva-text-dim font-mono uppercase tracking-wider">
+            Prize
           </div>
         </div>
       </div>
 
-      <div className="text-right">
-        <div
-          className={clsx(
-            "text-sm font-mono font-medium",
-            agent.prizeAmount >= 0 ? "text-[#EAB308]" : "text-eva-danger"
-          )}
-        >
-          {agent.prizeAmount >= 0 ? "+" : ""}{agent.prizeAmount.toFixed(2)} SOL
-        </div>
-        <div className="text-[10px] text-eva-text-dim font-mono uppercase tracking-wider">
-          Prize
-        </div>
-      </div>
+      {/* Inline activity for this agent */}
+      {latestActivity && (
+        <InlineActivity activity={latestActivity} />
+      )}
+    </div>
+  );
+}
+
+// Compact inline activity display
+function InlineActivity({ activity }: { activity: ActivityItem }) {
+  const isDepositOrWithdraw = activity.type === "deposit" || activity.type === "withdraw";
+
+  const getBadge = () => {
+    switch (activity.type) {
+      case "deposit": return <DepositBadge />;
+      case "withdraw": return <WithdrawBadge />;
+      case "buy": return <BuyBadge />;
+      case "sell": return <SellBadge />;
+      default: return null;
+    }
+  };
+
+  const getActionText = () => {
+    if (isDepositOrWithdraw) {
+      return `${formatSmallNumber(activity.solAmount)} SOL`;
+    }
+    return `${activity.tokenAmount.toLocaleString()} tokens @ ${formatSmallNumber(activity.solAmount)} SOL`;
+  };
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 bg-eva-dark/50 border-t border-[#374151]/50">
+      <span className="text-eva-text-dim text-[10px]">└</span>
+      <div className="scale-75 origin-left">{getBadge()}</div>
+      <span className="text-[10px] text-eva-text-dim font-mono truncate">
+        {getActionText()}
+      </span>
+      <span className="text-[10px] text-eva-text-dim/60 ml-auto">
+        {formatTimeAgo(activity.timestamp)}
+      </span>
     </div>
   );
 }

@@ -13,7 +13,7 @@ import { useAccount } from "@particle-network/connectkit";
 
 import DefaultLayout from "@/layouts/default";
 import { EvaCard, EvaCardContent, EvaButton, EvaBadge } from "@/components/ui";
-import { DepositModal, EditAgentModal, FirstDepositPromptModal, PauseRequiredModal, StartTimingModal, WithdrawModal } from "@/components/agent";
+import { DepositModal, EditAgentModal, FirstDepositPromptModal, StartTimingModal, WithdrawModal } from "@/components/agent";
 import { ConnectWalletPrompt } from "@/components/wallet/connect-wallet-prompt";
 import { TransactionLogModal } from "@/components/wallet/transaction-log-modal";
 import { ReasoningModal } from "@/components/arena/reasoning-modal";
@@ -157,30 +157,26 @@ function PnlChart({ timeline, isLoading, onHoverChange }: PnlChartProps) {
   // Empty state - show flat line
   if (dataPoints.length === 0) {
     return (
-      <svg
-        className="w-full h-full"
-        preserveAspectRatio="none"
-        viewBox={`0 0 ${width} ${height}`}
-      >
-        <line
-          stroke="#00ff88"
-          strokeOpacity="0.3"
-          strokeWidth="2"
-          x1={padding}
-          x2={width - padding}
-          y1={height / 2}
-          y2={height / 2}
-        />
-        <text
-          className="text-[10px]"
-          fill="#666"
-          textAnchor="middle"
-          x={width / 2}
-          y={height / 2 + 20}
+      <div className="relative w-full h-full">
+        <svg
+          className="w-full h-full"
+          preserveAspectRatio="none"
+          viewBox={`0 0 ${width} ${height}`}
         >
-          No PNL data
-        </text>
-      </svg>
+          <line
+            stroke="#00ff88"
+            strokeOpacity="0.3"
+            strokeWidth="2"
+            x1={padding}
+            x2={width - padding}
+            y1={height / 2}
+            y2={height / 2}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center pt-8">
+          <span className="text-[10px] text-[#666]">No PNL data</span>
+        </div>
+      </div>
     );
   }
 
@@ -916,7 +912,6 @@ export default function MyAgentPage() {
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isStartTimingModalOpen, setIsStartTimingModalOpen] = useState(false);
-  const [isPauseRequiredModalOpen, setIsPauseRequiredModalOpen] = useState(false);
   const [isTransactionLogModalOpen, setIsTransactionLogModalOpen] = useState(false);
   const [hoverPnl, setHoverPnl] = useState<number | null>(null);
 
@@ -1065,12 +1060,9 @@ export default function MyAgentPage() {
           agent={displayAgent}
           isToggling={toggleStatusMutation.isPending}
           onEdit={() => {
-            // If agent is active, show pause required modal first
-            if (displayAgent.status === "ACTIVE") {
-              setIsPauseRequiredModalOpen(true);
-            } else {
-              setIsEditModalOpen(true);
-            }
+            // Refresh agent detail before opening modal to ensure latest data
+            refetchAgentDetail();
+            setIsEditModalOpen(true);
           }}
           onToggleStatus={() => {
             // Show timing modal when activating, directly pause when deactivating
@@ -1312,8 +1304,13 @@ export default function MyAgentPage() {
       {/* Edit Agent Modal */}
       <EditAgentModal
         agent={agentDetail ?? null}
+        isAgentActive={displayAgent.status === "ACTIVE"}
+        isPausing={toggleStatusMutation.isPending}
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
+        onPauseAgent={async () => {
+          await toggleStatusMutation.mutateAsync({ id: displayAgent.id });
+        }}
         onSuccess={() => {
           refetchAgents();
           refetchAgentDetail();
@@ -1334,20 +1331,6 @@ export default function MyAgentPage() {
         isLoading={toggleStatusMutation.isPending}
       />
 
-      {/* Pause Required Modal */}
-      <PauseRequiredModal
-        isOpen={isPauseRequiredModalOpen}
-        onClose={() => setIsPauseRequiredModalOpen(false)}
-        onPause={async () => {
-          // Pause the agent first
-          await toggleStatusMutation.mutateAsync({ id: displayAgent.id });
-          // Close pause required modal
-          setIsPauseRequiredModalOpen(false);
-          // Open edit modal
-          setIsEditModalOpen(true);
-        }}
-        isLoading={toggleStatusMutation.isPending}
-      />
 
       {/* First Deposit Prompt Modal - shown for first-time users */}
       <FirstDepositPromptModal

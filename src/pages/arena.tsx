@@ -1,7 +1,7 @@
 import type { ArenaRound, AgentRanking } from "@/types";
 import type { AgentDetailData } from "@/components/arena/agent-detail-modal";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useEffect, useRef } from "react";
 
 import DefaultLayout from "@/layouts/default";
 import {
@@ -19,7 +19,7 @@ import {
   FloatingThinkButton,
   ThinkListPanel,
 } from "@/components/arena";
-import { EditAgentModal, EvolveMeDrawer, PauseRequiredModal, StartTimingModal } from "@/components/agent";
+import { EditAgentModal, EvolveMeDrawer, StartTimingModal } from "@/components/agent";
 import {
   useCurrentTrench,
   useLeaderboard,
@@ -122,14 +122,16 @@ export default function ArenaPage() {
   // Start timing modal state
   const [isStartTimingModalOpen, setIsStartTimingModalOpen] = useState(false);
 
-  // Pause required modal state
-  const [isPauseRequiredModalOpen, setIsPauseRequiredModalOpen] = useState(false);
-
   // Evolve Me drawer state
   const [isEvolveMeOpen, setIsEvolveMeOpen] = useState(false);
 
   // Think list panel state
   const [isThinkPanelOpen, setIsThinkPanelOpen] = useState(false);
+
+
+  // Rank change tracking
+  const previousRankRef = useRef<number | undefined>(undefined);
+  const [rankChange, setRankChange] = useState<number>(0);
 
   // Toggle agent status mutation
   const toggleAgentStatus = useToggleAgentStatus();
@@ -170,6 +172,70 @@ export default function ArenaPage() {
 
     return getThirdPlaceTokenAmount(leaderboardData);
   }, [leaderboardData]);
+
+  // Calculate user's agent ranking info
+  const userAgentRankingInfo = useMemo(() => {
+    if (!primaryAgent?.turnkeyAddress || rankings.length === 0) {
+      return { rank: undefined, gapToTop3: undefined, totalAgents: undefined };
+    }
+
+    // Find user's rank in the rankings list
+    const userRankIndex = rankings.findIndex(
+      (r) => r.userAddress === primaryAgent.turnkeyAddress
+    );
+
+    if (userRankIndex === -1) {
+      return { rank: undefined, gapToTop3: undefined, totalAgents: rankings.length };
+    }
+
+    const rank = userRankIndex + 1; // Convert 0-based index to 1-based rank
+    const userTokenAmount = rankings[userRankIndex]?.tokenAmount ?? 0;
+
+    // Calculate gap to top 3 (difference from 3rd place)
+    let gapToTop3 = 0;
+    if (rank > 3 && thirdPlaceTokenAmount > 0) {
+      gapToTop3 = Math.max(0, thirdPlaceTokenAmount - userTokenAmount);
+    }
+
+    return {
+      rank,
+      gapToTop3,
+      totalAgents: rankings.length,
+    };
+  }, [primaryAgent?.turnkeyAddress, rankings, thirdPlaceTokenAmount]);
+
+  // Track rank changes
+  useEffect(() => {
+    const currentRank = userAgentRankingInfo.rank;
+
+    if (currentRank === undefined) {
+      previousRankRef.current = undefined;
+      setRankChange(0);
+      return;
+    }
+
+    const previousRank = previousRankRef.current;
+
+    // Only track changes after we have a previous rank (not on initial load)
+    if (previousRank !== undefined && previousRank !== currentRank) {
+      const change = previousRank - currentRank; // Positive = improved
+      setRankChange(change);
+    }
+
+    // Update previous rank
+    previousRankRef.current = currentRank;
+  }, [userAgentRankingInfo.rank]);
+
+  // Auto-clear rank change indicator after 30 seconds
+  useEffect(() => {
+    if (rankChange === 0) return;
+
+    const timer = setTimeout(() => {
+      setRankChange(0);
+    }, 30000);
+
+    return () => clearTimeout(timer);
+  }, [rankChange]);
 
   const activities = useMemo(() => {
     if (!USE_REAL_DATA) return mockActivities;
@@ -392,16 +458,18 @@ export default function ArenaPage() {
           {/* Left column: Phase panel + Activity */}
           <div className="lg:col-span-2 space-y-4">
             {renderPhasePanel()}
-            <LiveActivity 
-              activities={activities} 
+            <LiveActivity
+              activities={activities}
               trenchId={trenchId}
               onLoadAgentDetail={handleLoadAgentDetailByUserAddress}
+              prizePool={currentRound.totalPrizePool}
             />
           </div>
 
-          {/* Right column: Rankings + Welcome/Agent */}
+          {/* Right column: Rankings above My Agent */}
           <div className="space-y-4">
-            <LiveRankings 
+            {/* Rankings - always show at top */}
+            <LiveRankings
               rankings={rankings}
               currentUser={currentUserRanking}
               thirdPlaceTokenAmount={thirdPlaceTokenAmount}
@@ -409,10 +477,11 @@ export default function ArenaPage() {
               isBettingPhase={currentRound.phase === "betting"}
               trenchId={trenchId}
               onLoadAgentDetail={handleLoadAgentDetail}
+              activities={activities}
             />
-            {!isAuthenticated && <WelcomeCard />}
-            {isAuthenticated && !hasAgent && <CreateAgentCard />}
-            {isAuthenticated && hasAgent && primaryAgent && (
+
+            {/* My Agent or Welcome/Create Card below */}
+            {isAuthenticated && hasAgent && primaryAgent ? (
               <AgentDashboardCard
                 agent={{
                   id: primaryAgent.id,
@@ -422,7 +491,7 @@ export default function ArenaPage() {
                   status:
                     primaryAgent.status === "ACTIVE" ? "running" : primaryAgent.status === "WAITING" ? "waiting" : "paused",
                   balance: turnkeyBalance || primaryAgent.currentBalance,
-                  totalDeposit: 0, // Would need to fetch from panel
+                  totalDeposit: 0,
                   totalWithdraw: 0,
                   pnl: primaryAgent.totalPnl,
                   frequency: parseInt(primaryAgent.frequency) || 10,
@@ -435,18 +504,23 @@ export default function ArenaPage() {
                 totalPnl={primaryAgent.totalPnl}
                 trenchId={trenchId}
                 turnkeyAddress={primaryAgent.turnkeyAddress}
+                rank={userAgentRankingInfo.rank}
+                gapToTop3={userAgentRankingInfo.gapToTop3}
+                totalAgents={userAgentRankingInfo.totalAgents}
                 onEvolveMe={() => setIsEvolveMeOpen(true)}
                 onEditName={() => {
-                  // If agent is active, show pause required modal first
-                  if (primaryAgent.status === "ACTIVE") {
-                    setIsPauseRequiredModalOpen(true);
-                  } else {
-                    setIsEditModalOpen(true);
-                  }
+                  // Refresh agent detail before opening modal to ensure latest data
+                  refetchAgentDetail();
+                  setIsEditModalOpen(true);
                 }}
                 onPauseSystem={() => toggleAgentStatus.mutate({ id: primaryAgent.id })}
                 onStartSystem={() => setIsStartTimingModalOpen(true)}
               />
+            ) : (
+              <>
+                {!isAuthenticated && <WelcomeCard />}
+                {isAuthenticated && !hasAgent && <CreateAgentCard />}
+              </>
             )}
           </div>
         </div>
@@ -455,8 +529,15 @@ export default function ArenaPage() {
       {/* Edit Agent Modal */}
       <EditAgentModal
         agent={agentDetail ?? null}
+        isAgentActive={primaryAgent?.status === "ACTIVE"}
+        isPausing={toggleAgentStatus.isPending}
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
+        onPauseAgent={async () => {
+          if (primaryAgent) {
+            await toggleAgentStatus.mutateAsync({ id: primaryAgent.id });
+          }
+        }}
         onSuccess={() => {
           refetchAgents();
           refetchAgentDetail();
@@ -472,23 +553,6 @@ export default function ArenaPage() {
             const immediate = timing === "now";
             toggleAgentStatus.mutate({ id: primaryAgent.id, immediate });
             setIsStartTimingModalOpen(false);
-          }}
-          isLoading={toggleAgentStatus.isPending}
-        />
-      )}
-
-      {/* Pause Required Modal */}
-      {primaryAgent && (
-        <PauseRequiredModal
-          isOpen={isPauseRequiredModalOpen}
-          onClose={() => setIsPauseRequiredModalOpen(false)}
-          onPause={async () => {
-            // Pause the agent first
-            await toggleAgentStatus.mutateAsync({ id: primaryAgent.id });
-            // Close pause required modal
-            setIsPauseRequiredModalOpen(false);
-            // Open edit modal
-            setIsEditModalOpen(true);
           }}
           isLoading={toggleAgentStatus.isPending}
         />
@@ -522,6 +586,7 @@ export default function ArenaPage() {
           />
         </>
       )}
+
     </DefaultLayout>
   );
 }

@@ -169,7 +169,7 @@ export function EvolveMeDrawer({
           id: "welcome",
           type: "ai",
           content:
-            "I'm here to help you evolve your agent strategy. Tell me what you'd like to improve, for example:\n\n• \"When price rises 50%, sell the principal\"\n• \"Be more aggressive in the betting phase\"\n• \"Reduce trading frequency when volatility is high\"",
+            "Based on the current round, share your feelings or any feedback:\n\n• \"Should have sold earlier when price peaked\"\n• \"Be more aggressive when volume spikes\"\n• \"Hold longer during uptrends\"\n\nYour suggestions will be automatically merged into your strategy prompt and take effect from the next round.",
         },
       ]);
 
@@ -331,7 +331,7 @@ export function EvolveMeDrawer({
               ///
             </span>
             <span className="text-white font-mono text-sm font-bold uppercase tracking-wider">
-              EVOLVE ME
+              COACH YOUR AGENT
             </span>
           </div>
           <div className="flex items-center gap-1">
@@ -358,6 +358,23 @@ export function EvolveMeDrawer({
             >
               <CloseIcon />
             </button>
+          </div>
+        </div>
+
+        {/* How it works banner */}
+        <div className="px-4 py-3 bg-[#0d1117] border-b border-[#1f2937]">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#6ce182]/10 flex items-center justify-center flex-shrink-0">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M8 1v6M8 11v.01M8 15a7 7 0 100-14 7 7 0 000 14z" stroke="#6ce182" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-white/90 font-medium mb-1">Real-time Feedback Loop</p>
+              <p className="text-[11px] text-white/50 leading-relaxed">
+                Share your trading insights anytime. Your feedback will be analyzed and merged into the agent's strategy, taking effect from the <span className="text-[#6ce182]">next round</span>.
+              </p>
+            </div>
           </div>
         </div>
 

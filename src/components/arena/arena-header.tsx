@@ -43,7 +43,7 @@ export function ArenaHeader({ round }: ArenaHeaderProps) {
     <EvaCard className="overflow-hidden">
       <EvaCardContent className="flex flex-col lg:flex-row items-stretch">
         {/* Left: Target Info */}
-        <div className="flex items-center justify-between gap-6 flex-1 lg:flex-[2] pb-4 lg:pb-0 lg:pr-6 lg:border-r border-b lg:border-b-0 border-eva-border">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-1 lg:flex-[2] pb-4 lg:pb-0 lg:pr-6 lg:border-r border-b lg:border-b-0 border-eva-border">
           <div className="flex items-center gap-4">
             {/* Token Avatar */}
             <div className="w-16 h-16 rounded-lg bg-gradient-to-br flex-shrink-0 from-eva-secondary/30 to-eva-primary/30 flex items-center justify-center border border-eva-border overflow-hidden">
@@ -70,7 +70,7 @@ export function ArenaHeader({ round }: ArenaHeaderProps) {
           </div>
 
           {/* Prize Pool */}
-          <div className="text-right">
+          <div className="sm:text-right">
             <div className="text-xs text-eva-text-dim uppercase tracking-wider mb-1">
               Total Prize Pool
             </div>

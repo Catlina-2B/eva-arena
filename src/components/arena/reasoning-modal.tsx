@@ -88,17 +88,30 @@ export function ReasoningModal({
           {/* Content */}
           <div className="px-6 pb-6 space-y-6">
             {/* Chain of Thought Section */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h3 className="text-xs font-medium uppercase tracking-wider text-eva-text-dim font-mono">
                 Chain of Thought
               </h3>
-              <div className="text-sm text-eva-text font-mono leading-relaxed space-y-4">
+              <div className="max-h-72 overflow-y-auto pr-2">
                 {activity.reason?.content ? (
-                  activity.reason.content.split(/\s{2,}/).map((paragraph, index) => (
-                    <p key={index}>{paragraph}</p>
-                  ))
+                  <ol className="space-y-3">
+                    {activity.reason.content
+                      .split(/\n+|(?<=[.!?])\s{2,}|(?<=[.!?])\s+(?=[A-Z])/)
+                      .filter((point) => point.trim().length > 0)
+                      .map((point, index, arr) => (
+                        <li
+                          key={index}
+                          className="flex items-start gap-3 p-2 rounded-md bg-eva-dark/30 border-l-2 border-eva-primary/50"
+                        >
+                          <span className="text-eva-primary text-xs font-bold mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-eva-primary/20 flex items-center justify-center">
+                            {index + 1}
+                          </span>
+                          <span className="text-sm text-eva-text font-mono leading-relaxed">{point.trim()}</span>
+                        </li>
+                      ))}
+                  </ol>
                 ) : (
-                  <p className="text-eva-text-dim italic">No reasoning available</p>
+                  <p className="text-sm text-eva-text-dim italic font-mono">No reasoning available</p>
                 )}
               </div>
             </div>
