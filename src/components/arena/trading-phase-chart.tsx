@@ -48,6 +48,9 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
   const [hoveredMarker, setHoveredMarker] = useState<UserTradeMarker | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
 
+  // Pulse marker position for latest trade
+  const [pulsePosition, setPulsePosition] = useState<{ x: number; y: number; type: "buy" | "sell" } | null>(null);
+
   // Use database primary key ID for API calls
   const trenchDbId = round.trenchDbId;
   // Use on-chain trench ID for WebSocket subscription
@@ -282,6 +285,58 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
     }
   }, [chartMarkers]);
 
+  // Update pulse position for latest marker
+  useEffect(() => {
+    if (!chartRef.current || !seriesRef.current || userTradeMarkers.length === 0) {
+      setPulsePosition(null);
+      return;
+    }
+
+    const chart = chartRef.current;
+    const series = seriesRef.current;
+    const latestMarker = userTradeMarkers[userTradeMarkers.length - 1];
+
+    const updatePulsePosition = () => {
+      try {
+        // Get time coordinate
+        const timeCoordinate = chart.timeScale().timeToCoordinate(latestMarker.time as Time);
+        if (timeCoordinate === null) {
+          setPulsePosition(null);
+          return;
+        }
+
+        // Get price coordinate
+        const priceCoordinate = series.priceToCoordinate(latestMarker.price);
+        if (priceCoordinate === null) {
+          setPulsePosition(null);
+          return;
+        }
+
+        setPulsePosition({
+          x: timeCoordinate,
+          y: priceCoordinate,
+          type: latestMarker.type,
+        });
+      } catch {
+        setPulsePosition(null);
+      }
+    };
+
+    // Initial position
+    updatePulsePosition();
+
+    // Update on chart changes
+    const handleVisibleTimeRangeChange = () => {
+      updatePulsePosition();
+    };
+
+    chart.timeScale().subscribeVisibleTimeRangeChange(handleVisibleTimeRangeChange);
+
+    return () => {
+      chart.timeScale().unsubscribeVisibleTimeRangeChange(handleVisibleTimeRangeChange);
+    };
+  }, [userTradeMarkers, filteredData]);
+
   // Handle crosshair move for tooltip display
   useEffect(() => {
     if (!chartRef.current || !chartContainerRef.current || userTradeMarkers.length === 0) {
@@ -426,6 +481,15 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
                   containerRef={chartContainerRef}
                 />
               )}
+
+              {/* Pulse animation for latest trade marker */}
+              {pulsePosition && !isLoading && filteredData.length > 0 && (
+                <PulseMarker
+                  x={pulsePosition.x}
+                  y={pulsePosition.y}
+                  type={pulsePosition.type}
+                />
+              )}
               
               {/* Loading overlay */}
               {isLoading && (
@@ -480,6 +544,103 @@ function CornerDecoration({ position }: CornerDecorationProps) {
       <svg fill="none" height="32" viewBox="0 0 32 32" width="32">
         <path d="M0 0 L32 0 L32 2 L2 2 L2 32 L0 32 Z" fill="#00ff88" />
       </svg>
+    </div>
+  );
+}
+
+// Pulse marker component for latest trade
+interface PulseMarkerProps {
+  x: number;
+  y: number;
+  type: "buy" | "sell";
+}
+
+function PulseMarker({ x, y, type }: PulseMarkerProps) {
+  const isBuy = type === "buy";
+  const color = isBuy ? "#34d399" : "#f87171";
+  const glowColor = isBuy ? "rgba(52, 211, 153, 0.4)" : "rgba(248, 113, 113, 0.4)";
+
+  return (
+    <div
+      className="absolute pointer-events-none z-40"
+      style={{
+        left: x,
+        top: y,
+        transform: "translate(-50%, -50%)",
+      }}
+    >
+      {/* Keyframe styles */}
+      <style>{`
+        @keyframes pulse-ring {
+          0% { transform: scale(1); opacity: 0.6; }
+          100% { transform: scale(2.5); opacity: 0; }
+        }
+        @keyframes pulse-glow {
+          0%, 100% { transform: scale(1); opacity: 0.5; }
+          50% { transform: scale(1.3); opacity: 0.2; }
+        }
+      `}</style>
+
+      {/* Outer pulse ring - expanding */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 20,
+          height: 20,
+          left: -10,
+          top: -10,
+          backgroundColor: glowColor,
+          animation: "pulse-ring 1.5s ease-out infinite",
+        }}
+      />
+      {/* Second pulse ring - staggered */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 20,
+          height: 20,
+          left: -10,
+          top: -10,
+          backgroundColor: glowColor,
+          animation: "pulse-ring 1.5s ease-out infinite 0.5s",
+        }}
+      />
+      {/* Middle glow ring */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 14,
+          height: 14,
+          left: -7,
+          top: -7,
+          backgroundColor: glowColor,
+          animation: "pulse-glow 2s ease-in-out infinite",
+        }}
+      />
+      {/* Center dot */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 8,
+          height: 8,
+          left: -4,
+          top: -4,
+          backgroundColor: color,
+          boxShadow: `0 0 8px ${color}, 0 0 16px ${glowColor}`,
+        }}
+      />
+      {/* Inner bright core */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: 4,
+          height: 4,
+          left: -2,
+          top: -2,
+          backgroundColor: "#ffffff",
+          opacity: 0.9,
+        }}
+      />
     </div>
   );
 }

@@ -47,6 +47,7 @@ export default {
         'slide-up': 'slide-up 0.3s ease-out',
         'slide-in': 'slide-in 0.5s ease-out forwards',
         'number-flash': 'number-flash 0.6s ease-out',
+        'pulse-glow-marker': 'pulse-glow-marker 2s ease-in-out infinite',
       },
       keyframes: {
         'pulse-glow': {
@@ -69,6 +70,10 @@ export default {
           '0%': { transform: 'scale(1)' },
           '50%': { transform: 'scale(1.1)' },
           '100%': { transform: 'scale(1)' },
+        },
+        'pulse-glow-marker': {
+          '0%, 100%': { transform: 'scale(1)', opacity: '0.6' },
+          '50%': { transform: 'scale(1.5)', opacity: '0.2' },
         },
       },
     },
