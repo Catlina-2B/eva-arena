@@ -93,6 +93,12 @@ interface EditAgentModalProps {
   onClose: () => void;
   agent: AgentDetailDto | null;
   onSuccess?: () => void;
+  /** Whether the agent is currently active/running */
+  isAgentActive?: boolean;
+  /** Callback to pause the agent before saving */
+  onPauseAgent?: () => Promise<void>;
+  /** Whether pause operation is in progress */
+  isPausing?: boolean;
 }
 
 export function EditAgentModal({
@@ -100,6 +106,9 @@ export function EditAgentModal({
   onClose,
   agent,
   onSuccess,
+  isAgentActive = false,
+  onPauseAgent,
+  isPausing = false,
 }: EditAgentModalProps) {
   // Form state
   const [name, setName] = useState("");
@@ -107,6 +116,9 @@ export function EditAgentModal({
   const [bettingStrategyPrompt, setBettingStrategyPrompt] = useState("");
   const [tradingStrategyPrompt, setTradingStrategyPrompt] = useState("");
   const [customAvatars, setCustomAvatars] = useState<string[]>([]);
+
+  // Pause confirmation state
+  const [showPauseConfirm, setShowPauseConfirm] = useState(false);
 
   // AI Drawer state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -190,17 +202,16 @@ export function EditAgentModal({
   useEffect(() => {
     if (!isOpen) {
       updateMutation.reset();
+      setShowPauseConfirm(false);
     }
   }, [isOpen]);
 
   if (!isOpen || !agent) return null;
 
-  const handleSubmit = async () => {
-    if (!name.trim()) return;
-
+  // Check if there are any changes
+  const getUpdateData = (): UpdateAgentDto => {
     const updateData: UpdateAgentDto = {};
 
-    // Only include changed fields
     if (name.trim() !== agent.name) {
       updateData.name = name.trim();
     }
@@ -214,18 +225,53 @@ export function EditAgentModal({
       updateData.tradingStrategyPrompt = tradingStrategyPrompt;
     }
 
+    return updateData;
+  };
+
+  const handleSubmit = async () => {
+    if (!name.trim()) return;
+
+    const updateData = getUpdateData();
+
     // Skip if no changes
     if (Object.keys(updateData).length === 0) {
       onClose();
       return;
     }
 
+    // If agent is active, show pause confirmation instead of saving directly
+    if (isAgentActive) {
+      setShowPauseConfirm(true);
+      return;
+    }
+
+    // Save directly if agent is not active
+    await saveChanges(updateData);
+  };
+
+  // Actually save the changes
+  const saveChanges = async (updateData: UpdateAgentDto) => {
     try {
       await updateMutation.mutateAsync({ id: agent.id, data: updateData });
       onSuccess?.();
       onClose();
     } catch {
       // Error is handled by mutation state
+    }
+  };
+
+  // Handle pause and save
+  const handlePauseAndSave = async () => {
+    if (!onPauseAgent) return;
+
+    try {
+      // Pause the agent first
+      await onPauseAgent();
+      // Then save the changes
+      const updateData = getUpdateData();
+      await saveChanges(updateData);
+    } catch {
+      // Error is handled by the caller
     }
   };
 
@@ -455,6 +501,110 @@ export function EditAgentModal({
         phase={activeDrawerPhase}
         onConfirm={handleAIPromptConfirm}
       />
+
+      {/* Pause Confirmation Modal */}
+      {showPauseConfirm && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[120] animate-fade-in"
+            onClick={() => setShowPauseConfirm(false)}
+          />
+
+          {/* Modal */}
+          <div className="fixed inset-0 flex items-center justify-center z-[120] p-4 pointer-events-none">
+            <div
+              className="relative bg-eva-dark/80 backdrop-blur-md border border-eva-primary/30 pointer-events-auto animate-slide-up w-full max-w-[416px] shadow-[0_0_40px_rgba(108,225,130,0.15)] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Corner decorations */}
+              <div className="absolute top-0 left-0 w-4 h-4 pointer-events-none z-20">
+                <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
+                  <path d="M0 0 L16 0 L16 1 L1 1 L1 16 L0 16 Z" fill="#00ff88" />
+                </svg>
+              </div>
+              <div className="absolute bottom-0 right-0 w-4 h-4 pointer-events-none z-20 rotate-180">
+                <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
+                  <path d="M0 0 L16 0 L16 1 L1 1 L1 16 L0 16 Z" fill="#00ff88" />
+                </svg>
+              </div>
+
+              {/* Close Button */}
+              <button
+                type="button"
+                className="absolute top-4 right-4 text-[#4b5563] hover:text-white transition-colors"
+                onClick={() => setShowPauseConfirm(false)}
+                disabled={isPausing || updateMutation.isPending}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M12 4L4 12M4 4L12 12"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+
+              {/* Content */}
+              <div className="px-8 pt-10 pb-8 flex flex-col items-center">
+                {/* Agent Icon */}
+                <div className="w-16 h-16 rounded-full border border-eva-primary/30 bg-eva-dark/60 flex items-center justify-center mb-6">
+                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" className="text-eva-primary">
+                    <rect x="6" y="10" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                    <line x1="16" y1="10" x2="16" y2="6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    <circle cx="16" cy="5" r="1.5" fill="currentColor" />
+                    <rect x="10" y="15" width="4" height="3" rx="0.5" fill="currentColor" />
+                    <rect x="18" y="15" width="4" height="3" rx="0.5" fill="currentColor" />
+                    <line x1="11" y1="22" x2="21" y2="22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </div>
+
+                {/* Title */}
+                <h2 className="font-display text-[22px] text-white tracking-[0.15em] text-center mb-3 uppercase">
+                  Notice
+                </h2>
+
+                {/* Secure Channel Label */}
+                <div className="text-eva-primary text-xs font-medium tracking-[0.2em] uppercase mb-6">
+                  // SECURE CHANNEL //
+                </div>
+
+                {/* Message Box */}
+                <div className="w-full border-l-2 border-[#00FF9D80] bg-[#00FF9D10] px-4 py-3 mb-6">
+                  <p className="text-sm text-[#00FF9D] leading-relaxed">
+                    Agent is currently running. Pause to save changes.
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="w-full flex gap-3">
+                  {/* Cancel Button */}
+                  <button
+                    type="button"
+                    className="flex-1 h-12 bg-transparent border border-eva-text-dim text-eva-text-dim text-xs font-semibold uppercase tracking-[0.15em] hover:border-white hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => setShowPauseConfirm(false)}
+                    disabled={isPausing || updateMutation.isPending}
+                  >
+                    CANCEL
+                  </button>
+
+                  {/* Pause & Save Button */}
+                  <button
+                    type="button"
+                    className="flex-1 h-12 bg-eva-primary border border-eva-primary text-eva-dark text-xs font-semibold uppercase tracking-[0.15em] hover:bg-eva-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handlePauseAndSave}
+                    disabled={isPausing || updateMutation.isPending}
+                  >
+                    {(isPausing || updateMutation.isPending) ? "PROCESSING..." : "PAUSE & SAVE"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </Fragment>,
     document.body,
   );

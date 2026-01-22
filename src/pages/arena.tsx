@@ -19,7 +19,7 @@ import {
   FloatingThinkButton,
   ThinkListPanel,
 } from "@/components/arena";
-import { EditAgentModal, EvolveMeDrawer, PauseRequiredModal, StartTimingModal } from "@/components/agent";
+import { EditAgentModal, EvolveMeDrawer, StartTimingModal } from "@/components/agent";
 import {
   useCurrentTrench,
   useLeaderboard,
@@ -121,9 +121,6 @@ export default function ArenaPage() {
   
   // Start timing modal state
   const [isStartTimingModalOpen, setIsStartTimingModalOpen] = useState(false);
-
-  // Pause required modal state
-  const [isPauseRequiredModalOpen, setIsPauseRequiredModalOpen] = useState(false);
 
   // Evolve Me drawer state
   const [isEvolveMeOpen, setIsEvolveMeOpen] = useState(false);
@@ -465,7 +462,6 @@ export default function ArenaPage() {
               activities={activities}
               trenchId={trenchId}
               onLoadAgentDetail={handleLoadAgentDetailByUserAddress}
-              rankings={rankings}
               prizePool={currentRound.totalPrizePool}
             />
           </div>
@@ -513,11 +509,8 @@ export default function ArenaPage() {
                 totalAgents={userAgentRankingInfo.totalAgents}
                 onEvolveMe={() => setIsEvolveMeOpen(true)}
                 onEditName={() => {
-                  if (primaryAgent.status === "ACTIVE") {
-                    setIsPauseRequiredModalOpen(true);
-                  } else {
-                    setIsEditModalOpen(true);
-                  }
+                  // Always open edit modal directly, pause confirmation is handled inside
+                  setIsEditModalOpen(true);
                 }}
                 onPauseSystem={() => toggleAgentStatus.mutate({ id: primaryAgent.id })}
                 onStartSystem={() => setIsStartTimingModalOpen(true)}
@@ -535,8 +528,15 @@ export default function ArenaPage() {
       {/* Edit Agent Modal */}
       <EditAgentModal
         agent={agentDetail ?? null}
+        isAgentActive={primaryAgent?.status === "ACTIVE"}
+        isPausing={toggleAgentStatus.isPending}
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
+        onPauseAgent={async () => {
+          if (primaryAgent) {
+            await toggleAgentStatus.mutateAsync({ id: primaryAgent.id });
+          }
+        }}
         onSuccess={() => {
           refetchAgents();
           refetchAgentDetail();
@@ -552,23 +552,6 @@ export default function ArenaPage() {
             const immediate = timing === "now";
             toggleAgentStatus.mutate({ id: primaryAgent.id, immediate });
             setIsStartTimingModalOpen(false);
-          }}
-          isLoading={toggleAgentStatus.isPending}
-        />
-      )}
-
-      {/* Pause Required Modal */}
-      {primaryAgent && (
-        <PauseRequiredModal
-          isOpen={isPauseRequiredModalOpen}
-          onClose={() => setIsPauseRequiredModalOpen(false)}
-          onPause={async () => {
-            // Pause the agent first
-            await toggleAgentStatus.mutateAsync({ id: primaryAgent.id });
-            // Close pause required modal
-            setIsPauseRequiredModalOpen(false);
-            // Open edit modal
-            setIsEditModalOpen(true);
           }}
           isLoading={toggleAgentStatus.isPending}
         />

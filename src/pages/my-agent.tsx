@@ -13,7 +13,7 @@ import { useAccount } from "@particle-network/connectkit";
 
 import DefaultLayout from "@/layouts/default";
 import { EvaCard, EvaCardContent, EvaButton, EvaBadge } from "@/components/ui";
-import { DepositModal, EditAgentModal, FirstDepositPromptModal, PauseRequiredModal, StartTimingModal, WithdrawModal } from "@/components/agent";
+import { DepositModal, EditAgentModal, FirstDepositPromptModal, StartTimingModal, WithdrawModal } from "@/components/agent";
 import { ConnectWalletPrompt } from "@/components/wallet/connect-wallet-prompt";
 import { TransactionLogModal } from "@/components/wallet/transaction-log-modal";
 import { ReasoningModal } from "@/components/arena/reasoning-modal";
@@ -912,7 +912,6 @@ export default function MyAgentPage() {
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isStartTimingModalOpen, setIsStartTimingModalOpen] = useState(false);
-  const [isPauseRequiredModalOpen, setIsPauseRequiredModalOpen] = useState(false);
   const [isTransactionLogModalOpen, setIsTransactionLogModalOpen] = useState(false);
   const [hoverPnl, setHoverPnl] = useState<number | null>(null);
 
@@ -1061,12 +1060,8 @@ export default function MyAgentPage() {
           agent={displayAgent}
           isToggling={toggleStatusMutation.isPending}
           onEdit={() => {
-            // If agent is active, show pause required modal first
-            if (displayAgent.status === "ACTIVE") {
-              setIsPauseRequiredModalOpen(true);
-            } else {
-              setIsEditModalOpen(true);
-            }
+            // Always open edit modal directly, pause confirmation is handled inside
+            setIsEditModalOpen(true);
           }}
           onToggleStatus={() => {
             // Show timing modal when activating, directly pause when deactivating
@@ -1308,8 +1303,13 @@ export default function MyAgentPage() {
       {/* Edit Agent Modal */}
       <EditAgentModal
         agent={agentDetail ?? null}
+        isAgentActive={displayAgent.status === "ACTIVE"}
+        isPausing={toggleStatusMutation.isPending}
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
+        onPauseAgent={async () => {
+          await toggleStatusMutation.mutateAsync({ id: displayAgent.id });
+        }}
         onSuccess={() => {
           refetchAgents();
           refetchAgentDetail();
@@ -1330,20 +1330,6 @@ export default function MyAgentPage() {
         isLoading={toggleStatusMutation.isPending}
       />
 
-      {/* Pause Required Modal */}
-      <PauseRequiredModal
-        isOpen={isPauseRequiredModalOpen}
-        onClose={() => setIsPauseRequiredModalOpen(false)}
-        onPause={async () => {
-          // Pause the agent first
-          await toggleStatusMutation.mutateAsync({ id: displayAgent.id });
-          // Close pause required modal
-          setIsPauseRequiredModalOpen(false);
-          // Open edit modal
-          setIsEditModalOpen(true);
-        }}
-        isLoading={toggleStatusMutation.isPending}
-      />
 
       {/* First Deposit Prompt Modal - shown for first-time users */}
       <FirstDepositPromptModal
