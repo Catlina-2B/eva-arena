@@ -18,6 +18,8 @@ import { useState } from "react";
 interface ThinkListPanelProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Current trench ID to filter records */
+  currentTrenchId?: number;
 }
 
 // 格式化相对时间
@@ -66,7 +68,7 @@ function thinkReasonToActivity(reason: ThinkReasonDto): ActivityItem {
   };
 }
 
-export function ThinkListPanel({ isOpen, onClose }: ThinkListPanelProps) {
+export function ThinkListPanel({ isOpen, onClose, currentTrenchId }: ThinkListPanelProps) {
   const [selectedReason, setSelectedReason] = useState<ThinkReasonDto | null>(null);
   const [isReasoningModalOpen, setIsReasoningModalOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -78,62 +80,28 @@ export function ThinkListPanel({ isOpen, onClose }: ThinkListPanelProps) {
   // 获取按钮位置
   const buttonPosition = getSavedPosition();
 
-  // 获取思考记录
+  // 获取思考记录 - 始终启用以支持 WebSocket 实时更新
   const { data, isLoading } = useThinkReasonsInfinite(
     { limit: 100 },
-    { enabled: isOpen }
+    { enabled: true }
   );
 
-  // 扁平化所有页面的数据
+  // 扁平化所有页面的数据，并筛选当前 round
   const reasons = useMemo(() => {
     if (!data?.pages) return [];
-    return data.pages.flatMap((page) => page.thinkReasons);
-  }, [data]);
-
-  // 按轮次分组
-  const groupedByRound = useMemo(() => {
-    const groups: Map<string, ThinkReasonDto[]> = new Map();
-
-    for (const reason of reasons) {
-      const trenchId = reason.trenchId;
-      if (!groups.has(trenchId)) {
-        groups.set(trenchId, []);
-      }
-      groups.get(trenchId)!.push(reason);
+    const allReasons = data.pages.flatMap((page) => page.thinkReasons);
+    
+    // 如果指定了 currentTrenchId，只显示当前 round 的记录
+    if (currentTrenchId) {
+      return allReasons.filter((reason) => reason.trenchId === String(currentTrenchId));
     }
+    
+    return allReasons;
+  }, [data, currentTrenchId]);
 
-    // 按 trenchId 降序排列（最新的轮次在前）
-    return Array.from(groups.entries())
-      .sort((a, b) => parseInt(b[0], 10) - parseInt(a[0], 10))
-      .map(([trenchId, items]) => ({
-        trenchId,
-        items,
-        actionCount: items.filter(i => i.status === "ACTION").length,
-        inactionCount: items.filter(i => i.status === "INACTION").length,
-      }));
-  }, [reasons]);
-
-  // 展开/折叠状态
-  const [expandedRounds, setExpandedRounds] = useState<Set<string>>(new Set());
-
-  // 当面板打开时，只展开当前（最新）轮次
-  useEffect(() => {
-    if (isOpen && groupedByRound.length > 0) {
-      setExpandedRounds(new Set([groupedByRound[0].trenchId]));
-    }
-  }, [isOpen, groupedByRound.length > 0 ? groupedByRound[0]?.trenchId : null]);
-
-  const toggleRound = (trenchId: string) => {
-    setExpandedRounds(prev => {
-      const next = new Set(prev);
-      if (next.has(trenchId)) {
-        next.delete(trenchId);
-      } else {
-        next.add(trenchId);
-      }
-      return next;
-    });
-  };
+  // 计算 action 和 inaction 数量
+  const actionCount = useMemo(() => reasons.filter(r => r.status === "ACTION").length, [reasons]);
+  const inactionCount = useMemo(() => reasons.filter(r => r.status === "INACTION").length, [reasons]);
 
   // 订阅 WebSocket，实时更新思考记录
   useEffect(() => {
@@ -264,102 +232,79 @@ export function ThinkListPanel({ isOpen, onClose }: ThinkListPanelProps) {
           </button>
         </div>
 
+        {/* 统计信息 */}
+        {currentTrenchId && reasons.length > 0 && (
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-eva-border/50 bg-eva-dark/30">
+            <span className="text-[10px] font-mono text-eva-text-dim">
+              Round #{currentTrenchId}:
+            </span>
+            {actionCount > 0 && (
+              <span className="text-[10px] font-mono text-eva-primary bg-eva-primary/10 px-1.5 py-0.5 rounded">
+                {actionCount} action{actionCount > 1 ? "s" : ""}
+              </span>
+            )}
+            {inactionCount > 0 && (
+              <span className="text-[10px] font-mono text-eva-text-dim bg-eva-dark px-1.5 py-0.5 rounded">
+                {inactionCount} hold{inactionCount > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+        )}
+
         {/* 列表 */}
-        <div className="overflow-y-auto max-h-[calc(60vh-48px)]">
+        <div className="overflow-y-auto max-h-[calc(60vh-96px)]">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-5 h-5 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : reasons.length === 0 ? (
             <div className="text-center py-8 text-eva-text-dim text-sm">
-              No thinking records yet
+              {currentTrenchId 
+                ? "No thinking records for this round yet"
+                : "No thinking records yet"
+              }
             </div>
           ) : (
             <div>
-              {groupedByRound.map((group) => (
-                <div key={group.trenchId} className="border-b border-eva-border/50">
-                  {/* 轮次标题 - 可点击展开/折叠 */}
-                  <button
-                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-eva-card-hover transition-colors"
-                    onClick={() => toggleRound(group.trenchId)}
-                  >
-                    <div className="flex items-center gap-2">
-                      {/* 展开/折叠图标 */}
-                      <svg
-                        className={clsx(
-                          "w-3 h-3 text-eva-text-dim transition-transform",
-                          expandedRounds.has(group.trenchId) && "rotate-90"
-                        )}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
-                      </svg>
-                      <span className="text-sm font-mono font-semibold text-eva-text">
-                        Round #{group.trenchId}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {group.actionCount > 0 && (
-                        <span className="text-[10px] font-mono text-eva-primary bg-eva-primary/10 px-1.5 py-0.5 rounded">
-                          {group.actionCount} action{group.actionCount > 1 ? "s" : ""}
-                        </span>
-                      )}
-                      {group.inactionCount > 0 && (
-                        <span className="text-[10px] font-mono text-eva-text-dim bg-eva-dark px-1.5 py-0.5 rounded">
-                          {group.inactionCount} hold{group.inactionCount > 1 ? "s" : ""}
-                        </span>
-                      )}
-                    </div>
-                  </button>
+              {reasons.map((reason) => (
+                <button
+                  key={reason.id}
+                  className="w-full px-4 py-2.5 text-left hover:bg-eva-card-hover transition-colors border-b border-eva-border/30"
+                  onClick={() => {
+                    setSelectedReason(reason);
+                    setIsReasoningModalOpen(true);
+                  }}
+                >
+                  {/* 第一行：时间 + 状态 */}
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-mono text-eva-text-dim">
+                      {formatRelativeTime(reason.createdAt)}
+                    </span>
+                    <EvaBadge
+                      variant={reason.status === "ACTION" ? "success" : "default"}
+                    >
+                      {reason.status}
+                    </EvaBadge>
+                  </div>
 
-                  {/* 轮次内的记录列表 */}
-                  {expandedRounds.has(group.trenchId) && (
-                    <div className="bg-eva-dark/30">
-                      {group.items.map((reason) => (
-                        <button
-                          key={reason.id}
-                          className="w-full px-4 py-2.5 pl-8 text-left hover:bg-eva-card-hover transition-colors border-t border-eva-border/30"
-                          onClick={() => {
-                            setSelectedReason(reason);
-                            setIsReasoningModalOpen(true);
-                          }}
-                        >
-                          {/* 第一行：时间 + 状态 */}
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] font-mono text-eva-text-dim">
-                              {formatRelativeTime(reason.createdAt)}
-                            </span>
-                            <EvaBadge
-                              variant={reason.status === "ACTION" ? "success" : "default"}
-                            >
-                              {reason.status}
-                            </EvaBadge>
-                          </div>
+                  {/* 第二行：内容摘要 */}
+                  <p className="text-xs text-eva-text font-mono line-clamp-2">
+                    {truncateContent(reason.content, 80)}
+                  </p>
 
-                          {/* 第二行：内容摘要 */}
-                          <p className="text-xs text-eva-text font-mono line-clamp-2">
-                            {truncateContent(reason.content, 80)}
-                          </p>
-
-                          {/* 第三行：执行动作（如果是 ACTION） */}
-                          {reason.status === "ACTION" && reason.action && (
-                            <p className="text-[10px] text-eva-primary font-mono mt-1 truncate">
-                              → {reason.action}
-                            </p>
-                          )}
-                        </button>
-                      ))}
-                    </div>
+                  {/* 第三行：执行动作（如果是 ACTION） */}
+                  {reason.status === "ACTION" && reason.action && (
+                    <p className="text-[10px] text-eva-primary font-mono mt-1 truncate">
+                      → {reason.action}
+                    </p>
                   )}
-                </div>
+                </button>
               ))}
 
               {/* 列表底部说明 */}
-              {groupedByRound.length > 0 && (
+              {reasons.length > 0 && (
                 <div className="text-center py-3 text-[10px] text-eva-text-dim font-mono">
-                  Showing recent {groupedByRound.length} rounds
+                  {reasons.length} record{reasons.length > 1 ? "s" : ""} in this round
                 </div>
               )}
             </div>

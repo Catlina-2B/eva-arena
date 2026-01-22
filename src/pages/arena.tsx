@@ -462,7 +462,6 @@ export default function ArenaPage() {
               activities={activities}
               trenchId={trenchId}
               onLoadAgentDetail={handleLoadAgentDetailByUserAddress}
-              prizePool={currentRound.totalPrizePool}
             />
           </div>
 
@@ -477,7 +476,6 @@ export default function ArenaPage() {
               isBettingPhase={currentRound.phase === "betting"}
               trenchId={trenchId}
               onLoadAgentDetail={handleLoadAgentDetail}
-              activities={activities}
             />
 
             {/* My Agent or Welcome/Create Card below */}
@@ -583,6 +581,7 @@ export default function ArenaPage() {
           <ThinkListPanel
             isOpen={isThinkPanelOpen}
             onClose={() => setIsThinkPanelOpen(false)}
+            currentTrenchId={onChainTrenchId}
           />
         </>
       )}

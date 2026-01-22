@@ -1,13 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 
-import type { AgentRanking, ActivityItem } from "@/types";
+import type { AgentRanking } from "@/types";
 
 import clsx from "clsx";
 
-import { RankBadge, DepositBadge, WithdrawBadge, BuyBadge, SellBadge } from "@/components/ui";
+import { RankBadge } from "@/components/ui";
 import { HeartFilledIcon } from "@/components/icons";
-import { formatTimeAgo } from "@/services/mock";
-import { formatSmallNumber } from "@/lib/trench-utils";
 import { AgentDetailModal, type AgentDetailData } from "./agent-detail-modal";
 
 // System Idle icon for empty state
@@ -71,8 +69,6 @@ interface LiveRankingsProps {
   onLoadAgentDetail?: (agentId: string) => Promise<AgentDetailData | null>;
   /** When true, removes outer card styling for embedding in tabs */
   embedded?: boolean;
-  /** Live activities to display inline with rankings */
-  activities?: ActivityItem[];
 }
 
 export function LiveRankings({
@@ -84,27 +80,20 @@ export function LiveRankings({
   trenchId,
   onLoadAgentDetail,
   embedded = false,
-  activities = [],
 }: LiveRankingsProps) {
   // Modal state
   const [selectedAgent, setSelectedAgent] = useState<AgentRanking | null>(null);
   const [agentDetailData, setAgentDetailData] = useState<AgentDetailData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // Collapse state - when collapsed, only show Top 1
+  // Collapse state - when collapsed, only show user's agent if participating
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Map activities by userAddress for quick lookup - get latest activity per user
-  const activityByUser = useMemo(() => {
-    const map = new Map<string, ActivityItem>();
-    // Activities are already sorted by time (newest first), so first occurrence is latest
-    for (const activity of activities) {
-      if (!map.has(activity.userAddress)) {
-        map.set(activity.userAddress, activity);
-      }
-    }
-    return map;
-  }, [activities]);
+  // Find user's agent in rankings (if in top 3)
+  const userAgentInRankings = rankings.find(agent => agent.isCurrentUser || agent.isOwned);
+
+  // Determine if user has participated (either in top 3 or outside top 3)
+  const userHasParticipated = !!userAgentInRankings || !!currentUser;
 
   // Only show current user section if they exist and are not in top 3
   const showCurrentUserSection = currentUser && currentUser.rank > 3;
@@ -176,38 +165,66 @@ export function LiveRankings({
       </div>
 
       {isSkipped ? (
-        // Empty state when round is skipped
-        <div className="p-3 pt-8">
-          <div className="border border-dashed border-eva-border flex flex-col items-center justify-center py-8 px-4">
-            <div className="w-12 h-12 rounded-full bg-eva-darker flex items-center justify-center mb-4">
-              <SystemIdleIcon />
+        // Empty state when round is skipped - hide when collapsed
+        !isCollapsed && (
+          <div className="p-3 pt-8">
+            <div className="border border-dashed border-eva-border flex flex-col items-center justify-center py-8 px-4">
+              <div className="w-12 h-12 rounded-full bg-eva-darker flex items-center justify-center mb-4">
+                <SystemIdleIcon />
+              </div>
+              <h3 className="text-sm font-semibold text-white tracking-wider mb-2">
+                SYSTEM IDLE
+              </h3>
+              <p className="text-xs text-eva-text-dim text-center max-w-[240px] leading-relaxed">
+                Due to no bets being placed during the free betting phase, the
+                current round is skipped.
+              </p>
             </div>
-            <h3 className="text-sm font-semibold text-white tracking-wider mb-2">
-              SYSTEM IDLE
-            </h3>
-            <p className="text-xs text-eva-text-dim text-center max-w-[240px] leading-relaxed">
-              Due to no bets being placed during the free betting phase, the
-              current round is skipped.
-            </p>
           </div>
-        </div>
+        )
       ) : (
         <>
           {/* Rankings list */}
           <div className="px-3 pb-3 space-y-4">
-            <div className="space-y-4">
-              {/* When collapsed, only show Top 1; when expanded, show Top 3 */}
-              {rankings.slice(0, isCollapsed ? 1 : 3).map((agent) => (
-                <RankingRow
-                  key={agent.agentId}
-                  agent={agent}
-                  isBettingPhase={isBettingPhase}
-                  isCurrentUser={agent.isCurrentUser}
-                  onClick={handleAgentClick}
-                  latestActivity={agent.userAddress ? activityByUser.get(agent.userAddress) : undefined}
-                />
-              ))}
-            </div>
+            {/* When collapsed: show user's agent only if participating, otherwise show nothing */}
+            {/* When expanded: show Top 3 */}
+            {isCollapsed ? (
+              // Collapsed state
+              userHasParticipated && (
+                <div className="space-y-4">
+                  {userAgentInRankings ? (
+                    // User is in top 3, show their agent
+                    <RankingRow
+                      agent={userAgentInRankings}
+                      isBettingPhase={isBettingPhase}
+                      isCurrentUser={true}
+                      onClick={handleAgentClick}
+                    />
+                  ) : currentUser ? (
+                    // User is outside top 3, show currentUser
+                    <RankingRow
+                      agent={currentUser}
+                      isBettingPhase={isBettingPhase}
+                      isCurrentUser={true}
+                      onClick={handleAgentClick}
+                    />
+                  ) : null}
+                </div>
+              )
+            ) : (
+              // Expanded state - show Top 3
+              <div className="space-y-4">
+                {rankings.slice(0, 3).map((agent) => (
+                  <RankingRow
+                    key={agent.agentId}
+                    agent={agent}
+                    isBettingPhase={isBettingPhase}
+                    isCurrentUser={agent.isCurrentUser}
+                    onClick={handleAgentClick}
+                  />
+                ))}
+              </div>
+            )}
 
             {/* Current user section (when not in top 3) - hide when collapsed */}
             {!isCollapsed && showCurrentUserSection && (
@@ -228,7 +245,6 @@ export function LiveRankings({
                   agent={currentUser}
                   isBettingPhase={isBettingPhase}
                   onClick={handleAgentClick}
-                  latestActivity={currentUser.userAddress ? activityByUser.get(currentUser.userAddress) : undefined}
                 />
 
                 {/* Prize distribution info */}
@@ -310,11 +326,9 @@ interface RankingRowProps {
   isCurrentUser?: boolean;
   /** Click handler for opening agent detail */
   onClick?: (agent: AgentRanking) => void;
-  /** Latest activity for this agent */
-  latestActivity?: ActivityItem;
 }
 
-function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onClick, latestActivity }: RankingRowProps) {
+function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onClick }: RankingRowProps) {
   const isFirst = agent.rank === 1;
   const isTop3CurrentUser = isCurrentUser && agent.rank <= 3;
 
@@ -361,11 +375,6 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
             </div>
           </div>
         </div>
-
-        {/* Inline activity for this agent */}
-        {latestActivity && (
-          <InlineActivity activity={latestActivity} />
-        )}
       </div>
     );
   }
@@ -427,46 +436,6 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
           </div>
         </div>
       </div>
-
-      {/* Inline activity for this agent */}
-      {latestActivity && (
-        <InlineActivity activity={latestActivity} />
-      )}
-    </div>
-  );
-}
-
-// Compact inline activity display
-function InlineActivity({ activity }: { activity: ActivityItem }) {
-  const isDepositOrWithdraw = activity.type === "deposit" || activity.type === "withdraw";
-
-  const getBadge = () => {
-    switch (activity.type) {
-      case "deposit": return <DepositBadge />;
-      case "withdraw": return <WithdrawBadge />;
-      case "buy": return <BuyBadge />;
-      case "sell": return <SellBadge />;
-      default: return null;
-    }
-  };
-
-  const getActionText = () => {
-    if (isDepositOrWithdraw) {
-      return `${formatSmallNumber(activity.solAmount)} SOL`;
-    }
-    return `${activity.tokenAmount.toLocaleString()} tokens @ ${formatSmallNumber(activity.solAmount)} SOL`;
-  };
-
-  return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-eva-dark/50 border-t border-[#374151]/50">
-      <span className="text-eva-text-dim text-[10px]">└</span>
-      <div className="scale-75 origin-left">{getBadge()}</div>
-      <span className="text-[10px] text-eva-text-dim font-mono truncate">
-        {getActionText()}
-      </span>
-      <span className="text-[10px] text-eva-text-dim/60 ml-auto">
-        {formatTimeAgo(activity.timestamp)}
-      </span>
     </div>
   );
 }

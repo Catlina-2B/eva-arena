@@ -18,11 +18,9 @@ interface LiveActivityProps {
   activities: ActivityItem[];
   trenchId?: number;
   onLoadAgentDetail?: (userAddress: string) => Promise<AgentDetailData | null>;
-  /** Total prize pool in SOL */
-  prizePool?: number;
 }
 
-export function LiveActivity({ activities, trenchId, onLoadAgentDetail, prizePool = 0 }: LiveActivityProps) {
+export function LiveActivity({ activities, trenchId, onLoadAgentDetail }: LiveActivityProps) {
   // Modal state
   const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
   const [agentDetailData, setAgentDetailData] = useState<AgentDetailData | null>(null);
@@ -57,20 +55,13 @@ export function LiveActivity({ activities, trenchId, onLoadAgentDetail, prizePoo
       <EvaCard>
         <EvaCardContent noPadding>
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-t-2 border-t-eva-secondary">
+          <div className="flex items-center px-4 py-3 border-t-2 border-t-eva-secondary">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 bg-eva-secondary animate-pulse" />
               <h3 className="text-sm font-semibold tracking-wider uppercase text-eva-text">
                 Live Activity
               </h3>
             </div>
-            {/* Prize Pool */}
-            {prizePool > 0 && (
-              <div className="text-right">
-                <span className="text-[10px] text-eva-text-dim font-mono uppercase tracking-wider">Prize Pool</span>
-                <div className="text-sm font-mono font-semibold text-[#EAB308]">{prizePool.toFixed(2)} SOL</div>
-              </div>
-            )}
           </div>
 
           {/* Activity list */}
