@@ -1060,7 +1060,8 @@ export default function MyAgentPage() {
           agent={displayAgent}
           isToggling={toggleStatusMutation.isPending}
           onEdit={() => {
-            // Always open edit modal directly, pause confirmation is handled inside
+            // Refresh agent detail before opening modal to ensure latest data
+            refetchAgentDetail();
             setIsEditModalOpen(true);
           }}
           onToggleStatus={() => {

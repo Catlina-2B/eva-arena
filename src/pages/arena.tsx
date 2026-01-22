@@ -509,7 +509,8 @@ export default function ArenaPage() {
                 totalAgents={userAgentRankingInfo.totalAgents}
                 onEvolveMe={() => setIsEvolveMeOpen(true)}
                 onEditName={() => {
-                  // Always open edit modal directly, pause confirmation is handled inside
+                  // Refresh agent detail before opening modal to ensure latest data
+                  refetchAgentDetail();
                   setIsEditModalOpen(true);
                 }}
                 onPauseSystem={() => toggleAgentStatus.mutate({ id: primaryAgent.id })}
