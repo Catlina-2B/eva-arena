@@ -339,30 +339,48 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
 
   // Handle crosshair move for tooltip display
   useEffect(() => {
-    if (!chartRef.current || !chartContainerRef.current || userTradeMarkers.length === 0) {
+    if (!chartRef.current || !seriesRef.current || userTradeMarkers.length === 0) {
       return;
     }
 
     const chart = chartRef.current;
-    const container = chartContainerRef.current;
+    const series = seriesRef.current;
 
     const handleCrosshairMove = (param: { time?: Time; point?: { x: number; y: number } }) => {
-      if (!param.time || !param.point) {
+      if (!param.point) {
         setHoveredMarker(null);
         setTooltipPosition(null);
         return;
       }
 
-      // Find if there's a marker at this time (within a small tolerance)
-      const hoveredTime = param.time as number;
-      const tolerance = 60; // 60 seconds tolerance
+      const mouseX = param.point.x;
+      const mouseY = param.point.y;
+      const maxDistance = 30; // Maximum pixel distance to show tooltip
 
-      const marker = userTradeMarkers.find(
-        (m) => Math.abs(m.time - hoveredTime) < tolerance
-      );
+      let closestMarker: UserTradeMarker | null = null;
+      let closestDistance = maxDistance;
 
-      if (marker) {
-        setHoveredMarker(marker);
+      // Find the marker closest to the mouse position (using pixel coordinates)
+      for (const m of userTradeMarkers) {
+        // Convert marker time and price to pixel coordinates
+        const markerX = chart.timeScale().timeToCoordinate(m.time as Time);
+        const markerY = series.priceToCoordinate(m.price);
+
+        if (markerX === null || markerY === null) continue;
+
+        // Calculate Euclidean distance from mouse to marker
+        const distance = Math.sqrt(
+          Math.pow(mouseX - markerX, 2) + Math.pow(mouseY - markerY, 2)
+        );
+
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestMarker = m;
+        }
+      }
+
+      if (closestMarker) {
+        setHoveredMarker(closestMarker);
         setTooltipPosition({ x: param.point.x, y: param.point.y });
       } else {
         setHoveredMarker(null);
