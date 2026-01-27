@@ -28,11 +28,4 @@ yarn.lock
 package-lock.json
 bun.lockb
 
-openspec/
-.cursor/
-.vscode/
-.claude/
-CLAUDE.md
-AGENTS.md
-
 generated-page.html
