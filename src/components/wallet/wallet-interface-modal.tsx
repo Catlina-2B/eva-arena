@@ -5,7 +5,7 @@ import { useDisconnect } from "@particle-network/connectkit";
 import { EvaButton } from "@/components/ui";
 import { DepositModal, WithdrawModal } from "@/components/agent";
 import { TransactionLogModal } from "./transaction-log-modal";
-import { useAgentPanel, useMyAgents, useAgentWithdraw } from "@/hooks";
+import { useMyAgents, useAgentWithdraw } from "@/hooks";
 import { useTurnkeyBalanceStore } from "@/stores/turnkey-balance";
 import { useAuthStore } from "@/stores/auth";
 
@@ -30,12 +30,9 @@ export function WalletInterfaceModal({
   const { user } = useAuthStore();
   const turnkeyAddress = user?.turnkeyAddress ?? "";
 
-  // Fetch user's agent data (for withdraw functionality)
-  const { data: agentsData } = useMyAgents();
+  // Fetch user's agent data (for cache invalidation after withdraw)
+  const { data: agentsData, refetch: refetchAgents } = useMyAgents();
   const primaryAgent = agentsData?.agents?.[0];
-
-  // Fetch agent panel data (for withdraw functionality)
-  const { refetch: refetchPanel } = useAgentPanel(primaryAgent?.id);
 
   // Get balance from global store (updated via WebSocket subscription)
   const { balance: turnkeyBalance } = useTurnkeyBalanceStore();
@@ -261,10 +258,11 @@ export function WalletInterfaceModal({
         onClose={() => setIsWithdrawModalOpen(false)}
         onWithdraw={async (amountInLamports, toAddress) => {
           await withdrawMutation.mutateAsync({
-            id: primaryAgent.id,
+            id: primaryAgent?.id ?? "",
             data: { amount: amountInLamports, toAddress },
           });
-          refetchPanel();
+          // Refetch agents data to update cache
+          refetchAgents();
         }}
       />
 

@@ -275,9 +275,11 @@ export function leaderboardToRankings(
     const supplyPercentage = (tokenAmount / TOTAL_TOKEN_SUPPLY) * 100;
     const depositedSol = parseFloat(item.depositedSol);
     const betAmount = depositedSol / 1e9; // Convert lamports to SOL
-    const allocationPercent = totalDeposited > 0 
+    // Calculate allocation percent, clamped to 0-100 to prevent race condition flashes
+    const rawAllocationPercent = totalDeposited > 0 
       ? (depositedSol / totalDeposited) * 100 
       : 0;
+    const allocationPercent = Math.min(100, Math.max(0, rawAllocationPercent));
 
     rankings.push({
       rank: item.rank,
@@ -318,9 +320,11 @@ export function getCurrentUserRanking(
   const totalDeposited = totalDepositedSol ? parseFloat(totalDepositedSol) : 0;
   const depositedSol = parseFloat(leaderboard.currentUser.depositedSol);
   const betAmount = depositedSol / 1e9;
-  const allocationPercent = totalDeposited > 0 
+  // Calculate allocation percent, clamped to 0-100 to prevent race condition flashes
+  const rawAllocationPercent = totalDeposited > 0 
     ? (depositedSol / totalDeposited) * 100 
     : 0;
+  const allocationPercent = Math.min(100, Math.max(0, rawAllocationPercent));
 
   return {
     rank: leaderboard.currentUser.rank,

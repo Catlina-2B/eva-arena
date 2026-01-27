@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import clsx from "clsx";
+import { useAccount } from "@particle-network/connectkit";
 
 import { EvaLogo } from "@/components/eva-logo";
-import { WalletConnectButton } from "@/components/wallet";
+import { WalletConnectButton, WalletInterfaceModal } from "@/components/wallet";
 import { WelcomeOnboardingModal } from "@/components/arena/welcome-onboarding-modal";
 import { useTurnkeyBalanceStore } from "@/stores/turnkey-balance";
 import { useAuthStore } from "@/stores/auth";
@@ -31,6 +32,10 @@ function NavLink({ href, children, isActive }: NavLinkProps) {
 export function Navbar() {
   const location = useLocation();
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  
+  // Get wallet address
+  const { address } = useAccount();
   
   // Get balance from global store
   const { balance } = useTurnkeyBalanceStore();
@@ -49,6 +54,7 @@ export function Navbar() {
             {/* Logo */}
             <Link className="flex items-center gap-2" to="/">
               <EvaLogo />
+              <span className="text-xs font-medium tracking-wider text-eva-text-dim">Alpha</span>
             </Link>
 
             {/* Navigation */}
@@ -66,9 +72,22 @@ export function Navbar() {
 
             {/* Actions */}
             <div className="flex items-center gap-3">
+              {/* Deposit Button - Only show when authenticated */}
+              {isAuthenticated && (
+                <button
+                  className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium tracking-wider rounded transition-colors bg-eva-primary text-eva-darker hover:bg-eva-primary-dim cursor-pointer"
+                  onClick={() => setIsWalletModalOpen(true)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3.4577 10.9995L10.6247 10.9995L10.6247 11.1665L3.4577 11.1665L3.4577 10.9995ZM3.74091 5.09131L6.10419 7.45361L6.9577 8.30713L6.9577 2.24951L7.12469 2.24951L7.12469 8.30713L10.3415 5.09033L10.4597 5.2085L7.04169 8.62646L3.62372 5.2085L3.74091 5.09131Z" fill="currentColor" stroke="currentColor"/>
+                  </svg>
+                  Deposit
+                </button>
+              )}
+
               {/* Balance Display - Only show when authenticated */}
               {isAuthenticated && (
-                <div className="hidden md:flex flex-col items-end">
+                <div className="hidden md:flex flex-col items-start px-4">
                   <span className="text-[10px] font-medium tracking-wider uppercase text-eva-text-dim">
                     Balance
                   </span>
@@ -105,6 +124,13 @@ export function Navbar() {
       <WelcomeOnboardingModal
         isOpen={isHowToPlayOpen}
         onClose={() => setIsHowToPlayOpen(false)}
+      />
+
+      {/* Wallet Interface Modal */}
+      <WalletInterfaceModal
+        address={address || ""}
+        isOpen={isWalletModalOpen}
+        onClose={() => setIsWalletModalOpen(false)}
       />
     </>
   );

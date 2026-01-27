@@ -8,11 +8,12 @@ import { useWalletAuth } from "@/hooks/use-wallet-auth";
 import { useTurnkeyBalance } from "@/hooks/use-turnkey-balance";
 import { useAuthStore } from "@/stores/auth";
 
-// 规则/玩法 Icon
+// 规则/玩法 Icon (Book icon)
 function RulesIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12.5 3.33317H4.16667V16.6665H15.8333V6.6665H12.5V3.33317ZM2.5 2.493C2.5 2.03655 2.87291 1.6665 3.33208 1.6665H13.3333L17.4998 5.83317L17.5 17.4936C17.5 17.9573 17.1292 18.3332 16.6722 18.3332H3.32783C2.87063 18.3332 2.5 17.9538 2.5 17.5067V2.493ZM9.16667 9.1665H10.8333V14.1665H9.16667V9.1665ZM9.16667 5.83317H10.8333V7.49984H9.16667V5.83317Z" fill="#6B7280"/>
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M1.16669 1.75H4.66669C5.95449 1.75 7.00002 2.79553 7.00002 4.08333V12.25C7.00002 11.2841 6.21587 10.5 5.25002 10.5H1.16669V1.75" stroke="#6B7280" strokeWidth="1.16667" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M12.8333 1.75H9.33333C8.04553 1.75 7 2.79553 7 4.08333V12.25C7 11.2841 7.78415 10.5 8.75 10.5H12.8333V1.75" stroke="#6B7280" strokeWidth="1.16667" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
@@ -69,35 +70,33 @@ export function WalletConnectButton({ onOpenRules }: WalletConnectButtonProps) {
               Sign failed
             </span>
           )}
-          {/* 钱包地址按钮 */}
-          <button
-            className="flex items-center gap-2 px-3 py-1.5 rounded transition-colors hover:opacity-80"
-            style={{ backgroundColor: "rgba(17, 24, 39, 0.5)" }}
-            onClick={() => setIsWalletModalOpen(true)}
-          >
-            {/* 地址文本 */}
-            <span className="text-sm font-mono text-eva-text tracking-wide">
-              {truncateAddress(displayAddress)}
-            </span>
-            {/* 认证状态指示点 */}
-            {isAuthenticated && !isLoggingIn && (
-              <span
-                className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0"
-                title="Authenticated"
-              />
-            )}
-          </button>
-
-          {/* 玩法按钮 */}
-          {onOpenRules && (
+          {/* 钱包地址按钮 - 只在未认证时显示 */}
+          {!isAuthenticated && (
             <button
-              className="flex items-center justify-center w-9 h-9 rounded transition-colors hover:opacity-80"
+              className="flex items-center gap-2 px-3 py-1.5 rounded transition-colors hover:opacity-80"
               style={{ backgroundColor: "rgba(17, 24, 39, 0.5)" }}
-              onClick={onOpenRules}
-              title="Game Rules"
+              onClick={() => setIsWalletModalOpen(true)}
             >
-              <RulesIcon />
+              {/* 地址文本 */}
+              <span className="text-sm font-mono text-eva-text tracking-wide">
+                {truncateAddress(displayAddress)}
+              </span>
             </button>
+          )}
+
+          {/* 分割线 + 玩法按钮 */}
+          {onOpenRules && (
+            <>
+              <div className="w-px h-6 bg-eva-border" />
+              <button
+                className="flex items-center gap-1.5 px-3 py-1.5 transition-colors hover:opacity-80 cursor-pointer"
+                onClick={onOpenRules}
+                title="Game Rules"
+              >
+                <RulesIcon />
+                <span className="text-sm font-medium tracking-wider text-eva-text-dim">RULES</span>
+              </button>
+            </>
           )}
         </div>
 
