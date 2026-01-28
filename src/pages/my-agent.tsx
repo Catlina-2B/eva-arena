@@ -33,6 +33,7 @@ import {
 } from "@/hooks";
 import { useIsAuthenticated } from "@/hooks/use-auth";
 import { useAuthStore } from "@/stores/auth";
+import { trackPageView, trackAgentPanelView } from "@/services/analytics";
 
 // Corner decoration component
 interface CornerDecorationProps {
@@ -979,6 +980,12 @@ export default function MyAgentPage() {
   // Fetch user PNL timeline
   const { data: pnlTimelineData, isLoading: isPnlTimelineLoading } =
     useUserPnlTimeline();
+
+  // 埋点：页面浏览和 Agent 面板查看
+  useEffect(() => {
+    trackPageView({ page_name: "my_agent" });
+    trackAgentPanelView({ wallet_address: turnkeyAddress });
+  }, [turnkeyAddress]);
 
   // Convert history items to history rounds (flatten all pages)
   const historyRounds = useMemo(() => {

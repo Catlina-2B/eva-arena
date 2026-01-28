@@ -48,6 +48,7 @@ import {
   mockActivities,
 } from "@/services/mock";
 import { agentApi } from "@/services/api";
+import { trackPageView, trackArenaView } from "@/services/analytics";
 
 // Feature flag for using real API data
 const USE_REAL_DATA = true;
@@ -141,6 +142,12 @@ export default function ArenaPage() {
 
   // Subscribe to real-time Solana slot updates via WebSocket
   const { slot: currentSlot } = useSlotSubscription();
+
+  // 埋点：页面浏览和 Arena 视图曝光
+  useEffect(() => {
+    trackPageView({ page_name: "arena" });
+    trackArenaView({ wallet_address: turnkeyAddress });
+  }, [turnkeyAddress]);
 
   // Convert backend data to UI format
   const currentRound: ArenaRound | null = useMemo(() => {

@@ -10,3 +10,6 @@ export * from "./websocket";
 
 // Solana Services
 export * from "./solana";
+
+// Analytics Services
+export * from "./analytics";

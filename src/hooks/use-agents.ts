@@ -15,6 +15,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { agentApi } from "@/services/api";
 import { useAuthStore } from "@/stores/auth";
+import {
+  trackAgentStart,
+  trackAgentPause,
+  trackUserDeposit,
+  trackUserWithdraw,
+} from "@/services/analytics";
 
 /**
  * Query keys for agents
@@ -180,6 +186,17 @@ export function useToggleAgentStatus() {
 
       return { previousPanel };
     },
+    onSuccess: (_, { id }, context) => {
+      // 埋点：根据之前的状态判断是启动还是暂停
+      const previousStatus = context?.previousPanel?.status;
+      if (previousStatus === "PAUSED" || previousStatus === "WAITING") {
+        // 之前是暂停/等待状态，现在是启动
+        trackAgentStart({ agent_id: id });
+      } else if (previousStatus === "ACTIVE") {
+        // 之前是激活状态，现在是暂停
+        trackAgentPause({ agent_id: id, pause_reason: "manual" });
+      }
+    },
     onError: (_, { id }, context) => {
       // Rollback on error
       if (context?.previousPanel) {
@@ -203,7 +220,14 @@ export function useAgentDeposit() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: AgentDepositDto }) =>
       agentApi.deposit(id, data),
-    onSuccess: (_, { id }) => {
+    onSuccess: (_, { id, data }) => {
+      // 埋点：充值成功
+      trackUserDeposit({
+        amount_sol: data.amount / 1e9, // lamports to SOL
+        tx_hash: data.txHash,
+        wallet_address: data.fromAddress,
+      });
+
       queryClient.invalidateQueries({ queryKey: agentKeys.panel(id) });
       queryClient.invalidateQueries({ queryKey: agentKeys.detail(id) });
     },
@@ -219,7 +243,16 @@ export function useAgentWithdraw() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: AgentWithdrawDto }) =>
       agentApi.withdraw(id, data),
-    onSuccess: (_, { id }) => {
+    onSuccess: (result, { id, data }) => {
+      // 埋点：提款成功
+      if (result.success) {
+        trackUserWithdraw({
+          amount_sol: data.amount / 1e9, // lamports to SOL
+          tx_hash: result.txHash,
+          wallet_address: data.toAddress,
+        });
+      }
+
       queryClient.invalidateQueries({ queryKey: agentKeys.panel(id) });
       queryClient.invalidateQueries({ queryKey: agentKeys.detail(id) });
     },

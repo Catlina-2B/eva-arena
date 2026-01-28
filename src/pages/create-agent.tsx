@@ -20,6 +20,7 @@ import {
   type BettingPresetKey,
   type TradingPresetKey,
 } from "@/constants/strategy-presets";
+import { trackPageView, trackAgentCreate } from "@/services/analytics";
 
 // Avatar background colors - matching Figma design
 const AVATAR_COLORS = [
@@ -334,6 +335,11 @@ export default function CreateAgentPage() {
   // Upload avatar mutation
   const uploadAvatarMutation = useUploadAvatar();
 
+  // 埋点：页面浏览
+  useEffect(() => {
+    trackPageView({ page_name: "create_agent" });
+  }, []);
+
   // Form state
   const [selectedLogoUrl, setSelectedLogoUrl] = useState<string | null>(null);
   // Custom uploaded avatars (stored locally)
@@ -432,7 +438,7 @@ export default function CreateAgentPage() {
     try {
       const pdaAddress = `pda_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-      await createAgentMutation.mutateAsync({
+      const createdAgent = await createAgentMutation.mutateAsync({
         name: agentName.trim(),
         logo: selectedLogoUrl,
         pdaAddress,
@@ -440,6 +446,9 @@ export default function CreateAgentPage() {
         tradingStrategyPrompt: tradingStrategy.trim(),
         filterConfig: DEFAULT_FILTER_CONFIG,
       });
+
+      // 埋点：Agent 创建成功
+      trackAgentCreate({ agent_id: createdAgent.id });
 
       navigate("/my-agent");
     } catch (error) {

@@ -4,6 +4,7 @@ import { Fragment, useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 
 import { AIPromptDrawer } from "./ai-prompt-drawer";
+import { trackAgentStrategyEdit } from "@/services/analytics";
 
 // Avatar item component with skeleton loading
 function AvatarItem({
@@ -253,6 +254,21 @@ export function EditAgentModal({
   const saveChanges = async (updateData: UpdateAgentDto) => {
     try {
       await updateMutation.mutateAsync({ id: agent.id, data: updateData });
+
+      // 埋点：策略编辑成功
+      if (updateData.bettingStrategyPrompt) {
+        trackAgentStrategyEdit({
+          strategy_phase: "bidding",
+          wallet_address: agent.turnkeyAddress,
+        });
+      }
+      if (updateData.tradingStrategyPrompt) {
+        trackAgentStrategyEdit({
+          strategy_phase: "trading",
+          wallet_address: agent.turnkeyAddress,
+        });
+      }
+
       onSuccess?.();
       onClose();
     } catch {

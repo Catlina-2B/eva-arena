@@ -4,6 +4,11 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { authApi } from "@/services/api";
 import { useAuthStore } from "@/stores/auth";
+import {
+  trackUserLogin,
+  trackUserLogout,
+  identifyUser,
+} from "@/services/analytics";
 
 // SIWS message configuration
 const SIWS_CONFIG = {
@@ -206,6 +211,16 @@ export function useWalletAuth(
         },
       });
 
+      // 6. 埋点：用户登录成功
+      identifyUser(response.user.id, {
+        wallet_address: address,
+        login_method: "wallet",
+      });
+      trackUserLogin({
+        login_method: "wallet",
+        wallet_address: address,
+      });
+
       onLoginSuccess?.();
     } catch (error) {
       const errorMessage =
@@ -255,6 +270,8 @@ export function useWalletAuth(
   // Logout when wallet disconnects
   useEffect(() => {
     if (!isConnected && isAuthenticated) {
+      // 埋点：用户登出（钱包断开连接）
+      trackUserLogout({ logout_reason: "wallet_disconnect" });
       logout();
       lastLoginAddressRef.current = null;
     }
@@ -282,6 +299,9 @@ export function useWalletAuth(
         "to",
         address,
       );
+
+      // 埋点：用户登出（钱包切换）
+      trackUserLogout({ logout_reason: "wallet_disconnect" });
 
       // Clear old auth state and cache before new login
       logout();
