@@ -6,6 +6,7 @@ import { useAccount } from "@particle-network/connectkit";
 import { EvaLogo } from "@/components/eva-logo";
 import { WalletConnectButton, WalletInterfaceModal } from "@/components/wallet";
 import { WelcomeOnboardingModal } from "@/components/arena/welcome-onboarding-modal";
+import { DepositModal } from "@/components/agent";
 import { useTurnkeyBalanceStore } from "@/stores/turnkey-balance";
 import { useAuthStore } from "@/stores/auth";
 
@@ -33,13 +34,15 @@ export function Navbar() {
   const location = useLocation();
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   
   // Get wallet address
   const { address } = useAccount();
   
   // Get balance from global store
   const { balance } = useTurnkeyBalanceStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const turnkeyAddress = user?.turnkeyAddress ?? "";
 
   const navItems = [
     { href: "/", label: "Arena" },
@@ -54,7 +57,9 @@ export function Navbar() {
             {/* Logo */}
             <Link className="flex items-center gap-2" to="/">
               <EvaLogo />
-              <span className="text-xs font-medium tracking-wider text-eva-text-dim">Alpha</span>
+              <span className="text-[10px] font-display font-semibold uppercase tracking-[0.22em] text-eva-secondary/80">
+                Alpha
+              </span>
             </Link>
 
             {/* Navigation */}
@@ -76,7 +81,7 @@ export function Navbar() {
               {isAuthenticated && (
                 <button
                   className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium tracking-wider rounded transition-colors bg-eva-primary text-eva-darker hover:bg-eva-primary-dim cursor-pointer"
-                  onClick={() => setIsWalletModalOpen(true)}
+                  onClick={() => setIsDepositModalOpen(true)}
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M3.4577 10.9995L10.6247 10.9995L10.6247 11.1665L3.4577 11.1665L3.4577 10.9995ZM3.74091 5.09131L6.10419 7.45361L6.9577 8.30713L6.9577 2.24951L7.12469 2.24951L7.12469 8.30713L10.3415 5.09033L10.4597 5.2085L7.04169 8.62646L3.62372 5.2085L3.74091 5.09131Z" fill="currentColor" stroke="currentColor"/>
@@ -87,14 +92,31 @@ export function Navbar() {
 
               {/* Balance Display - Only show when authenticated */}
               {isAuthenticated && (
-                <div className="hidden md:flex flex-col items-start px-4">
-                  <span className="text-[10px] font-medium tracking-wider uppercase text-eva-text-dim">
+                <button
+                  className="group hidden md:flex flex-col items-start gap-0.5 px-4 py-2 rounded-lg text-left hover:bg-eva-card-hover hover:text-eva-text transition-colors cursor-pointer"
+                  onClick={() => setIsWalletModalOpen(true)}
+                  type="button"
+                >
+                  <span className="flex items-center gap-1 text-[10px] font-medium tracking-wider uppercase text-eva-text-dim group-hover:text-eva-text">
                     Balance
+                    <svg
+                      className="w-3 h-3 opacity-70 group-hover:opacity-100"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        d="M9 18l6-6-6-6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                      />
+                    </svg>
                   </span>
-                  <span className="text-sm font-mono font-medium text-eva-primary">
+                  <span className="text-sm font-mono font-medium text-eva-primary group-hover:underline">
                     SOL: {balance.toFixed(2)}
                   </span>
-                </div>
+                </button>
               )}
 
               <WalletConnectButton onOpenRules={() => setIsHowToPlayOpen(true)} />
@@ -132,6 +154,15 @@ export function Navbar() {
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}
       />
+
+      {/* Deposit Modal */}
+      {turnkeyAddress && (
+        <DepositModal
+          depositAddress={turnkeyAddress}
+          isOpen={isDepositModalOpen}
+          onClose={() => setIsDepositModalOpen(false)}
+        />
+      )}
     </>
   );
 }
