@@ -295,7 +295,8 @@ function StrategyPresetButtons({
   onSelect,
 }: {
   presets: readonly { key: string; label: string }[];
-  activePreset?: string;
+  // undefined = show first button as default, null = no button highlighted, string = specific preset
+  activePreset?: string | null;
   onSelect: (key: string) => void;
 }) {
   return (
@@ -304,7 +305,9 @@ function StrategyPresetButtons({
         <StrategyPresetButton
           key={preset.key}
           label={preset.label}
-          isFirst={index === 0 && !activePreset}
+          // Only show first button as default when activePreset is strictly undefined
+          // When null (AI generated), no button should be highlighted
+          isFirst={index === 0 && activePreset === undefined}
           isActive={activePreset === preset.key}
           onClick={() => onSelect(preset.key)}
         />
@@ -355,8 +358,11 @@ export default function CreateAgentPage() {
   const [activeDrawerPhase, setActiveDrawerPhase] = useState<WizardPhase>("betting");
 
   // Strategy preset state
-  const [activeBettingPreset, setActiveBettingPreset] = useState<BettingPresetKey | undefined>();
-  const [activeTradingPreset, setActiveTradingPreset] = useState<TradingPresetKey | undefined>();
+  // undefined = initial state, show first button as default
+  // null = explicitly no selection (e.g., AI generated), show no button highlighted
+  // string = a specific preset is selected
+  const [activeBettingPreset, setActiveBettingPreset] = useState<BettingPresetKey | null | undefined>();
+  const [activeTradingPreset, setActiveTradingPreset] = useState<TradingPresetKey | null | undefined>();
 
   // Handle betting preset selection
   const handleBettingPresetSelect = useCallback((key: string) => {
@@ -391,13 +397,13 @@ export default function CreateAgentPage() {
     if (activeDrawerPhase === "betting") {
       setBettingStrategy(prompt);
       setHasUserEditedBetting(true);
-      // Clear active preset when AI generates a new prompt
-      setActiveBettingPreset(undefined);
+      // Set to null to explicitly indicate no preset selected (AI generated)
+      setActiveBettingPreset(null);
     } else {
       setTradingStrategy(prompt);
       setHasUserEditedTrading(true);
-      // Clear active preset when AI generates a new prompt
-      setActiveTradingPreset(undefined);
+      // Set to null to explicitly indicate no preset selected (AI generated)
+      setActiveTradingPreset(null);
     }
   }, [activeDrawerPhase]);
 
@@ -617,8 +623,8 @@ export default function CreateAgentPage() {
                 onChange={(e) => {
                   setBettingStrategy(e.target.value);
                   setHasUserEditedBetting(true);
-                  // Clear active preset when user manually edits
-                  setActiveBettingPreset(undefined);
+                  // Set to null to clear preset highlighting when user manually edits
+                  setActiveBettingPreset(null);
                 }}
               />
             </div>
@@ -647,8 +653,8 @@ export default function CreateAgentPage() {
                 onChange={(e) => {
                   setTradingStrategy(e.target.value);
                   setHasUserEditedTrading(true);
-                  // Clear active preset when user manually edits
-                  setActiveTradingPreset(undefined);
+                  // Set to null to clear preset highlighting when user manually edits
+                  setActiveTradingPreset(null);
                 }}
               />
             </div>
