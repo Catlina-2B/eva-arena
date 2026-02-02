@@ -25,7 +25,7 @@ export default function DefaultLayout({
           <div className="container mx-auto px-3">
             <div className="flex items-center justify-between text-xs text-eva-text-dim">
               <span>© 2026 EVA Arena. All rights reserved.</span>
-              <div className="flex items-center gap-4">
+              {/* <div className="flex items-center gap-4">
                 <a className="hover:text-eva-text transition-colors" href="#">
                   Terms
                 </a>
@@ -35,7 +35,7 @@ export default function DefaultLayout({
                 <a className="hover:text-eva-text transition-colors" href="#">
                   Docs
                 </a>
-              </div>
+              </div> */}
             </div>
           </div>
         </footer>
