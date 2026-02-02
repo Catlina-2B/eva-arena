@@ -1,4 +1,5 @@
 import { Navbar } from "@/components/navbar";
+import { FloatingFeedbackButton } from "@/components/floating-feedback-button";
 
 export default function DefaultLayout({
   children,
@@ -19,10 +20,11 @@ export default function DefaultLayout({
         <main className="container mx-auto px-3 flex-grow pt-20 pb-8">
           {children}
         </main>
+        <FloatingFeedbackButton />
         <footer className="w-full border-t border-eva-border py-4">
           <div className="container mx-auto px-3">
             <div className="flex items-center justify-between text-xs text-eva-text-dim">
-              <span>© 2024 EVA Arena. All rights reserved.</span>
+              <span>© 2026 EVA Arena. All rights reserved.</span>
               <div className="flex items-center gap-4">
                 <a className="hover:text-eva-text transition-colors" href="#">
                   Terms
