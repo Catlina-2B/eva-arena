@@ -58,7 +58,7 @@ export function Navbar() {
             <Link className="flex items-center gap-2" to="/">
               <EvaLogo />
               <span className="text-[10px] font-display font-semibold uppercase tracking-[0.22em] text-eva-secondary/80">
-                Alpha
+                Internal
               </span>
             </Link>
 
