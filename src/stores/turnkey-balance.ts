@@ -4,7 +4,7 @@ import { create } from "zustand";
  * Turnkey 钱包余额全局状态
  */
 interface TurnkeyBalanceState {
-  /** SOL 余额 (已从 lamports 转换) */
+  /** 余额 (已从基础单位转换) */
   balance: number;
   /** 是否正在加载 */
   isLoading: boolean;

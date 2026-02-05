@@ -167,8 +167,8 @@ export function trenchToArenaRound(
     currentSlot,
   );
 
-  // Calculate prize pool from deposited SOL (80% goes to prize pool)
-  const totalDepositedSol = parseFloat(trench.prizePoolReserves) / 1e9; // lamports to SOL
+  // Calculate prize pool from deposited USDC (80% goes to prize pool)
+  const totalDepositedSol = parseFloat(trench.prizePoolReserves) / 1e6; // microUSDC to USDC
   const prizePool = totalDepositedSol;
 
   // Get token price
@@ -230,7 +230,7 @@ function calculateWinners(
   for (const participant of leaderboard.topThree) {
     const tokenAmount = parseInt(participant.tokenBalance) / 1e6;
     const supplyPercentage = (tokenAmount / TOTAL_TOKEN_SUPPLY) * 100;
-    const prizeAmount = parseFloat(participant.prizeAmount) / 1e9;
+    const prizeAmount = parseFloat(participant.prizeAmount) / 1e6;
 
     winners.push({
       rank: participant.rank,
@@ -256,7 +256,7 @@ const TOTAL_TOKEN_SUPPLY = 1_000_000_000;
 /**
  * Convert LeaderboardResponseDto to AgentRanking array (top 3 only)
  * @param leaderboard - Leaderboard data from API
- * @param totalDepositedSol - Total deposited SOL in lamports (for allocation calculation)
+ * @param totalDepositedSol - Total deposited USDC in microUSDC (for allocation calculation)
  * @param currentUserAddress - Current user's wallet address
  */
 export function leaderboardToRankings(
@@ -274,7 +274,7 @@ export function leaderboardToRankings(
     const tokenAmount = parseInt(item.tokenBalance) / 1e6; // Adjust decimals
     const supplyPercentage = (tokenAmount / TOTAL_TOKEN_SUPPLY) * 100;
     const depositedSol = parseFloat(item.depositedSol);
-    const betAmount = depositedSol / 1e9; // Convert lamports to SOL
+    const betAmount = depositedSol / 1e6; // Convert microUSDC to USDC
     // Calculate allocation percent, clamped to 0-100 to prevent race condition flashes
     const rawAllocationPercent = totalDeposited > 0 
       ? (depositedSol / totalDeposited) * 100 
@@ -288,8 +288,8 @@ export function leaderboardToRankings(
       agentAvatar: item.agentLogo || undefined,
       userAddress: item.userAddress,
       tokenAmount,
-      pnlSol: parseFloat(item.pnlSol) / 1e9,
-      prizeAmount: parseFloat(item.prizeAmount) / 1e9,
+      pnlSol: parseFloat(item.pnlSol) / 1e6,
+      prizeAmount: parseFloat(item.prizeAmount) / 1e6,
       supplyPercentage,
       isOwned: item.isCurrentUser || item.userAddress === currentUserAddress,
       isCurrentUser: item.isCurrentUser,
@@ -304,7 +304,7 @@ export function leaderboardToRankings(
 /**
  * Get current user ranking info (when not in top 3)
  * @param leaderboard - Leaderboard data from API
- * @param totalDepositedSol - Total deposited SOL in lamports (for allocation calculation)
+ * @param totalDepositedSol - Total deposited USDC in microUSDC (for allocation calculation)
  */
 export function getCurrentUserRanking(
   leaderboard: LeaderboardResponseDto | undefined,
@@ -319,7 +319,7 @@ export function getCurrentUserRanking(
   const supplyPercentage = (tokenAmount / TOTAL_TOKEN_SUPPLY) * 100;
   const totalDeposited = totalDepositedSol ? parseFloat(totalDepositedSol) : 0;
   const depositedSol = parseFloat(leaderboard.currentUser.depositedSol);
-  const betAmount = depositedSol / 1e9;
+  const betAmount = depositedSol / 1e6;
   // Calculate allocation percent, clamped to 0-100 to prevent race condition flashes
   const rawAllocationPercent = totalDeposited > 0 
     ? (depositedSol / totalDeposited) * 100 
@@ -334,8 +334,8 @@ export function getCurrentUserRanking(
     agentAvatar: leaderboard.currentUser.agentLogo || undefined,
     userAddress: leaderboard.currentUser.userAddress,
     tokenAmount,
-    pnlSol: parseFloat(leaderboard.currentUser.pnlSol) / 1e9,
-    prizeAmount: parseFloat(leaderboard.currentUser.prizeAmount) / 1e9,
+    pnlSol: parseFloat(leaderboard.currentUser.pnlSol) / 1e6,
+    prizeAmount: parseFloat(leaderboard.currentUser.prizeAmount) / 1e6,
     supplyPercentage,
     isOwned: true,
     betAmount,
@@ -378,7 +378,7 @@ export function transactionsToActivities(
       agentName: tx.agentName || `Agent ${tx.userAddress.slice(0, 8)}`,
       userAddress: tx.userAddress,
       tokenAmount: tx.tokenAmount ? parseInt(tx.tokenAmount) / 1e6 : 0,
-      solAmount: tx.solAmount ? parseFloat(tx.solAmount) / 1e9 : 0,
+      solAmount: tx.solAmount ? parseFloat(tx.solAmount) / 1e6 : 0,
       timestamp: new Date(tx.createdAt),
       signature: tx.signature,
       reason: tx.reason
@@ -393,12 +393,13 @@ export function transactionsToActivities(
 }
 
 /**
- * Format SOL amount from lamports
+ * Format USDC amount from microUSDC
  */
-export function lamportsToSol(lamports: string | number): number {
-  const value = typeof lamports === "string" ? parseFloat(lamports) : lamports;
+export function microUsdcToUsdc(microUsdc: string | number): number {
+  const value =
+    typeof microUsdc === "string" ? parseFloat(microUsdc) : microUsdc;
 
-  return value / 1e9;
+  return value / 1e6;
 }
 
 /**

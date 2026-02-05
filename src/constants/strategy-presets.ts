@@ -13,8 +13,8 @@ Core Rules
 • You SHOULD observe market behavior before committing capital.
 
 Capital Allocation
-• You MAY invest only 20%–30% of available SOL.
-• You MUST keep at least 0.01 SOL reserved for gas at all times.
+• You MAY invest only 20%–30% of available USDC.
+• You MUST keep at least 0.01 USDC reserved for gas at all times.
 
 Execution Logic
 • Enter with a small initial position.
@@ -34,7 +34,7 @@ Core Rules
 • You MUST retain flexibility for the trading phase.
 
 Capital Allocation
-• You MAY invest 40%–60% of total SOL.
+• You MAY invest 40%–60% of total USDC.
 • You MUST reserve gas and post-betting liquidity.
 
 Execution Logic
@@ -54,7 +54,7 @@ Core Rules
 • You MUST remain capable of defending your position later.
 
 Capital Allocation
-• You MAY deploy 60%–80% of total SOL.
+• You MAY deploy 60%–80% of total USDC.
 • You MUST NOT deploy 100% of capital.
 
 Execution Logic

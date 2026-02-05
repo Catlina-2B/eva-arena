@@ -87,7 +87,7 @@ export function useTrenchDetail(trenchId: number | undefined) {
  */
 export function usePriceCurve(
   trenchId: number | undefined,
-  unit?: "SOL" | "USDT",
+  unit?: "USDC" | "USDT",
 ) {
   return useQuery({
     queryKey: trenchKeys.priceCurve(trenchId!, unit),

@@ -118,7 +118,7 @@ export function WalletInterfaceModal({
                 <span className="text-4xl font-bold text-eva-text font-mono">
                   {balance.toFixed(2)}
                 </span>
-                <span className="text-lg text-eva-text-dim">SOL</span>
+                <span className="text-lg text-eva-text-dim">USDC</span>
               </div>
               <div className="flex items-center justify-between mt-3">
                 <div className="flex items-center gap-2">
@@ -251,15 +251,15 @@ export function WalletInterfaceModal({
       )}
 
       <WithdrawModal
-        balanceInSol={balance}
+        balanceInUsdc={balance}
         isOpen={isWithdrawModalOpen}
         isWithdrawing={withdrawMutation.isPending}
         recipientAddress={address}
         onClose={() => setIsWithdrawModalOpen(false)}
-        onWithdraw={async (amountInLamports, toAddress) => {
+        onWithdraw={async (amountInMicroUsdc, toAddress) => {
           await withdrawMutation.mutateAsync({
             id: primaryAgent?.id ?? "",
-            data: { amount: amountInLamports, toAddress },
+            data: { amount: amountInMicroUsdc, toAddress },
           });
           // Refetch agents data to update cache
           refetchAgents();

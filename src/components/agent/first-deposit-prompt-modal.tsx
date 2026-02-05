@@ -168,7 +168,7 @@ export function FirstDepositPromptModal({
 
             {/* Description */}
             <p className="text-sm text-eva-text-dim text-center mb-8 tracking-wide">
-              Let's deposit SOL to your wallet to play!
+              Let's deposit USDC to your wallet to play!
             </p>
 
             {/* Deposit Button */}

@@ -223,7 +223,7 @@ export function useAgentDeposit() {
     onSuccess: (_, { id, data }) => {
       // 埋点：充值成功
       trackUserDeposit({
-        amount_sol: data.amount / 1e9, // lamports to SOL
+        amount_sol: data.amount / 1e6, // microUSDC to USDC
         tx_hash: data.txHash,
         wallet_address: data.fromAddress,
       });
@@ -247,7 +247,7 @@ export function useAgentWithdraw() {
       // 埋点：提款成功
       if (result.success) {
         trackUserWithdraw({
-          amount_sol: data.amount / 1e9, // lamports to SOL
+          amount_sol: data.amount / 1e6, // microUSDC to USDC
           tx_hash: result.txHash,
           wallet_address: data.toAddress,
         });

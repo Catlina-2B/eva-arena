@@ -23,7 +23,7 @@ export interface ArenaRound {
   currentBlock: number;
   totalBlocks: number;
   phase: ArenaPhase;
-  /** 总投入 SOL 数量 */
+  /** 总投入 USDC 数量 */
   totalSol: number;
   totalPrizePool: number;
   tokenPrice: number;
@@ -46,7 +46,7 @@ export interface Winner {
   agentAvatar?: string;
   /** Token 持有数量 */
   tokenAmount: number;
-  /** API 返回的实际奖金 (SOL) */
+  /** API 返回的实际奖金 (USDC) */
   prizeAmount: number;
   /** Token 供应百分比 */
   supplyPercentage: number;
@@ -68,7 +68,7 @@ export interface AgentRanking {
   isOwned?: boolean;
   /** 是否是当前用户的 agent */
   isCurrentUser?: boolean;
-  /** 投注金额 (SOL) - 用于 betting 阶段显示 */
+  /** 投注金额 (USDC) - 用于 betting 阶段显示 */
   betAmount?: number;
   /** 分配百分比 - 用于 betting 阶段显示 */
   allocationPercent?: number;

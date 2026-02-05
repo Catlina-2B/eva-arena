@@ -7,7 +7,7 @@ import { apiClient } from "./client";
  */
 export const priceApi = {
   /**
-   * Get current SOL/USD price
+   * Get current USD price
    */
   getSolPrice: async (): Promise<SolPriceResponseDto> => {
     const response = await apiClient.get<SolPriceResponseDto>("/api/price/sol");

@@ -110,8 +110,8 @@ function ActivityRow({
   activity: ActivityItem;
   onExternalLink?: (signature: string) => void;
 }) {
-  // Always show only SOL amount
-  const actionText = `${formatSmallNumber(activity.solAmount)} SOL`;
+  // Always show only USDC amount
+  const actionText = `${formatSmallNumber(activity.solAmount)} USDC`;
 
   // Show price for buy/sell transactions
   const isDepositOrWithdraw = activity.type === "deposit" || activity.type === "withdraw";
@@ -198,11 +198,11 @@ export function AgentDetailModal({
   detailData,
   onViewTransaction,
 }: AgentDetailModalProps) {
-  // State for SOL balance fetched via RPC
+  // State for USDC balance fetched via RPC
   const [rpcSolBalance, setRpcSolBalance] = useState<number | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
 
-  // Fetch SOL balance via RPC when modal opens
+  // Fetch USDC balance via RPC when modal opens
   useEffect(() => {
     if (!isOpen || !agent?.userAddress) {
       setRpcSolBalance(null);
@@ -219,7 +219,7 @@ export function AgentDetailModal({
         }
       })
       .catch((err) => {
-        console.error("[AgentDetailModal] Failed to fetch SOL balance:", err);
+        console.error("[AgentDetailModal] Failed to fetch USDC balance:", err);
         if (!cancelled) {
           setRpcSolBalance(null);
         }
@@ -360,18 +360,18 @@ export function AgentDetailModal({
 
                 <div className="space-y-4">
                   <MetricRow 
-                    label="SOL Balance" 
+                    label="USDC Balance" 
                     value={isLoadingBalance ? "..." : formatSmallNumber(solBalance)} 
                   />
                   <MetricRow label="Token Balance" value={tokenBalance.toLocaleString()} />
                   <MetricRow
                     label="Round PNL"
-                    value={roundPnl == null || isNaN(roundPnl) ? "--" : `${roundPnl >= 0 ? "+" : ""}${formatSmallNumber(roundPnl)} SOL`}
+                    value={roundPnl == null || isNaN(roundPnl) ? "--" : `${roundPnl >= 0 ? "+" : ""}${formatSmallNumber(roundPnl)} USDC`}
                     valueColor={roundPnl == null || isNaN(roundPnl) ? "text-white" : roundPnl >= 0 ? "text-[#6ce182]" : "text-[#f87171]"}
                   />
                   <MetricRow
                     label="Total PNL"
-                    value={totalPnl == null || isNaN(totalPnl) ? "--" : `${totalPnl >= 0 ? "+" : ""}${formatSmallNumber(totalPnl)} SOL`}
+                    value={totalPnl == null || isNaN(totalPnl) ? "--" : `${totalPnl >= 0 ? "+" : ""}${formatSmallNumber(totalPnl)} USDC`}
                     valueColor={totalPnl == null || isNaN(totalPnl) ? "text-white" : totalPnl >= 0 ? "text-[#6ce182]" : "text-[#f87171]"}
                     hasBorder={false}
                   />

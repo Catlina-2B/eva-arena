@@ -42,7 +42,7 @@ export function TargetInfoCard({ round }: TargetInfoCardProps) {
             Total Prize Pool
           </div>
           <div className="text-2xl font-bold text-eva-primary">
-            {round.totalPrizePool} SOL
+            {round.totalPrizePool} USDC
           </div>
         </div>
       </EvaCardContent>

@@ -203,7 +203,7 @@ export interface AgentDepositDto {
 }
 
 export interface AgentWithdrawDto {
-  /** Amount in lamports (1 SOL = 1,000,000,000 lamports) */
+  /** Amount in microUSDC (1 USDC = 1,000,000 microUSDC) */
   amount: number;
   toAddress: string;
 }
@@ -306,7 +306,7 @@ export interface PricePointDto {
 export interface PriceCurveResponseDto {
   trenchId: number;
   trenchPda: string;
-  unit: "SOL" | "USDT";
+  unit: "USDC" | "USDT";
   pricePoints: PricePointDto[];
   totalTrades: number;
 }
@@ -457,21 +457,21 @@ export interface TrenchHistoryItemDto {
   tokenSymbol: string | null;
   /** 用户地址 (turnkey 地址) */
   userAddress: string;
-  /** 存入 SOL (lamports) */
+  /** 存入 USDC (microUSDC) */
   depositedSol: string;
-  /** 提现 SOL (lamports) */
+  /** 提现 USDC (microUSDC) */
   totalWithdrawnSol: string;
   /** 持有代币数量 */
   tokenBalance: string;
-  /** 总买入 SOL (lamports) */
+  /** 总买入 USDC (microUSDC) */
   totalBuySol: string;
-  /** 总卖出 SOL (lamports) */
+  /** 总卖出 USDC (microUSDC) */
   totalSellSol: string;
-  /** 盈亏 SOL (lamports) */
+  /** 盈亏 USDC (microUSDC) */
   pnlSol: string;
   /** 排名 (结算后有值) */
   rank: number | null;
-  /** 奖励金额 (lamports) */
+  /** 奖励金额 (microUSDC) */
   prizeAmount: string;
   /** 奖励是否已结算 */
   isPrizeSettled: boolean;
@@ -497,7 +497,7 @@ export interface TrenchHistoryResponseDto {
 // ============== PNL Timeline Types ==============
 
 export interface PnlTimelineItemDto {
-  /** PNL 值 (lamports) */
+  /** PNL 值 (microUSDC) */
   pnl: string;
   /** 时间戳 */
   timestamp: string;

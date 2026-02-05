@@ -75,7 +75,7 @@ export const trenchApi = {
    */
   getPriceCurve: async (
     trenchId: number,
-    unit?: "SOL" | "USDT",
+    unit?: "USDC" | "USDT",
   ): Promise<PriceCurveResponseDto> => {
     const response = await apiClient.get<PriceCurveResponseDto>(
       `/api/trenches/${trenchId}/price-curve`,

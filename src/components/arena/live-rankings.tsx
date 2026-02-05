@@ -361,7 +361,7 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
                 )}
               </div>
               <div className="text-[11px] text-eva-text-dim font-mono">
-                Bet {agent.betAmount?.toFixed(2) ?? "0.00"} SOL
+                Bet {agent.betAmount?.toFixed(2) ?? "0.00"} USDC
               </div>
             </div>
           </div>
@@ -429,7 +429,7 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
               agent.prizeAmount >= 0 ? "text-[#EAB308]" : "text-eva-danger"
             )}
           >
-            {agent.prizeAmount >= 0 ? "+" : ""}{agent.prizeAmount.toFixed(2)} SOL
+            {agent.prizeAmount >= 0 ? "+" : ""}{agent.prizeAmount.toFixed(2)} USDC
           </div>
           <div className="text-[10px] text-eva-text-dim font-mono uppercase tracking-wider">
             Prize

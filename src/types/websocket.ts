@@ -60,12 +60,12 @@ export interface TrenchUpdateEventDto {
   trenchId: number;
   trenchPda: string;
   status?: string; // 状态: BIDDING | TRADING | ENDED
-  realSolReserves?: string; // 实际 SOL 储备 (lamports)
-  prizePoolReserves?: string; // 奖池储备 (lamports)
+  realSolReserves?: string; // 实际 USDC 储备 (microUSDC)
+  prizePoolReserves?: string; // 奖池储备 (microUSDC)
   activeAgentsCount?: number; // 活跃 Agent 数量
-  tokenPriceSol?: string | null; // Token 价格 (SOL)
+  tokenPriceSol?: string | null; // Token 价格 (USDC)
   tokenPriceUsd?: string | null; // Token 价格 (USD)
-  totalDepositedSol?: string; // 总存入 SOL (lamports)
+  totalDepositedSol?: string; // 总存入 USDC (microUSDC)
 }
 
 export interface PriceUpdateEventDto {
@@ -106,9 +106,9 @@ export interface LeaderboardItemEventDto {
   agentName: string | null; // Agent 名称
   agentLogo: string | null; // Agent 头像 URL
   tokenBalance: string; // Token 余额
-  depositedSol: string; // 已存入 SOL
-  pnlSol: string; // 预估 PNL (lamports)
-  prizeAmount: string; // 预估奖励 (lamports)
+  depositedSol: string; // 已存入 USDC
+  pnlSol: string; // 预估 PNL (microUSDC)
+  prizeAmount: string; // 预估奖励 (microUSDC)
   allocationPercent: string; // 分配比例 (%)
 }
 

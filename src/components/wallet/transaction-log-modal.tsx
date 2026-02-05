@@ -59,7 +59,7 @@ export function TransactionLogModal({
       tx.type,
       tx.signature,
       tx.timeAgo,
-      `${tx.amount} SOL`,
+      `${tx.amount} USDC`,
       tx.status,
     ]);
 
@@ -220,7 +220,7 @@ export function TransactionLogModal({
 
                       {/* AMOUNT */}
                       <div className="text-sm font-mono text-eva-text text-right">
-                        {tx.amount} SOL
+                        {tx.amount} USDC
                       </div>
 
                       {/* STATUS */}

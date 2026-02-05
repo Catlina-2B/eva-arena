@@ -58,7 +58,7 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
   const onChainTrenchId = parseInt(round.id.replace(/^eva-/, ""), 10);
 
   // Fetch price curve data from API
-  const { data: priceCurveData, isLoading } = usePriceCurve(trenchDbId, "SOL");
+  const { data: priceCurveData, isLoading } = usePriceCurve(trenchDbId, "USDC");
 
   // Subscribe to WebSocket for real-time price updates
   const handlePriceUpdate = useCallback((data: PriceUpdateEventDto) => {
@@ -163,7 +163,7 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
         price,
         type: tx.txType === "BUY" ? "buy" as const : "sell" as const,
         tokenAmount: tx.tokenAmount ? parseFloat(tx.tokenAmount) / 1e6 : 0,
-        solAmount: tx.solAmount ? parseFloat(tx.solAmount) / 1e9 : 0,
+        solAmount: tx.solAmount ? parseFloat(tx.solAmount) / 1e6 : 0,
         signature: tx.signature,
       };
     }).sort((a, b) => a.time - b.time);
@@ -462,7 +462,7 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
                 </svg>
               </div>
               <span className="font-mono text-sm text-white/60 tracking-wider">
-                EVA/SOL
+                EVA/USDC
               </span>
               <span className="font-mono text-lg text-eva-primary font-semibold">
                 {formatPrice(currentPrice)}
@@ -774,7 +774,7 @@ function TradeTooltip({ marker, position, containerRef }: TradeTooltipProps) {
               Value
             </span>
             <span className="font-mono text-[10px] text-zinc-300 font-bold">
-              {marker.solAmount.toFixed(2)} SOL
+              {marker.solAmount.toFixed(2)} USDC
             </span>
           </div>
           {/* Price row */}
@@ -783,7 +783,7 @@ function TradeTooltip({ marker, position, containerRef }: TradeTooltipProps) {
               Price
             </span>
             <span className="font-mono text-[10px] text-zinc-300 font-bold">
-              {marker.tokenAmount > 0 ? formatSmallNumber(marker.solAmount / marker.tokenAmount, 4, 4, true) : "—"} SOL
+              {marker.tokenAmount > 0 ? formatSmallNumber(marker.solAmount / marker.tokenAmount, 4, 4, true) : "—"} USDC
             </span>
           </div>
         </div>

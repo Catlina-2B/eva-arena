@@ -679,7 +679,7 @@ export default function CreateAgentPage() {
                   </span>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-white">
-                    0.1 SOL
+                    0.1 USDC
                   </span>
                 <CreationFeeIcon />
               </div>

@@ -36,8 +36,8 @@ export function ReasoningModal({
   const isDepositOrWithdraw =
     activity.type === "deposit" || activity.type === "withdraw";
   const actionText = isDepositOrWithdraw
-    ? `${actionLabel} ${formatSmallNumber(activity.solAmount)} SOL`
-    : `${actionLabel} ${activity.tokenAmount.toLocaleString()} Token for ${formatSmallNumber(activity.solAmount)} SOL @${formatSmallNumber(activity.solAmount)} SOL`;
+    ? `${actionLabel} ${formatSmallNumber(activity.solAmount)} USDC`
+    : `${actionLabel} ${activity.tokenAmount.toLocaleString()} Token for ${formatSmallNumber(activity.solAmount)} USDC @${formatSmallNumber(activity.solAmount)} USDC`;
 
   // 使用 reason.action 如果存在，否则用默认格式
   const displayAction = activity.reason?.action || actionText;

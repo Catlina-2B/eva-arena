@@ -70,14 +70,14 @@ function PnlChart({ timeline, isLoading, onHoverChange }: PnlChartProps) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Convert timeline data to chart points (convert lamports to SOL)
+  // Convert timeline data to chart points (convert microUSDC to USDC)
   const dataPoints = useMemo(() => {
     if (!timeline || timeline.length === 0) {
       return [];
     }
 
     return timeline.map((item) => ({
-      pnl: parseFloat(item.pnl) / 1e9,
+      pnl: parseFloat(item.pnl) / 1e6,
       timestamp: item.timestamp,
     }));
   }, [timeline]);
@@ -315,7 +315,7 @@ function TradeHistoryTable({
       agentName: tx.agentName || "",
       userAddress: tx.userAddress,
       tokenAmount: tx.tokenAmount ? parseFloat(tx.tokenAmount) / 1e6 : 0,
-      solAmount: tx.solAmount ? parseFloat(tx.solAmount) / 1e9 : 0,
+      solAmount: tx.solAmount ? parseFloat(tx.solAmount) / 1e6 : 0,
       timestamp: tx.blockTime ? new Date(tx.blockTime * 1000) : new Date(tx.createdAt),
       signature: tx.signature,
       reason: tx.reason ? {
@@ -350,16 +350,16 @@ function TradeHistoryTable({
 
   const formatTokenAmount = (amount: string | null) => {
     if (!amount) return "-";
-    const value = parseFloat(amount) / 1e6; // Convert from lamports
+    const value = parseFloat(amount) / 1e6; // Convert from microUSDC
 
     return value.toFixed(2);
   };
 
-  const formatSolAmount = (amount: string | null) => {
+  const formatUsdcAmount = (amount: string | null) => {
     if (!amount) return "-";
-    const value = parseFloat(amount) / 1e9; // Convert from lamports
+    const value = parseFloat(amount) / 1e6; // Convert from microUSDC
 
-    return `${value.toFixed(4)} SOL`;
+    return `${value.toFixed(4)} USDC`;
   };
 
   const openTxExplorer = (signature: string) => {
@@ -417,7 +417,7 @@ function TradeHistoryTable({
               <th className="px-4 py-3 text-left font-medium">Time</th>
               <th className="px-4 py-3 text-left font-medium">Type</th>
               <th className="px-4 py-3 text-left font-medium">Token Amount</th>
-              <th className="px-4 py-3 text-left font-medium">SOL Amount</th>
+              <th className="px-4 py-3 text-left font-medium">USDC Amount</th>
               <th className="px-4 py-3 text-center font-medium">Tx</th>
               <th className="px-4 py-3 text-center font-medium">Reasoning</th>
             </tr>
@@ -438,7 +438,7 @@ function TradeHistoryTable({
                   {formatTokenAmount(tx.tokenAmount)}
                 </td>
                 <td className="px-4 py-3 font-mono text-eva-text">
-                  {formatSolAmount(tx.solAmount)}
+                  {formatUsdcAmount(tx.solAmount)}
                 </td>
                 <td className="px-4 py-3 text-center">
                   <button
@@ -619,7 +619,7 @@ function HistoryRow({
               className={`text-sm font-mono ${round.pnl >= 0 ? "text-eva-primary" : "text-eva-danger"}`}
             >
               {round.pnl >= 0 ? "+" : ""}
-              {round.pnl.toFixed(4)} SOL
+              {round.pnl.toFixed(4)} USDC
             </div>
           </div>
           <div className="text-right">
@@ -627,7 +627,7 @@ function HistoryRow({
               PRIZE
             </div>
             <div className="text-sm font-mono text-eva-text">
-              {round.prize.toFixed(4)} SOL
+              {round.prize.toFixed(4)} USDC
             </div>
           </div>
           <span className="text-eva-text-dim hover:text-eva-text transition-colors">
@@ -669,15 +669,15 @@ interface ExtendedHistoryRound extends AgentHistoryRound {
 
 // Convert API trench history item to history round format
 function historyItemToRound(item: TrenchHistoryItemDto): ExtendedHistoryRound {
-  const pnlSol = parseFloat(item.pnlSol) / 1e9;
-  const prizeSol = parseFloat(item.prizeAmount) / 1e9;
+  const pnlUsdc = parseFloat(item.pnlSol) / 1e6;
+  const prizeUsdc = parseFloat(item.prizeAmount) / 1e6;
 
   return {
     roundId: `eva-${item.trenchId}`,
     tokenName: item.tokenSymbol || `Round ${item.trenchId}`,
     rank: item.rank ?? 0,
-    pnl: pnlSol,
-    prize: prizeSol,
+    pnl: pnlUsdc,
+    prize: prizeUsdc,
     trades: 0, // Not available in TrenchHistoryItemDto, could be calculated from transactions
     trenchDbId: item.trenchId,
   };
@@ -1115,7 +1115,7 @@ export default function MyAgentPage() {
                       <div className="flex items-baseline justify-between">
                         <div className="font-mono text-xl font-bold text-eva-text">
                           {balance.toFixed(2)}{" "}
-                          <span className="text-sm text-eva-text-dim">SOL</span>
+                          <span className="text-sm text-eva-text-dim">USDC</span>
                         </div>
                         <button
                           className="text-xs font-mono text-eva-text-dim hover:text-eva-primary transition-colors cursor-pointer"
@@ -1136,7 +1136,10 @@ export default function MyAgentPage() {
                             Total Deposit
                           </div>
                           <div className="font-mono text-sm text-eva-text">
-                            {(totalDeposit / 1e9).toFixed(2)}
+                            {(totalDeposit / 1e6).toFixed(2)}{" "}
+                            <span className="text-xs text-eva-text-dim">
+                              USDC
+                            </span>
                           </div>
                         </div>
                         <EvaButton
@@ -1158,9 +1161,9 @@ export default function MyAgentPage() {
                             Total Withdraw
                           </div>
                           <div className="font-mono text-sm text-eva-text">
-                            {(totalWithdraw / 1e9).toFixed(2)}{" "}
+                            {(totalWithdraw / 1e6).toFixed(2)}{" "}
                             <span className="text-xs text-eva-text-dim">
-                              SOL
+                              USDC
                             </span>
                           </div>
                         </div>
@@ -1194,7 +1197,7 @@ export default function MyAgentPage() {
                         className={`font-mono text-xl font-bold transition-colors ${displayPnl >= 0 ? "text-eva-primary" : "text-eva-danger"}`}
                       >
                         {displayPnl >= 0 ? "+" : ""}
-                        {displayPnl.toFixed(2)} <span className="text-sm">SOL</span>
+                        {displayPnl.toFixed(2)} <span className="text-sm">USDC</span>
                       </div>
                     );
                   })()}
@@ -1293,15 +1296,15 @@ export default function MyAgentPage() {
 
       {/* Withdraw Modal */}
       <WithdrawModal
-        balanceInSol={balance}
+        balanceInUsdc={balance}
         isOpen={isWithdrawModalOpen}
         isWithdrawing={withdrawMutation.isPending}
         recipientAddress={walletAddress ?? ""}
         onClose={() => setIsWithdrawModalOpen(false)}
-        onWithdraw={async (amountInLamports, toAddress) => {
+        onWithdraw={async (amountInMicroUsdc, toAddress) => {
           await withdrawMutation.mutateAsync({
             id: displayAgent.id,
-            data: { amount: amountInLamports, toAddress },
+            data: { amount: amountInMicroUsdc, toAddress },
           });
           // Refresh panel data after successful withdrawal
           refetchPanel();

@@ -114,7 +114,7 @@ export function Navbar() {
                     </svg>
                   </span>
                   <span className="text-sm font-mono font-medium text-eva-primary group-hover:underline">
-                    SOL: {balance.toFixed(2)}
+                    USDC: {balance.toFixed(2)}
                   </span>
                 </button>
               )}

@@ -3,16 +3,16 @@ import { PublicKey } from "@solana/web3.js";
 import { getSolanaConnection } from "./connection";
 
 /**
- * 获取账户 SOL 余额
+ * 获取账户余额
  * @param address 钱包地址
- * @returns SOL 余额 (已从 lamports 转换)
+ * @returns 余额 (已从基础单位转换)
  */
 export async function getBalance(address: string): Promise<number> {
   const connection = getSolanaConnection();
   const publicKey = new PublicKey(address);
   const lamports = await connection.getBalance(publicKey);
 
-  return lamports / 1e9;
+  return lamports / 1e6;
 }
 
 /**
@@ -32,7 +32,7 @@ export function subscribeBalance(
   const subscriptionId = connection.onAccountChange(
     publicKey,
     (accountInfo) => {
-      const balanceInSol = accountInfo.lamports / 1e9;
+      const balanceInSol = accountInfo.lamports / 1e6;
 
       onBalanceChange(balanceInSol);
     },

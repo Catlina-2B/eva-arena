@@ -100,7 +100,7 @@ export function DepositModal({
                 </span>
                 <div className="flex items-center gap-2 px-4 py-3 bg-eva-darker border border-eva-border rounded-lg">
                   <div className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-500 to-blue-500" />
-                  <span className="text-eva-text font-mono">SOL</span>
+                  <span className="text-eva-text font-mono">USDC</span>
                   <svg
                     className="w-4 h-4 ml-auto text-eva-text-dim"
                     fill="none"

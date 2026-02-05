@@ -56,7 +56,7 @@ export function useTurnkeyBalance(turnkeyAddress: string | undefined) {
   }, [turnkeyAddress, fetchInitialBalance, setBalance, reset]);
 
   return {
-    /** SOL 余额 */
+    /** USDC 余额 */
     balance,
     /** 是否正在加载 */
     isLoading,

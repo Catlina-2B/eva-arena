@@ -88,7 +88,7 @@ export function RoundSettlement({ round, currentUserAgent }: RoundSettlementProp
                 Final Prize Pool
               </span>
               <span className="text-2xl font-display text-[#facc15] tracking-tight">
-                {round.totalPrizePool.toFixed(2)} SOL
+                {round.totalPrizePool.toFixed(2)} USDC
               </span>
             </div>
 
@@ -137,7 +137,7 @@ export function RoundSettlement({ round, currentUserAgent }: RoundSettlementProp
                     </div>
                     <div className="flex items-baseline gap-1">
                       <span className="font-mono font-bold text-sm text-[#4ade80]">
-                        {winner.prizeAmount.toFixed(2)} SOL
+                        {winner.prizeAmount.toFixed(2)} USDC
                       </span>
                       <span className="font-mono text-xs text-[#6b7280]">
                         ({getPrizePercent(winner.rank)}%)
@@ -154,7 +154,7 @@ export function RoundSettlement({ round, currentUserAgent }: RoundSettlementProp
                   </span>
                   <div className="flex items-baseline gap-1">
                     <span className="font-mono font-bold text-xs text-[#4ade80]">
-                      {othersAmount.toFixed(2)} SOL
+                      {othersAmount.toFixed(2)} USDC
                     </span>
                     <span className="font-mono text-xs text-[#6b7280]">
                       ({othersPercent}%)
@@ -186,7 +186,7 @@ export function RoundSettlement({ round, currentUserAgent }: RoundSettlementProp
                     </span>
                   </div>
                   <span className="font-mono font-bold text-lg text-[#4ade80]">
-                    {currentUserAgent.prizeAmount.toFixed(2)} SOL
+                    {currentUserAgent.prizeAmount.toFixed(2)} USDC
                   </span>
                 </div>
               </div>

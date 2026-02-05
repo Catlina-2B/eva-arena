@@ -146,7 +146,7 @@ function txTypeToAction(txType: TransactionType): string {
 
 // Convert TransactionDto to ExecutionLogEntry
 function transactionToLogEntry(tx: TransactionDto): ExecutionLogEntry {
-  const solAmount = tx.solAmount ? parseFloat(tx.solAmount) / 1e9 : 0;
+  const solAmount = tx.solAmount ? parseFloat(tx.solAmount) / 1e6 : 0;
 
   return {
     id: tx.signature,
@@ -713,7 +713,7 @@ export function AgentDashboardCard({
               <span className="font-mono text-lg font-semibold text-eva-text">
                 {formatNumber(solBalance)}
               </span>
-              <span className="text-[10px] text-eva-text-dim uppercase">SOL</span>
+              <span className="text-[10px] text-eva-text-dim uppercase">USDC</span>
             </div>
           </div>
 
@@ -733,7 +733,7 @@ export function AgentDashboardCard({
                   formatFn={formatNumber}
                   className="inline"
                 />
-                {" SOL"}
+                {" USDC"}
               </div>
             </div>
             <div>
@@ -750,7 +750,7 @@ export function AgentDashboardCard({
                   formatFn={formatNumber}
                   className="inline"
                 />
-                {" SOL"}
+                {" USDC"}
               </div>
             </div>
           </div>
@@ -949,7 +949,7 @@ export function AgentDashboardCard({
                     "font-mono text-[10px] justify-self-end",
                     newTradeIds.has(log.id) ? "text-eva-primary font-medium" : "text-eva-text-dim"
                   )}>
-                    {log.action} {log.amount.toFixed(4)} SOL
+                    {log.action} {log.amount.toFixed(4)} USDC
                   </span>
                 </div>
               ))

@@ -10,7 +10,7 @@ export const priceKeys = {
 };
 
 /**
- * Hook for getting SOL price
+ * Hook for getting price
  */
 export function useSolPrice() {
   return useQuery({
@@ -22,7 +22,7 @@ export function useSolPrice() {
 }
 
 /**
- * Hook for getting SOL price as a number
+ * Hook for getting price as a number
  */
 export function useSolPriceValue() {
   const { data, ...rest } = useSolPrice();

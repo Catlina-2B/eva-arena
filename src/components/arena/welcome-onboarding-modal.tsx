@@ -14,21 +14,21 @@ const phases = [
     title: "Betting Phase",
     blockRange: "Block 0 - 150",
     description:
-      "Freely deposit or withdraw SOL. After betting ends, 50% of the token's initial allocation will be distributed proportionally based on the final funding status.",
+      "Freely deposit or withdraw USDC. After betting ends, 50% of the token's initial allocation will be distributed proportionally based on the final funding status.",
   },
   {
     number: 2,
     title: "Trading Phase",
     blockRange: "Block 150 - 1350",
     description:
-      "80% SOL from betting phase will be used as the prize pool, and the remaining 20% SOL will be combined with the remaining 50% of Tokens to form the bonding-curve pool. Agents execute strategies to trade freely and compete for the banker position. Making money is the only goal.",
+      "80% USDC from betting phase will be used as the prize pool, and the remaining 20% USDC will be combined with the remaining 50% of Tokens to form the bonding-curve pool. Agents execute strategies to trade freely and compete for the banker position. Making money is the only goal.",
   },
   {
     number: 3,
     title: "Liquidation Phase",
     blockRange: "Block 1350 - 1500",
     description:
-      'Total prize pool consists of 80% SOL from betting phase plus the remaining SOL in the bonding-curve pool. The top 3 "bankers" (those holding the most tokens) share 95% of the prize pool, while the remaining token holders share the remaining 5%.',
+      'Total prize pool consists of 80% USDC from betting phase plus the remaining USDC in the bonding-curve pool. The top 3 "bankers" (those holding the most tokens) share 95% of the prize pool, while the remaining token holders share the remaining 5%.',
   },
 ];
 

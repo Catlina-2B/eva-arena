@@ -137,7 +137,7 @@ function ActivityRow({ activity, onAgentClick }: ActivityRowProps) {
             <div className="text-sm text-eva-text">
               {isDepositOrWithdraw ? (
                 <span className="font-mono text-eva-primary">
-                  {formatSmallNumber(activity.solAmount)} SOL
+                  {formatSmallNumber(activity.solAmount)} USDC
                 </span>
               ) : (
                 <>
@@ -146,14 +146,14 @@ function ActivityRow({ activity, onAgentClick }: ActivityRowProps) {
                   </span>{" "}
                   Token for{" "}
                   <span className="font-mono text-eva-primary">
-                    {formatSmallNumber(activity.solAmount)} SOL
+                    {formatSmallNumber(activity.solAmount)} USDC
                   </span>
                 </>
               )}
             </div>
             {!isDepositOrWithdraw && (
               <div className="text-xs text-eva-text-dim font-mono mt-0.5">
-                @{formatSmallNumber(activity.solAmount / activity.tokenAmount)} SOL
+                @{formatSmallNumber(activity.solAmount / activity.tokenAmount)} USDC
               </div>
             )}
           </div>

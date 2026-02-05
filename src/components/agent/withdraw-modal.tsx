@@ -4,28 +4,28 @@ import clsx from "clsx";
 
 import { EvaButton } from "@/components/ui";
 
-/** 1 SOL = 1,000,000,000 lamports */
-const LAMPORTS_PER_SOL = 1_000_000_000;
+/** 1 USDC = 1,000,000 microUSDC */
+const MICRO_USDC_PER_USDC = 1_000_000;
 
-/** Default CU reserve in lamports for transaction fees */
-const DEFAULT_CU_RESERVE_LAMPORTS = 5000;
+/** Default reserve in microUSDC for transaction fees */
+const DEFAULT_CU_RESERVE_MICRO_USDC = 5000;
 
 interface WithdrawModalProps {
   isOpen: boolean;
   onClose: () => void;
-  /** Balance in SOL */
-  balanceInSol: number;
+  /** Balance in USDC */
+  balanceInUsdc: number;
   /** Connected wallet address (recipient) */
   recipientAddress: string;
-  /** Callback with amount in lamports */
-  onWithdraw: (amountInLamports: number, recipientAddress: string) => Promise<void>;
+  /** Callback with amount in microUSDC */
+  onWithdraw: (amountInMicroUsdc: number, recipientAddress: string) => Promise<void>;
   isWithdrawing?: boolean;
 }
 
 export function WithdrawModal({
   isOpen,
   onClose,
-  balanceInSol,
+  balanceInUsdc,
   recipientAddress,
   onWithdraw,
   isWithdrawing = false,
@@ -36,9 +36,12 @@ export function WithdrawModal({
   if (!isOpen) return null;
 
   // Calculate max withdrawable amount: balance - CU reserve
-  const balanceInLamports = balanceInSol * LAMPORTS_PER_SOL;
-  const maxWithdrawableLamports = Math.max(0, balanceInLamports - DEFAULT_CU_RESERVE_LAMPORTS);
-  const maxWithdrawableSol = maxWithdrawableLamports / LAMPORTS_PER_SOL;
+  const balanceInMicroUsdc = balanceInUsdc * MICRO_USDC_PER_USDC;
+  const maxWithdrawableMicroUsdc = Math.max(
+    0,
+    balanceInMicroUsdc - DEFAULT_CU_RESERVE_MICRO_USDC,
+  );
+  const maxWithdrawableUsdc = maxWithdrawableMicroUsdc / MICRO_USDC_PER_USDC;
 
   const handleAmountChange = (value: string) => {
     // Only allow numbers and decimals
@@ -49,21 +52,21 @@ export function WithdrawModal({
   };
 
   const handleMaxClick = () => {
-    setAmount(maxWithdrawableSol.toFixed(9));
+    setAmount(maxWithdrawableUsdc.toFixed(6));
     setError(null);
   };
 
   const handleSubmit = async () => {
-    const amountInSol = parseFloat(amount);
+    const amountInUsdc = parseFloat(amount);
 
     // Validation
-    if (!amount || isNaN(amountInSol) || amountInSol <= 0) {
+    if (!amount || isNaN(amountInUsdc) || amountInUsdc <= 0) {
       setError("Please enter a valid amount");
 
       return;
     }
 
-    if (amountInSol > maxWithdrawableSol) {
+    if (amountInUsdc > maxWithdrawableUsdc) {
       setError("Amount exceeds available balance");
 
       return;
@@ -77,9 +80,9 @@ export function WithdrawModal({
 
     try {
       setError(null);
-      // Convert SOL to lamports for API call
-      const amountInLamports = Math.floor(amountInSol * LAMPORTS_PER_SOL);
-      await onWithdraw(amountInLamports, recipientAddress);
+      // Convert USDC to microUSDC for API call
+      const amountInMicroUsdc = Math.floor(amountInUsdc * MICRO_USDC_PER_USDC);
+      await onWithdraw(amountInMicroUsdc, recipientAddress);
       // Reset form on success
       setAmount("");
       onClose();
@@ -88,7 +91,7 @@ export function WithdrawModal({
     }
   };
 
-  const networkFee = 0.0001; // Estimated network fee in SOL
+  const networkFee = 0.0001; // Estimated network fee in USDC
 
   return createPortal(
     <Fragment>
@@ -145,7 +148,7 @@ export function WithdrawModal({
                   className="text-xs text-eva-primary font-mono hover:underline"
                   onClick={handleMaxClick}
                 >
-                  MAX: {maxWithdrawableSol.toFixed(4)} SOL
+                  MAX: {maxWithdrawableUsdc.toFixed(4)} USDC
                 </button>
               </div>
               <div className="relative">
@@ -161,7 +164,7 @@ export function WithdrawModal({
                   onChange={(e) => handleAmountChange(e.target.value)}
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-eva-text-dim font-mono">
-                  SOL
+                  USDC
                 </span>
               </div>
             </div>
@@ -198,7 +201,7 @@ export function WithdrawModal({
                   NETWORK FEE
                 </span>
                 <span className="text-eva-text font-mono">
-                  {networkFee} SOL
+                  {networkFee} USDC
                 </span>
               </div>
             </div>

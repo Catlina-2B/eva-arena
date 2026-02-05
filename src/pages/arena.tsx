@@ -296,7 +296,7 @@ export default function ArenaPage() {
           solBalance: 0, // Not provided by panel API, modal will show from ranking
           tokenBalance: agent.tokenAmount,
           roundPnl: panelData.roundPnl
-            ? parseFloat(panelData.roundPnl) / 1e9 // Convert lamports to SOL
+            ? parseFloat(panelData.roundPnl) / 1e6 // Convert microUSDC to USDC
             : 0,
           totalPnl: panelData.totalPnl,
           recentActions: [], // Loaded by modal via useUserTransactions hook
@@ -326,7 +326,7 @@ export default function ArenaPage() {
           solBalance: 0, // Not provided by panel API, modal will show from RPC
           tokenBalance: agent?.tokenAmount ?? 0,
           roundPnl: panelData.roundPnl
-            ? parseFloat(panelData.roundPnl) / 1e9 // Convert lamports to SOL
+            ? parseFloat(panelData.roundPnl) / 1e6 // Convert microUSDC to USDC
             : 0,
           totalPnl: panelData.totalPnl,
           recentActions: [], // Loaded by modal via useUserTransactions hook
@@ -502,10 +502,10 @@ export default function ArenaPage() {
                   frequency: parseInt(primaryAgent.frequency) || 10,
                 }}
                 isToggling={toggleAgentStatus.isPending}
-                roundPnl={trenchData?.pnlSol ? parseFloat(trenchData.pnlSol) / 1e9 : 0}
+                roundPnl={trenchData?.pnlSol ? parseFloat(trenchData.pnlSol) / 1e6 : 0}
                 solBalance={turnkeyBalance || primaryAgent.currentBalance}
                 tokenBalance={trenchData?.tokenBalance ? parseFloat(trenchData.tokenBalance) / 1e6 : 0}
-                tokenChangePercent={(trenchData?.tokenBalance ? parseFloat(trenchData.tokenBalance) / 1e9 : 0) * 100}
+                tokenChangePercent={(trenchData?.tokenBalance ? parseFloat(trenchData.tokenBalance) / 1e6 : 0) * 100}
                 totalPnl={primaryAgent.totalPnl}
                 trenchId={trenchId}
                 turnkeyAddress={primaryAgent.turnkeyAddress}
