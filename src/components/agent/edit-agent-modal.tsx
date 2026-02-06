@@ -3,6 +3,11 @@ import type { AgentDetailDto, UpdateAgentDto, WizardPhase } from "@/types/api";
 import { Fragment, useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 
+import {
+  DEFAULT_LLM_PLATFORM,
+  LLM_SOURCE_LABELS,
+  type LlmSource,
+} from "@/constants/llm";
 import { AIPromptDrawer } from "./ai-prompt-drawer";
 
 // Avatar item component with skeleton loading
@@ -117,6 +122,12 @@ export function EditAgentModal({
   const [tradingStrategyPrompt, setTradingStrategyPrompt] = useState("");
   const [customAvatars, setCustomAvatars] = useState<string[]>([]);
 
+  // LLM model selection
+  const [llmSource, setLlmSource] = useState<LlmSource>("platform");
+  const [customLlmApiKey, setCustomLlmApiKey] = useState("");
+  const [customLlmModel, setCustomLlmModel] = useState("");
+  const [customLlmEndpoint, setCustomLlmEndpoint] = useState("");
+
   // Pause confirmation state
   const [showPauseConfirm, setShowPauseConfirm] = useState(false);
 
@@ -195,6 +206,14 @@ export function EditAgentModal({
       } else {
         setCustomAvatars([]);
       }
+      // LLM: PLATFORM or deepseek-r1 -> platform, otherwise custom
+      const isPlatform =
+        agent.llmProvider === "PLATFORM" ||
+        (agent.llmProvider === "DEEPSEEK" && (agent.llmModel === "deepseek-r1" || !agent.llmModel));
+      setLlmSource(isPlatform ? "platform" : "custom");
+      setCustomLlmApiKey(""); // API key not echoed back for security
+      setCustomLlmModel(agent.llmModel && !isPlatform ? agent.llmModel : "");
+      setCustomLlmEndpoint(agent.llmApiEndpoint || "");
     }
   }, [agent, isOpen, logosData]);
 
@@ -225,11 +244,33 @@ export function EditAgentModal({
       updateData.tradingStrategyPrompt = tradingStrategyPrompt;
     }
 
+    // LLM: build effective provider/model/key/endpoint from form
+    const nextProvider = llmSource === "platform" ? DEFAULT_LLM_PLATFORM.provider : "CUSTOM";
+    const nextModel = llmSource === "platform" ? DEFAULT_LLM_PLATFORM.model : (customLlmModel.trim() || undefined);
+    const nextApiKey = llmSource === "custom" ? customLlmApiKey.trim() : undefined;
+    const nextEndpoint = llmSource === "custom" ? (customLlmEndpoint.trim() || undefined) : undefined;
+
+    if (nextProvider !== agent.llmProvider) {
+      updateData.llmProvider = nextProvider;
+    }
+    if (nextModel !== agent.llmModel) {
+      updateData.llmModel = nextModel;
+    }
+    if (llmSource === "custom" && nextApiKey) {
+      updateData.llmApiKey = nextApiKey;
+    }
+    if (nextEndpoint !== (agent.llmApiEndpoint ?? "")) {
+      updateData.llmApiEndpoint = nextEndpoint || undefined;
+    }
+
     return updateData;
   };
 
   const handleSubmit = async () => {
     if (!name.trim()) return;
+    // When switching to custom, API key is required; when already custom, key can be left empty (keep existing)
+    const isSwitchingToCustom = llmSource === "custom" && agent.llmProvider === "PLATFORM";
+    if (isSwitchingToCustom && !customLlmApiKey.trim()) return;
 
     const updateData = getUpdateData();
 
@@ -275,7 +316,13 @@ export function EditAgentModal({
     }
   };
 
-  const isFormValid = name.trim().length > 0 && name.trim().length <= 20;
+  const isFormValid =
+    name.trim().length > 0 &&
+    name.trim().length <= 20 &&
+    (llmSource === "platform" ||
+      llmSource !== "custom" ||
+      customLlmApiKey.trim() ||
+      agent.llmProvider !== "PLATFORM");
   const isSubmitting = updateMutation.isPending;
 
   return createPortal(
@@ -446,6 +493,67 @@ export function EditAgentModal({
                       </svg>
                     )}
                   </button>
+                </div>
+              )}
+            </div>
+
+            {/* Model Selection */}
+            <div>
+              <label className="block text-xs font-mono text-eva-text-dim uppercase tracking-widest mb-3">
+                模型选择
+              </label>
+              <select
+                value={llmSource}
+                onChange={(e) => setLlmSource(e.target.value as LlmSource)}
+                className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono text-sm focus:outline-none focus:border-eva-primary appearance-none cursor-pointer"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M3 4.5L6 7.5L9 4.5'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 12px center",
+                  paddingRight: "36px",
+                }}
+              >
+                <option value="platform">{LLM_SOURCE_LABELS.platform}</option>
+                <option value="custom">{LLM_SOURCE_LABELS.custom}</option>
+              </select>
+              {llmSource === "custom" && (
+                <div className="flex flex-col gap-2 pl-6 border-l-2 border-eva-border">
+                  <div>
+                    <label className="text-xs font-mono text-eva-text-dim block mb-1">
+                      API Key (必填)
+                    </label>
+                    <input
+                      type="password"
+                      className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono placeholder:text-eva-muted focus:outline-none focus:border-eva-primary text-sm"
+                      placeholder="sk-..."
+                      value={customLlmApiKey}
+                      onChange={(e) => setCustomLlmApiKey(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-mono text-eva-text-dim block mb-1">
+                      模型名称 (可选)
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono placeholder:text-eva-muted focus:outline-none focus:border-eva-primary text-sm"
+                      placeholder="e.g. gpt-4o"
+                      value={customLlmModel}
+                      onChange={(e) => setCustomLlmModel(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-mono text-eva-text-dim block mb-1">
+                      API Endpoint (可选)
+                    </label>
+                    <input
+                      type="url"
+                      className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono placeholder:text-eva-muted focus:outline-none focus:border-eva-primary text-sm"
+                      placeholder="https://api.openai.com/v1"
+                      value={customLlmEndpoint}
+                      onChange={(e) => setCustomLlmEndpoint(e.target.value)}
+                    />
+                  </div>
                 </div>
               )}
             </div>

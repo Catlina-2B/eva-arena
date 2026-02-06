@@ -13,6 +13,11 @@ import {
 import { useAuthStore } from "@/stores/auth";
 import type { WizardPhase } from "@/types/api";
 import {
+  DEFAULT_LLM_PLATFORM,
+  LLM_SOURCE_LABELS,
+  type LlmSource,
+} from "@/constants/llm";
+import {
   BETTING_STRATEGY_PRESETS,
   TRADING_STRATEGY_PRESETS,
   BETTING_PRESET_BUTTONS,
@@ -344,6 +349,12 @@ export default function CreateAgentPage() {
   const [hasUserEditedBetting, setHasUserEditedBetting] = useState(false);
   const [hasUserEditedTrading, setHasUserEditedTrading] = useState(false);
 
+  // LLM model selection: default 官方 Deepseek R1, or custom API key
+  const [llmSource, setLlmSource] = useState<LlmSource>("platform");
+  const [customLlmApiKey, setCustomLlmApiKey] = useState("");
+  const [customLlmModel, setCustomLlmModel] = useState("");
+  const [customLlmEndpoint, setCustomLlmEndpoint] = useState("");
+
   // AI Prompt Drawer state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeDrawerPhase, setActiveDrawerPhase] = useState<WizardPhase>("betting");
@@ -428,18 +439,33 @@ export default function CreateAgentPage() {
     if (!agentName.trim() || !selectedLogoUrl || !bettingStrategy.trim() || !tradingStrategy.trim()) {
       return;
     }
+    if (llmSource === "custom" && !customLlmApiKey.trim()) {
+      return;
+    }
 
     try {
       const pdaAddress = `pda_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-      await createAgentMutation.mutateAsync({
+      const payload: Parameters<typeof createAgentMutation.mutateAsync>[0] = {
         name: agentName.trim(),
         logo: selectedLogoUrl,
         pdaAddress,
         bettingStrategyPrompt: bettingStrategy.trim(),
         tradingStrategyPrompt: tradingStrategy.trim(),
         filterConfig: DEFAULT_FILTER_CONFIG,
-      });
+      };
+
+      if (llmSource === "platform") {
+        payload.llmProvider = DEFAULT_LLM_PLATFORM.provider;
+        payload.llmModel = DEFAULT_LLM_PLATFORM.model;
+      } else {
+        payload.llmProvider = "CUSTOM";
+        payload.llmApiKey = customLlmApiKey.trim();
+        if (customLlmModel.trim()) payload.llmModel = customLlmModel.trim();
+        if (customLlmEndpoint.trim()) payload.llmApiEndpoint = customLlmEndpoint.trim();
+      }
+
+      await createAgentMutation.mutateAsync(payload);
 
       navigate("/my-agent");
     } catch (error) {
@@ -448,7 +474,11 @@ export default function CreateAgentPage() {
   };
 
   const isFormValid =
-    agentName.trim() && selectedLogoUrl && bettingStrategy.trim() && tradingStrategy.trim();
+    agentName.trim() &&
+    selectedLogoUrl &&
+    bettingStrategy.trim() &&
+    tradingStrategy.trim() &&
+    (llmSource === "platform" || (llmSource === "custom" && customLlmApiKey.trim()));
   const isSubmitting = createAgentMutation.isPending;
 
   // Get selected avatar index for background color and large preview
@@ -583,6 +613,61 @@ export default function CreateAgentPage() {
                 onChange={(e) => setAgentName(e.target.value)}
               />
             </div>
+            </div>
+
+            {/* Model Selection */}
+            <div className="flex flex-col gap-3">
+              <label className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider">
+                模型选择
+              </label>
+              <select
+                value={llmSource}
+                onChange={(e) => setLlmSource(e.target.value as LlmSource)}
+                className="w-full px-[17px] py-3 bg-black border border-[#374151] text-sm font-medium text-white focus:outline-none focus:border-[#6ce182] appearance-none cursor-pointer"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%239ca3af' d='M3 4.5L6 7.5L9 4.5'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 12px center",
+                  paddingRight: "36px",
+                }}
+              >
+                <option value="platform">{LLM_SOURCE_LABELS.platform}</option>
+                <option value="custom">{LLM_SOURCE_LABELS.custom}</option>
+              </select>
+              {llmSource === "custom" && (
+                <div className="flex flex-col gap-2 pl-7 border-l-2 border-[#374151]">
+                  <div>
+                    <label className="text-xs text-[#6b7280] block mb-1">API Key (必填)</label>
+                    <input
+                      type="password"
+                      className="w-full px-[17px] py-3 bg-black border border-[#374151] text-sm text-white placeholder:text-[#4b5563] focus:outline-none focus:border-[#6ce182]"
+                      placeholder="sk-..."
+                      value={customLlmApiKey}
+                      onChange={(e) => setCustomLlmApiKey(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#6b7280] block mb-1">模型名称 (可选)</label>
+                    <input
+                      type="text"
+                      className="w-full px-[17px] py-3 bg-black border border-[#374151] text-sm text-white placeholder:text-[#4b5563] focus:outline-none focus:border-[#6ce182]"
+                      placeholder="e.g. gpt-4o"
+                      value={customLlmModel}
+                      onChange={(e) => setCustomLlmModel(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[#6b7280] block mb-1">API Endpoint (可选)</label>
+                    <input
+                      type="url"
+                      className="w-full px-[17px] py-3 bg-black border border-[#374151] text-sm text-white placeholder:text-[#4b5563] focus:outline-none focus:border-[#6ce182]"
+                      placeholder="https://api.openai.com/v1"
+                      value={customLlmEndpoint}
+                      onChange={(e) => setCustomLlmEndpoint(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
           {/* Betting Strategy Prompt */}
