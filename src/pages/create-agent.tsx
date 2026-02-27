@@ -2,6 +2,11 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AIPromptDrawer } from "@/components/agent";
+import { CreateAgentModeSelect, type CreateMode } from "@/components/agent/create-agent-mode-select";
+import { CreateAgentStepper } from "@/components/agent/create-agent-stepper";
+import { StepNameAvatar } from "@/components/agent/steps/step-name-avatar";
+import { StepBettingStrategy } from "@/components/agent/steps/step-betting-strategy";
+import { StepTradingStrategy } from "@/components/agent/steps/step-trading-strategy";
 import DefaultLayout from "@/layouts/default";
 import { EvaButton } from "@/components/ui";
 import {
@@ -343,6 +348,10 @@ export default function CreateAgentPage() {
     trackPageView({ page_name: "create_agent" });
   }, []);
 
+  // Mode & step state for dual-path creation
+  const [createMode, setCreateMode] = useState<CreateMode>("select");
+  const [beginnerStep, setBeginnerStep] = useState(1);
+
   // Form state
   const [selectedLogoUrl, setSelectedLogoUrl] = useState<string | null>(null);
   // Custom uploaded avatars (stored locally)
@@ -462,6 +471,19 @@ export default function CreateAgentPage() {
     }
   };
 
+  // Beginner-mode strategy change handlers (also track user edits)
+  const handleBeginnerBettingChange = useCallback((value: string) => {
+    setBettingStrategy(value);
+    setHasUserEditedBetting(true);
+    setActiveBettingPreset(null);
+  }, []);
+
+  const handleBeginnerTradingChange = useCallback((value: string) => {
+    setTradingStrategy(value);
+    setHasUserEditedTrading(true);
+    setActiveTradingPreset(null);
+  }, []);
+
   const isFormValid =
     agentName.trim() && selectedLogoUrl && bettingStrategy.trim() && tradingStrategy.trim();
   const isSubmitting = createAgentMutation.isPending;
@@ -474,6 +496,95 @@ export default function CreateAgentPage() {
     ? logosData.large[selectedIndex] 
     : selectedLogoUrl;
 
+  // --- Render: Mode Select ---
+  if (createMode === "select") {
+    return (
+      <DefaultLayout>
+        <CreateAgentModeSelect
+          onSelect={(mode) => {
+            setCreateMode(mode);
+            if (mode === "beginner") setBeginnerStep(1);
+          }}
+        />
+        <AIPromptDrawer
+          isOpen={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+          phase={activeDrawerPhase}
+          onConfirm={handleAIPromptConfirm}
+        />
+      </DefaultLayout>
+    );
+  }
+
+  // --- Render: Beginner guided flow ---
+  if (createMode === "beginner") {
+    return (
+      <DefaultLayout>
+        <CreateAgentStepper
+          currentStep={beginnerStep}
+          onBack={() => {
+            if (beginnerStep === 1) setCreateMode("select");
+            else setBeginnerStep((s) => s - 1);
+          }}
+        >
+          {beginnerStep === 1 && (
+            <StepNameAvatar
+              agentName={agentName}
+              selectedLogoUrl={selectedLogoUrl}
+              customAvatars={customAvatars}
+              logosData={logosData}
+              isLoadingLogos={isLoadingLogos}
+              isUploading={uploadAvatarMutation.isPending}
+              uploadError={uploadAvatarMutation.isError}
+              onAgentNameChange={setAgentName}
+              onAvatarSelect={setSelectedLogoUrl}
+              onAvatarUpload={handleAvatarUpload}
+              onBack={() => setCreateMode("select")}
+              onNext={() => setBeginnerStep(2)}
+            />
+          )}
+          {beginnerStep === 2 && (
+            <StepBettingStrategy
+              bettingStrategy={bettingStrategy}
+              activeBettingPreset={activeBettingPreset}
+              onBettingStrategyChange={handleBeginnerBettingChange}
+              onPresetSelect={handleBettingPresetSelect}
+              onOpenAIDrawer={handleOpenAIDrawer}
+              onBack={() => setBeginnerStep(1)}
+              onNext={() => setBeginnerStep(3)}
+            />
+          )}
+          {beginnerStep === 3 && (
+            <StepTradingStrategy
+              tradingStrategy={tradingStrategy}
+              activeTradingPreset={activeTradingPreset}
+              isSubmitting={isSubmitting}
+              isAuthenticated={isAuthenticated}
+              createError={
+                createAgentMutation.isError
+                  ? (createAgentMutation.error as { message?: string })?.message || "Failed to create agent. Please try again."
+                  : null
+              }
+              onTradingStrategyChange={handleBeginnerTradingChange}
+              onPresetSelect={handleTradingPresetSelect}
+              onOpenAIDrawer={handleOpenAIDrawer}
+              onBack={() => setBeginnerStep(2)}
+              onSubmit={handleCreateAgent}
+            />
+          )}
+        </CreateAgentStepper>
+
+        <AIPromptDrawer
+          isOpen={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+          phase={activeDrawerPhase}
+          onConfirm={handleAIPromptConfirm}
+        />
+      </DefaultLayout>
+    );
+  }
+
+  // --- Render: Expert mode (original form) ---
   return (
     <DefaultLayout>
       <div className="flex gap-6 items-stretch p-0">
