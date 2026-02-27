@@ -3,6 +3,9 @@
  */
 
 export { AIPromptDrawer } from "./ai-prompt-drawer";
+export { CreateAgentModeSelect } from "./create-agent-mode-select";
+export type { CreateMode } from "./create-agent-mode-select";
+export { CreateAgentStepper } from "./create-agent-stepper";
 export { DepositModal } from "./deposit-modal";
 export { EditAgentModal } from "./edit-agent-modal";
 export { EvolveMeDrawer } from "./evolve-me-drawer";
