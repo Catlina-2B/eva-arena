@@ -9,6 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { trenchKeys } from "./use-trenches";
+import { usePageVisibility } from "./use-page-visibility";
 
 import {
   ConnectionStatus,
@@ -63,6 +64,8 @@ export function useTrenchSocket(
     useState<TransactionEventDto | null>(null);
   const [transactions, setTransactions] = useState<TransactionEventDto[]>([]);
 
+  const { isVisible, onBecomeVisible } = usePageVisibility();
+
   // Keep track of handlers to avoid stale closures
   const handlersRef = useRef({
     onTrenchUpdate,
@@ -78,6 +81,9 @@ export function useTrenchSocket(
     onLeaderboardUpdate,
   };
 
+  // Track whether we're paused so we can refetch on resume
+  const pausedRef = useRef(false);
+
   // Subscribe to connection status
   useEffect(() => {
     const unsubscribe = trenchSocketClient.onStatusChange(setConnectionStatus);
@@ -85,9 +91,12 @@ export function useTrenchSocket(
     return unsubscribe;
   }, []);
 
-  // Subscribe to trench events
+  // Subscribe to trench events (pauses when tab is hidden)
   useEffect(() => {
-    if (!trenchId) return;
+    if (!trenchId || !isVisible) {
+      pausedRef.current = !isVisible && !!trenchId;
+      return;
+    }
 
     const unsubscribe = subscribeTrench(trenchId, {
       onTrenchUpdate: (data) => {
@@ -114,7 +123,7 @@ export function useTrenchSocket(
 
       onTransaction: (data) => {
         setLatestTransaction(data);
-        setTransactions((prev) => [data, ...prev.slice(0, 49)]); // Keep last 50
+        setTransactions((prev) => [data, ...prev.slice(0, 49)]);
         handlersRef.current.onTransaction?.(data);
 
         if (autoInvalidate && dbTrenchId) {
@@ -145,7 +154,23 @@ export function useTrenchSocket(
       setLatestPrice(null);
       setLatestTransaction(null);
     };
-  }, [trenchId, autoInvalidate, dbTrenchId, queryClient]);
+  }, [trenchId, isVisible, autoInvalidate, dbTrenchId, queryClient]);
+
+  // Refetch stale data when tab becomes visible again
+  useEffect(() => {
+    if (!dbTrenchId || !autoInvalidate) return;
+
+    return onBecomeVisible(() => {
+      if (pausedRef.current) {
+        queryClient.invalidateQueries({ queryKey: trenchKeys.current() });
+        queryClient.invalidateQueries({ queryKey: trenchKeys.detail(dbTrenchId) });
+        queryClient.invalidateQueries({ queryKey: trenchKeys.leaderboard(dbTrenchId) });
+        queryClient.invalidateQueries({ queryKey: trenchKeys.priceCurve(dbTrenchId) });
+        queryClient.invalidateQueries({ queryKey: trenchKeys.transactions(dbTrenchId) });
+        pausedRef.current = false;
+      }
+    });
+  }, [dbTrenchId, autoInvalidate, queryClient, onBecomeVisible]);
 
   // Manual reconnect function
   const reconnect = useCallback(() => {

@@ -48,6 +48,13 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
   const [hoveredMarker, setHoveredMarker] = useState<UserTradeMarker | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
 
+  // Chart interaction hint
+  const [showChartHint, setShowChartHint] = useState(() => {
+    try {
+      return !localStorage.getItem("eva-chart-hint-dismissed");
+    } catch { return true; }
+  });
+
   // Pulse marker position for latest trade
   const [pulsePosition, setPulsePosition] = useState<{ x: number; y: number; type: "buy" | "sell" } | null>(null);
 
@@ -60,29 +67,61 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
   // Fetch price curve data from API
   const { data: priceCurveData, isLoading } = usePriceCurve(trenchDbId, "SOL");
 
-  // Subscribe to WebSocket for real-time price updates
+  // Throttled price update handler — keeps only the latest value
+  // within a 200ms window to reduce CPU usage on lower-end devices
+  const pendingPriceRef = useRef<{ time: UTCTimestamp; value: number } | null>(null);
+  const throttleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushPendingPrice = useCallback(() => {
+    const pending = pendingPriceRef.current;
+    if (!pending) return;
+    pendingPriceRef.current = null;
+
+    setRealtimePrices((prev) => {
+      const lastPoint = prev[prev.length - 1];
+      if (lastPoint && lastPoint.time === pending.time) {
+        return prev;
+      }
+      return [...prev, pending];
+    });
+  }, []);
+
   const handlePriceUpdate = useCallback((data: PriceUpdateEventDto) => {
     const value = parseFloat(data.priceSol);
-    
-    // Skip invalid values
-    if (isNaN(value) || !isFinite(value)) {
-      return;
-    }
-    
-    const newPoint = {
+    if (isNaN(value) || !isFinite(value)) return;
+
+    pendingPriceRef.current = {
       time: Math.floor(data.timestamp / 1000) as UTCTimestamp,
       value,
     };
 
-    setRealtimePrices((prev) => {
-      // Avoid duplicates
-      const lastPoint = prev[prev.length - 1];
-      if (lastPoint && lastPoint.time === newPoint.time) {
-        return prev;
+    if (!throttleTimerRef.current) {
+      throttleTimerRef.current = setTimeout(() => {
+        throttleTimerRef.current = null;
+        flushPendingPrice();
+      }, 200);
+    }
+  }, [flushPendingPrice]);
+
+  // Flush pending price on unmount
+  useEffect(() => {
+    return () => {
+      if (throttleTimerRef.current) {
+        clearTimeout(throttleTimerRef.current);
+        throttleTimerRef.current = null;
       }
-      return [...prev, newPoint];
-    });
+    };
   }, []);
+
+  // Auto-dismiss chart hint after 5 seconds
+  useEffect(() => {
+    if (!showChartHint) return;
+    const timer = setTimeout(() => {
+      setShowChartHint(false);
+      try { localStorage.setItem("eva-chart-hint-dismissed", "1"); } catch {}
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [showChartHint]);
 
   const { isConnected } = useTrenchSocket(onChainTrenchId, {
     onPriceUpdate: handlePriceUpdate,
@@ -499,6 +538,22 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
                   position={tooltipPosition}
                   containerRef={chartContainerRef}
                 />
+              )}
+
+              {/* Chart interaction hint */}
+              {showChartHint && !isLoading && filteredData.length > 0 && (
+                <div
+                  className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3 py-1.5 bg-black/80 border border-white/10 rounded-full backdrop-blur-sm cursor-pointer transition-opacity hover:opacity-80"
+                  onClick={() => {
+                    setShowChartHint(false);
+                    try { localStorage.setItem("eva-chart-hint-dismissed", "1"); } catch {}
+                  }}
+                >
+                  <span className="text-[10px] text-white/60 font-mono tracking-wider">
+                    Scroll to zoom · Drag to pan
+                  </span>
+                  <span className="text-[10px] text-white/30">✕</span>
+                </div>
               )}
 
               {/* Pulse animation for latest trade marker */}

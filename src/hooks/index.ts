@@ -89,6 +89,7 @@ export { useSlotSubscription } from "./use-slot-subscription";
 export { useFirstVisit } from "./use-first-visit";
 export { useFirstDepositPrompt } from "./use-first-deposit-prompt";
 export { useIntersectionObserver } from "./use-intersection-observer";
+export { usePageVisibility } from "./use-page-visibility";
 
 // Turnkey balance hooks
 export { useTurnkeyBalance } from "./use-turnkey-balance";

@@ -128,17 +128,82 @@ Forbidden Actions
 • Do NOT allow multiple mid-sized agents to coordinate against you.`,
 } as const;
 
-// Preset button configurations with short descriptions for tooltips
-export const BETTING_PRESET_BUTTONS = [
-  { key: 'newbie', label: 'Newbie', description: 'Conservative — invest 20–30% SOL, prioritize capital preservation' },
-  { key: 'balanced', label: 'Balanced Trader', description: 'Moderate — invest 40–60% SOL, aim for Top 3–5 efficiently' },
-  { key: 'whale', label: 'Whale', description: 'Aggressive — deploy 60–80% SOL, dominate early rankings' },
+// Strategy metadata for structured summary cards
+export interface StrategyMeta {
+  key: string;
+  label: string;
+  emoji: string;
+  description: string;
+  riskProfile: "Conservative" | "Balanced" | "Aggressive";
+  frequency: "Low" | "Medium" | "High";
+  bestCondition: string;
+  weakCondition: string;
+}
+
+export const BETTING_PRESET_BUTTONS: readonly StrategyMeta[] = [
+  {
+    key: 'newbie',
+    label: 'Newbie',
+    emoji: '🐣',
+    description: 'Conservative — invest 20–30% SOL, prioritize capital preservation',
+    riskProfile: "Conservative",
+    frequency: "Low",
+    bestCondition: "Stable market, low whale activity",
+    weakCondition: "Fast-moving competitive lobbies",
+  },
+  {
+    key: 'balanced',
+    label: 'Balanced Trader',
+    emoji: '⚖️',
+    description: 'Moderate — invest 40–60% SOL, aim for Top 3–5 efficiently',
+    riskProfile: "Balanced",
+    frequency: "Medium",
+    bestCondition: "Mid-competition with clear ranking gaps",
+    weakCondition: "Capital war between multiple whales",
+  },
+  {
+    key: 'whale',
+    label: 'Whale',
+    emoji: '🐋',
+    description: 'Aggressive — deploy 60–80% SOL, dominate early rankings',
+    riskProfile: "Aggressive",
+    frequency: "High",
+    bestCondition: "Early rounds with low competition",
+    weakCondition: "Multiple large-capital opponents",
+  },
 ] as const;
 
-export const TRADING_PRESET_BUTTONS = [
-  { key: 'surfer', label: 'Surfer', description: 'Ride volatility — multiple small trades for realized profit' },
-  { key: 'sniper', label: 'Sniper', description: 'Wait for high-probability setups, strike fast and exit' },
-  { key: 'whale', label: 'Whale', description: 'Dominate Top 3 — use size to suppress competitors' },
+export const TRADING_PRESET_BUTTONS: readonly StrategyMeta[] = [
+  {
+    key: 'surfer',
+    label: 'Surfer',
+    emoji: '🏄',
+    description: 'Ride volatility — multiple small trades for realized profit',
+    riskProfile: "Balanced",
+    frequency: "High",
+    bestCondition: "Volatile, oscillating markets",
+    weakCondition: "Low-volume flat markets",
+  },
+  {
+    key: 'sniper',
+    label: 'Sniper',
+    emoji: '🎯',
+    description: 'Wait for high-probability setups, strike fast and exit',
+    riskProfile: "Conservative",
+    frequency: "Low",
+    bestCondition: "Clear asymmetric opportunities",
+    weakCondition: "No clear trend or opportunity",
+  },
+  {
+    key: 'whale',
+    label: 'Whale',
+    emoji: '🐋',
+    description: 'Dominate Top 3 — use size to suppress competitors',
+    riskProfile: "Aggressive",
+    frequency: "Medium",
+    bestCondition: "Fragmented competition, no dominant player",
+    weakCondition: "Coordinated opposition from mid-size agents",
+  },
 ] as const;
 
 // Type exports

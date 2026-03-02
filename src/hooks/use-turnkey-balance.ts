@@ -2,6 +2,7 @@ import { useEffect, useCallback } from "react";
 
 import { getBalance, subscribeBalance } from "@/services/solana";
 import { useTurnkeyBalanceStore } from "@/stores/turnkey-balance";
+import { usePageVisibility } from "./use-page-visibility";
 
 /**
  * Hook 用于订阅 Turnkey 钱包余额实时更新
@@ -14,8 +15,8 @@ import { useTurnkeyBalanceStore } from "@/stores/turnkey-balance";
 export function useTurnkeyBalance(turnkeyAddress: string | undefined) {
   const { balance, isLoading, error, setBalance, setLoading, setError, reset } =
     useTurnkeyBalanceStore();
+  const { isVisible } = usePageVisibility();
 
-  // 获取初始余额
   const fetchInitialBalance = useCallback(async () => {
     if (!turnkeyAddress) return;
 
@@ -32,28 +33,24 @@ export function useTurnkeyBalance(turnkeyAddress: string | undefined) {
     }
   }, [turnkeyAddress, setBalance, setLoading, setError]);
 
-  // 订阅余额变化
   useEffect(() => {
     if (!turnkeyAddress) {
       reset();
-
       return;
     }
 
-    // 1. 获取初始余额
+    if (!isVisible) return;
+
     fetchInitialBalance();
 
-    // 2. 订阅余额变化
     const unsubscribe = subscribeBalance(turnkeyAddress, (newBalance) => {
-      console.log("[TurnkeyBalance] Balance updated:", newBalance);
       setBalance(newBalance);
     });
 
-    // 清理：取消订阅
     return () => {
       unsubscribe();
     };
-  }, [turnkeyAddress, fetchInitialBalance, setBalance, reset]);
+  }, [turnkeyAddress, isVisible, fetchInitialBalance, setBalance, reset]);
 
   return {
     /** SOL 余额 */

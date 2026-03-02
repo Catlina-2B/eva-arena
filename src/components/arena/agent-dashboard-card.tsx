@@ -682,18 +682,103 @@ export function AgentDashboardCard({
           </div>
         </div>
 
-        {/* Evolve CTA - Question-guided */}
-        <div className="mb-4 p-3 bg-gradient-to-r from-eva-primary/5 to-transparent border border-eva-border rounded-lg">
-          <p className="text-xs text-eva-text-dim mb-2">
-            Want me to trade differently?
-          </p>
-          <button
-            className="flex items-center gap-2 text-eva-primary hover:text-eva-primary-dim transition-colors group"
-            onClick={onEvolveMe || onEditName}
+        {/* Agent Reasoning + Teach Me — compact combined block */}
+        <div className={clsx(
+          "mb-4 bg-eva-dark/50 border rounded-lg overflow-hidden transition-all duration-500",
+          thinkingStatus === "action" || latestThinkReason?.status === "ACTION"
+            ? "border-eva-primary/50"
+            : "border-eva-border",
+          isReasoningPulsing && "ring-1 ring-eva-primary/40"
+        )}>
+          {/* Top row: reasoning status + Teach Me */}
+          <div className="flex items-center justify-between px-3 py-2.5">
+            <button
+              className="flex items-center gap-2 min-w-0 flex-1 text-left"
+              onClick={() => {
+                if (thinkingStatus !== "thinking" && (thinkingStatus === "action" || thinkingStatus === "inaction" || latestThinkReason)) {
+                  setIsReasoningExpanded(!isReasoningExpanded);
+                }
+              }}
+            >
+              {thinkingStatus === "thinking" ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-eva-primary border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                  <span className="text-xs text-eva-text truncate">
+                    Thinking<ThinkingDots />
+                  </span>
+                </>
+              ) : (thinkingStatus === "action" || thinkingStatus === "inaction" || latestThinkReason) ? (
+                <>
+                  <LightbulbIcon className="text-eva-primary flex-shrink-0" />
+                  <span className={clsx(
+                    "text-xs font-medium truncate",
+                    thinkingStatus === "action" || latestThinkReason?.status === "ACTION"
+                      ? "text-eva-primary"
+                      : "text-eva-text"
+                  )}>
+                    {thinkReasonActivity?.reason?.action || (
+                      thinkingStatus === "action" || latestThinkReason?.status === "ACTION"
+                        ? "Execute Trade"
+                        : "Hold"
+                    )}
+                  </span>
+                  <ChevronIcon isExpanded={isReasoningExpanded} className="text-eva-text-dim flex-shrink-0" />
+                </>
+              ) : (
+                <>
+                  <LightbulbIcon className="text-eva-text-dim flex-shrink-0" />
+                  <span className="text-xs text-eva-text-dim truncate">No reasoning yet</span>
+                </>
+              )}
+            </button>
+            <button
+              className="flex items-center gap-1.5 ml-3 px-3 py-1.5 text-xs font-medium text-eva-primary hover:bg-eva-primary/10 rounded transition-colors flex-shrink-0 group"
+              onClick={onEvolveMe || onEditName}
+            >
+              Teach Me
+              <ArrowRightIcon className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            </button>
+          </div>
+
+          {/* Expandable reasoning detail */}
+          <div
+            className={clsx(
+              "transition-all duration-300 ease-in-out overflow-hidden",
+              isReasoningExpanded ? "max-h-56 opacity-100" : "max-h-0 opacity-0"
+            )}
           >
-            <span className="text-sm font-medium">Teach Me</span>
-            <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-          </button>
+            <div className="px-3 pb-3 border-t border-eva-border/50">
+              <div className="mt-2">
+                {thinkReasonActivity?.reason?.content ? (
+                  <ul className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                    {thinkReasonActivity.reason.content
+                      .split(/\n+|(?<=[.!?])\s{2,}|(?<=[.!?])\s+(?=[A-Z])/)
+                      .filter((point: string) => point.trim().length > 0)
+                      .slice(0, 4)
+                      .map((point: string, index: number) => (
+                        <li key={index} className="flex items-start gap-2 p-1.5 rounded bg-eva-dark/50 border-l-2 border-eva-primary/40">
+                          <span className="text-eva-primary text-[10px] font-bold mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-eva-primary/20 flex items-center justify-center">
+                            {index + 1}
+                          </span>
+                          <span className="text-xs text-eva-text leading-relaxed">{point.trim()}</span>
+                        </li>
+                      ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-eva-text-dim">No reasoning available</p>
+                )}
+              </div>
+              <button
+                className="mt-2 text-[10px] text-eva-primary hover:text-eva-primary-dim transition-colors uppercase tracking-wider"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsReasoningModalOpen(true);
+                }}
+              >
+                View Full Details →
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Balance & PNL Stats - Compact Layout */}
@@ -798,116 +883,6 @@ export function AgentDashboardCard({
             </>
           )}
         </button>
-
-        {/* Agent Reasoning - Independent Block */}
-        <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <LightbulbIcon className="text-eva-primary" />
-            <span className="text-[10px] text-eva-text-dim uppercase tracking-wider">
-              AGENT REASONING
-            </span>
-          </div>
-
-          {thinkingStatus === "thinking" ? (
-            <div className="bg-eva-dark/50 border border-eva-primary/30 rounded-lg overflow-hidden animate-pulse">
-              <div className="flex items-center gap-3 p-3">
-                <div className="relative">
-                  <div className="w-5 h-5 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
-                  <div className="absolute inset-0 w-5 h-5 border-2 border-eva-primary/20 rounded-full animate-ping" />
-                </div>
-                <span className="text-sm text-eva-text">
-                  Thinking<ThinkingDots />
-                </span>
-              </div>
-            </div>
-          ) : (thinkingStatus === "action" || thinkingStatus === "inaction" || latestThinkReason) ? (
-            <div className={clsx(
-              "bg-eva-dark/50 border rounded-lg overflow-hidden transition-all duration-500",
-              thinkingStatus === "action" || latestThinkReason?.status === "ACTION"
-                ? "border-eva-primary/50"
-                : "border-eva-border",
-              isReasoningPulsing && "ring-2 ring-eva-primary/50 ring-offset-2 ring-offset-eva-darker shadow-lg shadow-eva-primary/20"
-            )}>
-              {/* Accordion Header */}
-              <button
-                className="w-full flex items-center justify-between p-3 hover:bg-eva-card-hover transition-colors text-left"
-                onClick={() => setIsReasoningExpanded(!isReasoningExpanded)}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-eva-text-dim">Latest:</span>
-                  <span className={clsx(
-                    "text-sm font-medium",
-                    thinkingStatus === "action" || latestThinkReason?.status === "ACTION"
-                      ? "text-eva-primary"
-                      : "text-eva-text"
-                  )}>
-                    {thinkReasonActivity?.reason?.action || (
-                      thinkingStatus === "action" || latestThinkReason?.status === "ACTION"
-                        ? "Execute Trade"
-                        : "Hold"
-                    )}
-                  </span>
-                </div>
-                <ChevronIcon isExpanded={isReasoningExpanded} className="text-eva-text-dim" />
-              </button>
-
-              {/* Accordion Content */}
-              <div
-                className={clsx(
-                  "transition-all duration-300 ease-in-out overflow-hidden",
-                  isReasoningExpanded ? "max-h-56 opacity-100" : "max-h-0 opacity-0"
-                )}
-              >
-                <div className="px-3 pb-3 border-t border-eva-border/50">
-                  {/* Chain of Thought - Bullet Points */}
-                  <div className="mt-3">
-                    <div className="text-[10px] text-eva-text-dim uppercase tracking-wider mb-2">
-                      Chain of Thought
-                    </div>
-                    {thinkReasonActivity?.reason?.content ? (
-                      <ul className="space-y-2 max-h-32 overflow-y-auto pr-1">
-                        {thinkReasonActivity.reason.content
-                          .split(/\n+|(?<=[.!?])\s{2,}|(?<=[.!?])\s+(?=[A-Z])/)
-                          .filter((point: string) => point.trim().length > 0)
-                          .slice(0, 4)
-                          .map((point: string, index: number) => (
-                            <li key={index} className="flex items-start gap-2 p-1.5 rounded bg-eva-dark/50 border-l-2 border-eva-primary/40">
-                              <span className="text-eva-primary text-[10px] font-bold mt-0.5 flex-shrink-0 w-4 h-4 rounded-full bg-eva-primary/20 flex items-center justify-center">
-                                {index + 1}
-                              </span>
-                              <span className="text-xs text-eva-text leading-relaxed">{point.trim()}</span>
-                            </li>
-                          ))}
-                      </ul>
-                    ) : (
-                      <p className="text-xs text-eva-text-dim">No reasoning available</p>
-                    )}
-                  </div>
-
-                  {/* View More Link */}
-                  <button
-                    className="mt-3 text-[10px] text-eva-primary hover:text-eva-primary-dim transition-colors uppercase tracking-wider"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsReasoningModalOpen(true);
-                    }}
-                  >
-                    View Full Details →
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : isThinkReasonLoading ? (
-            <div className="flex items-center gap-2 p-3 bg-eva-dark/50 border border-eva-border rounded-lg">
-              <div className="w-4 h-4 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs text-eva-text-dim">Loading reasoning...</span>
-            </div>
-          ) : (
-            <div className="p-3 bg-eva-dark/50 border border-eva-border rounded-lg">
-              <span className="text-xs text-eva-text-dim">No reasoning data yet</span>
-            </div>
-          )}
-        </div>
 
         {/* Execution Logs */}
         <div>

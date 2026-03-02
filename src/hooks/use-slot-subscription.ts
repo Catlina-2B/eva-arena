@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 
 import { getSolanaConnection, getCurrentSlot } from "@/services/solana";
+import { usePageVisibility } from "./use-page-visibility";
 
 /**
  * Hook that subscribes to Solana slot updates via WebSocket.
@@ -12,6 +13,7 @@ export function useSlotSubscription() {
   const [slot, setSlot] = useState<number | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const { isVisible } = usePageVisibility();
 
   // Fetch initial slot
   const fetchInitialSlot = useCallback(async () => {
@@ -30,11 +32,12 @@ export function useSlotSubscription() {
   }, []);
 
   useEffect(() => {
+    if (!isVisible) return;
+
     let subscriptionId: number | null = null;
     let mounted = true;
 
     const setupSubscription = async () => {
-      // Fetch initial slot first
       await fetchInitialSlot();
 
       if (!mounted) return;
@@ -42,7 +45,6 @@ export function useSlotSubscription() {
       try {
         const connection = getSolanaConnection();
 
-        // Subscribe to slot changes
         subscriptionId = connection.onSlotChange((slotInfo) => {
           if (mounted) {
             setSlot(slotInfo.slot);
@@ -61,7 +63,6 @@ export function useSlotSubscription() {
 
     setupSubscription();
 
-    // Cleanup subscription on unmount
     return () => {
       mounted = false;
       if (subscriptionId !== null) {
@@ -72,7 +73,7 @@ export function useSlotSubscription() {
           .catch(console.error);
       }
     };
-  }, [fetchInitialSlot]);
+  }, [fetchInitialSlot, isVisible]);
 
   return {
     slot,
