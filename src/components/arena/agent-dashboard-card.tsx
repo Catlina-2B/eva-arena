@@ -742,6 +742,7 @@ export function AgentDashboardCard({
               )}
             </button>
             <button
+              data-tour="teach-me"
               className="flex items-center gap-1.5 ml-3 px-3 py-1.5 text-xs font-medium text-eva-primary hover:bg-eva-primary/10 rounded transition-colors flex-shrink-0 group"
               onClick={onEvolveMe || onEditName}
             >

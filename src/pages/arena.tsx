@@ -18,7 +18,14 @@ import {
   WelcomeOnboardingModal,
   FloatingThinkButton,
   ThinkListPanel,
+  GuidedTour,
+  useTourCompleted,
+  useNewUserTourCompleted,
+  NEW_USER_TOUR_STEPS,
+  RETURNING_USER_TOUR_STEPS,
+  ContextualTip,
 } from "@/components/arena";
+import type { TipId } from "@/components/arena/contextual-tip";
 import { EditAgentModal, EvolveMeDrawer, StartTimingModal } from "@/components/agent";
 import {
   useCurrentTrench,
@@ -62,6 +69,16 @@ export default function ArenaPage() {
   // First visit detection for welcome modal
   const { isFirstVisit, markVisited } = useFirstVisit();
 
+  // Guided tour (starts after welcome modal is dismissed)
+  const { isTourCompleted, markTourCompleted } = useTourCompleted();
+  const { isNewUserTourCompleted, markNewUserTourCompleted } = useNewUserTourCompleted();
+  const [isTourActive, setIsTourActive] = useState(false);
+  const [isNewUserTourActive, setIsNewUserTourActive] = useState(false);
+
+  // Contextual tip
+  const [activeTip, setActiveTip] = useState<TipId | null>(null);
+  const prevPhaseRef = useRef<string | null>(null);
+
   // Fetch current trench from API
   const {
     data: trenchData,
@@ -101,6 +118,16 @@ export default function ArenaPage() {
   const userAgents = agentsData?.agents ?? [];
   const hasAgent = userAgents.length > 0;
   const primaryAgent = userAgents[0];
+
+  // Auto-trigger returning user tour after first agent is created
+  const hadAgentRef = useRef(hasAgent);
+  useEffect(() => {
+    if (!hadAgentRef.current && hasAgent && !isTourCompleted && isAuthenticated) {
+      setIsNewUserTourActive(false);
+      setTimeout(() => setIsTourActive(true), 800);
+    }
+    hadAgentRef.current = hasAgent;
+  }, [hasAgent, isTourCompleted, isAuthenticated]);
 
   // Fetch user's buy/sell transactions for chart markers
   // Use the primary agent's turnkey address when available
@@ -234,6 +261,29 @@ export default function ArenaPage() {
     // Update previous rank
     previousRankRef.current = currentRank;
   }, [userAgentRankingInfo.rank]);
+
+  // Contextual tips on phase transitions
+  useEffect(() => {
+    if (!currentRound || !isAuthenticated || !hasAgent || !isTourCompleted) return;
+
+    const phase = currentRound.phase;
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = phase;
+
+    if (!prev || prev === phase) return;
+
+    // Entering liquidation from trading = round just ended
+    if (prev === "trading" && phase === "liquidation") {
+      const rank = userAgentRankingInfo.rank;
+      if (rank !== undefined && rank <= 3) {
+        setActiveTip("compare_after_win");
+      } else if (rank !== undefined && rank > 3) {
+        setActiveTip("retry_after_loss");
+      } else {
+        setActiveTip("evolve_after_round");
+      }
+    }
+  }, [currentRound?.phase, isAuthenticated, hasAgent, isTourCompleted, userAgentRankingInfo.rank]);
 
   // Auto-clear rank change indicator after 30 seconds
   useEffect(() => {
@@ -445,7 +495,38 @@ export default function ArenaPage() {
   return (
     <DefaultLayout>
       {/* Welcome Onboarding Modal for first-time visitors */}
-      <WelcomeOnboardingModal isOpen={isFirstVisit} onClose={markVisited} />
+      <WelcomeOnboardingModal isOpen={isFirstVisit} onClose={() => {
+        markVisited();
+        if (isAuthenticated) {
+          setTimeout(() => {
+            if (hasAgent && !isTourCompleted) {
+              setIsTourActive(true);
+            } else if (!hasAgent && !isNewUserTourCompleted) {
+              setIsNewUserTourActive(true);
+            }
+          }, 600);
+        }
+      }} />
+
+      {/* Guided Tour — new user (no agent yet) */}
+      <GuidedTour
+        isOpen={isNewUserTourActive}
+        steps={NEW_USER_TOUR_STEPS}
+        onComplete={() => {
+          setIsNewUserTourActive(false);
+          markNewUserTourCompleted();
+        }}
+      />
+
+      {/* Guided Tour — returning user (has agent) */}
+      <GuidedTour
+        isOpen={isTourActive}
+        steps={RETURNING_USER_TOUR_STEPS}
+        onComplete={() => {
+          setIsTourActive(false);
+          markTourCompleted();
+        }}
+      />
 
       <div className="space-y-4">
 
@@ -466,17 +547,22 @@ export default function ArenaPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left column: Phase panel + Activity */}
           <div className="lg:col-span-2 space-y-4">
-            {renderPhasePanel()}
-            <LiveActivity
-              activities={activities}
-              trenchId={trenchId}
-              onLoadAgentDetail={handleLoadAgentDetailByUserAddress}
-            />
+            <div data-tour="phase-panel">
+              {renderPhasePanel()}
+            </div>
+            <div data-tour="activity">
+              <LiveActivity
+                activities={activities}
+                trenchId={trenchId}
+                onLoadAgentDetail={handleLoadAgentDetailByUserAddress}
+              />
+            </div>
           </div>
 
           {/* Right column: Rankings above My Agent */}
           <div className="space-y-4">
             {/* Rankings - always show at top */}
+            <div data-tour="rankings">
             <LiveRankings
               rankings={rankings}
               currentUser={currentUserRanking}
@@ -486,9 +572,11 @@ export default function ArenaPage() {
               trenchId={trenchId}
               onLoadAgentDetail={handleLoadAgentDetail}
             />
+            </div>
 
             {/* My Agent or Welcome/Create Card below */}
             {isAuthenticated && hasAgent && primaryAgent ? (
+              <div data-tour="agent-card">
               <AgentDashboardCard
                 agent={{
                   id: primaryAgent.id,
@@ -523,10 +611,15 @@ export default function ArenaPage() {
                 onPauseSystem={() => toggleAgentStatus.mutate({ id: primaryAgent.id })}
                 onStartSystem={() => setIsStartTimingModalOpen(true)}
               />
+              </div>
             ) : (
               <>
                 {!isAuthenticated && <WelcomeCard />}
-                {isAuthenticated && !hasAgent && <CreateAgentCard />}
+                {isAuthenticated && !hasAgent && (
+                  <div data-tour="create-agent">
+                    <CreateAgentCard />
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -595,6 +688,17 @@ export default function ArenaPage() {
           />
         </>
       )}
+
+      {/* Contextual Tips */}
+      <ContextualTip
+        tipId={activeTip}
+        onAction={() => {
+          if (activeTip === "evolve_after_round" || activeTip === "retry_after_loss") {
+            setIsEvolveMeOpen(true);
+          }
+          setActiveTip(null);
+        }}
+      />
 
     </DefaultLayout>
   );

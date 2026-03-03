@@ -7,6 +7,7 @@ import { EvaLogo } from "@/components/eva-logo";
 import { WalletConnectButton, WalletInterfaceModal } from "@/components/wallet";
 import { WelcomeOnboardingModal } from "@/components/arena/welcome-onboarding-modal";
 import { DepositModal } from "@/components/agent";
+import { HelpPanel } from "@/components/help-panel";
 import { useTurnkeyBalanceStore } from "@/stores/turnkey-balance";
 import { useAuthStore } from "@/stores/auth";
 
@@ -35,6 +36,7 @@ export function Navbar() {
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   
   // Get wallet address
   const { address } = useAccount();
@@ -77,6 +79,19 @@ export function Navbar() {
 
             {/* Actions */}
             <div className="flex items-center gap-3">
+              {/* Help Button */}
+              <button
+                className="p-2 text-eva-text-dim hover:text-eva-primary transition-colors"
+                onClick={() => setIsHelpOpen(true)}
+                title="Quick Reference"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </button>
+
               {/* Deposit Button - Only show when authenticated */}
               {isAuthenticated && (
                 <button
@@ -163,6 +178,9 @@ export function Navbar() {
           onClose={() => setIsDepositModalOpen(false)}
         />
       )}
+
+      {/* Help Panel */}
+      <HelpPanel isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
     </>
   );
 }
