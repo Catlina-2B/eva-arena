@@ -36,10 +36,8 @@ export function subscribeUser(
     trenchSocketClient.connect();
   }
 
-  // Set up event listeners
-  // Event format: { event: "agentThinkReason", data: {...}, timestamp: number }
-  const handleAgentThinkReason = (msg: { event: string; data: AgentThinkReasonEventDto; timestamp: number }) => {
-    const data = msg.data;
+  // Set up event listeners — backend pushes data directly, no WsMessage wrapping
+  const handleAgentThinkReason = (data: AgentThinkReasonEventDto) => {
     console.log("[UserSocket] agentThinkReason received:", data.status, data);
     handlers.onAgentThinkReason?.(data);
   };
@@ -76,23 +74,21 @@ export function subscribeUser(
     );
   };
 
-  // Subscribe now if connected, or wait for connection
+  // Subscribe now if connected, and re-subscribe on every (re)connect
   if (socket.connected) {
     doSubscribe();
-  } else {
-    socket.once("connect", doSubscribe);
   }
+  socket.on("connect", doSubscribe);
 
   // Return cleanup function
   return () => {
-    // Unsubscribe from user room
     if (socket.connected) {
       socket.emit(WsEventType.UNSUBSCRIBE_USER, { turnkeyAddress });
     }
 
-    // Remove listeners
     socket.off(WsEventType.AGENT_THINK_REASON, handleAgentThinkReason);
     socket.off(WsEventType.ERROR, handleError);
+    socket.off("connect", doSubscribe);
   };
 }
 

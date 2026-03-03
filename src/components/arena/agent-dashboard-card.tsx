@@ -472,6 +472,13 @@ export function AgentDashboardCard({
   const { status: thinkingStatus, latestEvent: wsThinkEvent } =
     useAgentThinkReason(turnkeyAddress);
 
+  // Collapse panel when agent starts thinking
+  useEffect(() => {
+    if (thinkingStatus === "thinking") {
+      setIsReasoningExpanded(false);
+    }
+  }, [thinkingStatus]);
+
   // Auto-expand and pulse when new reasoning arrives
   useEffect(() => {
     const currentId = wsThinkEvent?.id || latestThinkReason?.id || null;
@@ -630,62 +637,65 @@ export function AgentDashboardCard({
             <span className="text-lg font-bold tracking-wide text-eva-text block truncate">
               {agent.name}
             </span>
-            {/* Inline Ranking Info */}
-            {rank !== undefined && (
-              <div className="flex items-center gap-2 mt-0.5">
-                {rank <= 3 ? (
-                  <>
+            {/* Inline Ranking Info — always visible */}
+            <div className="flex items-center gap-2 mt-0.5">
+              {rank === undefined ? (
+                <span className="text-sm font-mono text-eva-text-dim">Unranked</span>
+              ) : rank <= 3 ? (
+                <>
+                  <span className={clsx(
+                    "text-sm font-bold font-mono",
+                    rank === 1 ? "text-yellow-400" :
+                    rank === 2 ? "text-gray-300" :
+                    "text-orange-400"
+                  )}>
+                    #{rank} {rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉"}
+                  </span>
+                  {rankChange !== undefined && rankChange !== 0 && (
                     <span className={clsx(
-                      "text-sm font-bold font-mono",
-                      rank === 1 ? "text-yellow-400" :
-                      rank === 2 ? "text-gray-300" :
-                      "text-orange-400"
+                      "text-[10px] font-mono font-semibold flex items-center gap-0.5",
+                      rankChange > 0 ? "text-eva-success" : "text-eva-danger"
                     )}>
-                      #{rank} {rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉"}
+                      {rankChange > 0 ? "↑" : "↓"}{Math.abs(rankChange)}
                     </span>
-                    {/* Rank change indicator */}
-                    {rankChange !== undefined && rankChange !== 0 && (
-                      <span className={clsx(
-                        "text-[10px] font-mono font-semibold flex items-center gap-0.5",
-                        rankChange > 0 ? "text-eva-success" : "text-eva-danger"
-                      )}>
-                        {rankChange > 0 ? "↑" : "↓"}{Math.abs(rankChange)}
-                      </span>
-                    )}
-                    <span className="text-[10px] text-eva-text-dim">
-                      Prize {rank === 1 ? "50%" : rank === 2 ? "30%" : "15%"}
+                  )}
+                  <span className="text-[10px] text-eva-text-dim">
+                    Prize {rank === 1 ? "50%" : rank === 2 ? "30%" : "15%"}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-bold font-mono text-eva-text">
+                    #{rank}
+                  </span>
+                  {totalAgents !== undefined && (
+                    <span className="text-[10px] font-mono text-eva-text-dim">
+                      / {totalAgents}
                     </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-sm font-mono text-eva-text-dim">
-                      #{rank}
+                  )}
+                  {rankChange !== undefined && rankChange !== 0 && (
+                    <span className={clsx(
+                      "text-[10px] font-mono font-semibold flex items-center gap-0.5",
+                      rankChange > 0 ? "text-eva-success" : "text-eva-danger"
+                    )}>
+                      {rankChange > 0 ? "↑" : "↓"}{Math.abs(rankChange)}
                     </span>
-                    {/* Rank change indicator */}
-                    {rankChange !== undefined && rankChange !== 0 && (
-                      <span className={clsx(
-                        "text-[10px] font-mono font-semibold flex items-center gap-0.5",
-                        rankChange > 0 ? "text-eva-success" : "text-eva-danger"
-                      )}>
-                        {rankChange > 0 ? "↑" : "↓"}{Math.abs(rankChange)}
-                      </span>
-                    )}
-                    {gapToTop3 !== undefined && gapToTop3 > 0 && (
-                      <span className="text-[10px] text-eva-warning">
-                        ↑ {formatTokenNumber(gapToTop3)} to Top 3
-                      </span>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
+                  )}
+                  {gapToTop3 !== undefined && gapToTop3 > 0 && (
+                    <span className="text-[10px] text-eva-warning">
+                      ↑ {formatTokenNumber(gapToTop3)} to Top 3
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Agent Reasoning + Teach Me — compact combined block */}
         <div className={clsx(
           "mb-4 bg-eva-dark/50 border rounded-lg overflow-hidden transition-all duration-500",
-          thinkingStatus === "action" || latestThinkReason?.status === "ACTION"
+          thinkingStatus === "action" || thinkReasonActivity?.reason?.action === "Execute Trade" || latestThinkReason?.status === "ACTION"
             ? "border-eva-primary/50"
             : "border-eva-border",
           isReasoningPulsing && "ring-1 ring-eva-primary/40"
@@ -695,7 +705,7 @@ export function AgentDashboardCard({
             <button
               className="flex items-center gap-2 min-w-0 flex-1 text-left"
               onClick={() => {
-                if (thinkingStatus !== "thinking" && (thinkingStatus === "action" || thinkingStatus === "inaction" || latestThinkReason)) {
+                if (thinkingStatus !== "thinking" && (thinkingStatus === "action" || thinkingStatus === "inaction" || thinkReasonActivity || latestThinkReason)) {
                   setIsReasoningExpanded(!isReasoningExpanded);
                 }
               }}
@@ -707,12 +717,12 @@ export function AgentDashboardCard({
                     Thinking<ThinkingDots />
                   </span>
                 </>
-              ) : (thinkingStatus === "action" || thinkingStatus === "inaction" || latestThinkReason) ? (
+              ) : (thinkingStatus === "action" || thinkingStatus === "inaction" || thinkReasonActivity || latestThinkReason) ? (
                 <>
                   <LightbulbIcon className="text-eva-primary flex-shrink-0" />
                   <span className={clsx(
                     "text-xs font-medium truncate",
-                    thinkingStatus === "action" || latestThinkReason?.status === "ACTION"
+                    thinkingStatus === "action" || thinkReasonActivity?.reason?.action === "Execute Trade" || latestThinkReason?.status === "ACTION"
                       ? "text-eva-primary"
                       : "text-eva-text"
                   )}>
@@ -886,7 +896,7 @@ export function AgentDashboardCard({
 
         {/* Execution Logs */}
         <div>
-          <div className="text-[10px] text-eva-text-dim uppercase tracking-wider mb-2">
+          <div className="text-xs text-eva-text-dim uppercase tracking-wider mb-2">
             MY TRADES
           </div>
 
@@ -896,7 +906,7 @@ export function AgentDashboardCard({
                 <div className="w-4 h-4 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
               </div>
             ) : executionLogs.length === 0 ? (
-              <div className="text-xs text-eva-text-dim text-center py-4">
+              <div className="text-sm text-eva-text-dim text-center py-4">
                 No transactions yet
               </div>
             ) : (
@@ -904,7 +914,7 @@ export function AgentDashboardCard({
                 <div
                   key={log.id}
                   className={clsx(
-                    "grid grid-cols-3 text-xs py-1.5 px-2 rounded transition-all duration-500",
+                    "grid grid-cols-3 text-sm py-1.5 px-2 rounded transition-all duration-500",
                     newTradeIds.has(log.id) && "animate-slide-in bg-eva-primary/10 border-l-2 border-eva-primary"
                   )}
                   style={{
@@ -912,7 +922,7 @@ export function AgentDashboardCard({
                   }}
                 >
                   {/* Left: EVA Round Number */}
-                  <span className="font-mono text-eva-text-dim text-[10px]">
+                  <span className="font-mono text-eva-text-dim text-xs">
                     Eva-{log.trenchId}
                   </span>
                   {/* Middle: Phase Badge */}
@@ -921,7 +931,7 @@ export function AgentDashboardCard({
                   </div>
                   {/* Right: Action + Amount */}
                   <span className={clsx(
-                    "font-mono text-[10px] justify-self-end",
+                    "font-mono text-xs justify-self-end",
                     newTradeIds.has(log.id) ? "text-eva-primary font-medium" : "text-eva-text-dim"
                   )}>
                     {log.action} {log.amount.toFixed(4)} SOL

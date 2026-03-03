@@ -181,35 +181,37 @@ export default function ArenaPage() {
   }, [leaderboardData]);
 
   // Calculate user's agent ranking info
+  // First check top-3 list, then fall back to currentUser from the API
   const userAgentRankingInfo = useMemo(() => {
-    if (!primaryAgent?.turnkeyAddress || rankings.length === 0) {
+    const totalAgents = leaderboardData?.totalParticipants ?? rankings.length;
+
+    if (!primaryAgent?.turnkeyAddress) {
       return { rank: undefined, gapToTop3: undefined, totalAgents: undefined };
     }
 
-    // Find user's rank in the rankings list
+    // Check if user is in the top-3 list
     const userRankIndex = rankings.findIndex(
       (r) => r.userAddress === primaryAgent.turnkeyAddress
     );
 
-    if (userRankIndex === -1) {
-      return { rank: undefined, gapToTop3: undefined, totalAgents: rankings.length };
+    if (userRankIndex !== -1) {
+      const rank = userRankIndex + 1;
+      return { rank, gapToTop3: 0, totalAgents };
     }
 
-    const rank = userRankIndex + 1; // Convert 0-based index to 1-based rank
-    const userTokenAmount = rankings[userRankIndex]?.tokenAmount ?? 0;
-
-    // Calculate gap to top 3 (difference from 3rd place)
-    let gapToTop3 = 0;
-    if (rank > 3 && thirdPlaceTokenAmount > 0) {
-      gapToTop3 = Math.max(0, thirdPlaceTokenAmount - userTokenAmount);
+    // Fall back to currentUser from leaderboard API (covers rank > 3)
+    if (leaderboardData?.currentUser) {
+      const rank = leaderboardData.currentUser.rank;
+      const userTokenAmount = parseInt(leaderboardData.currentUser.tokenBalance) / 1e6;
+      let gapToTop3 = 0;
+      if (rank > 3 && thirdPlaceTokenAmount > 0) {
+        gapToTop3 = Math.max(0, thirdPlaceTokenAmount - userTokenAmount);
+      }
+      return { rank, gapToTop3, totalAgents };
     }
 
-    return {
-      rank,
-      gapToTop3,
-      totalAgents: rankings.length,
-    };
-  }, [primaryAgent?.turnkeyAddress, rankings, thirdPlaceTokenAmount]);
+    return { rank: undefined, gapToTop3: undefined, totalAgents: totalAgents || undefined };
+  }, [primaryAgent?.turnkeyAddress, rankings, leaderboardData, thirdPlaceTokenAmount]);
 
   // Track rank changes
   useEffect(() => {
@@ -589,6 +591,7 @@ export default function ArenaPage() {
             isOpen={isThinkPanelOpen}
             onClose={() => setIsThinkPanelOpen(false)}
             currentTrenchId={onChainTrenchId}
+            turnkeyAddress={primaryAgent?.turnkeyAddress}
           />
         </>
       )}

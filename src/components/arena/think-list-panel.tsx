@@ -20,6 +20,8 @@ interface ThinkListPanelProps {
   onClose: () => void;
   /** Current trench ID to filter records */
   currentTrenchId?: number;
+  /** Agent's turnkey address for WebSocket subscription */
+  turnkeyAddress?: string;
 }
 
 // 格式化相对时间
@@ -68,23 +70,37 @@ function thinkReasonToActivity(reason: ThinkReasonDto): ActivityItem {
   };
 }
 
-export function ThinkListPanel({ isOpen, onClose, currentTrenchId }: ThinkListPanelProps) {
+export function ThinkListPanel({ isOpen, onClose, currentTrenchId, turnkeyAddress: turnkeyAddressProp }: ThinkListPanelProps) {
   const [selectedReason, setSelectedReason] = useState<ThinkReasonDto | null>(null);
   const [isReasoningModalOpen, setIsReasoningModalOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-  const turnkeyAddress = user?.turnkeyAddress;
+  const turnkeyAddress = turnkeyAddressProp || user?.turnkeyAddress;
 
   // 获取按钮位置
   const buttonPosition = getSavedPosition();
 
   // 获取思考记录 - 始终启用以支持 WebSocket 实时更新
-  const { data, isLoading } = useThinkReasonsInfinite(
+  const { data, isLoading, refetch } = useThinkReasonsInfinite(
     { limit: 100 },
     { enabled: true }
   );
+
+  // 面板打开时立即刷新 + 定时轮询
+  const prevIsOpenRef = useRef(false);
+  useEffect(() => {
+    if (isOpen && !prevIsOpenRef.current) {
+      refetch();
+    }
+    prevIsOpenRef.current = isOpen;
+
+    if (!isOpen) return;
+
+    const interval = setInterval(() => refetch(), 15_000);
+    return () => clearInterval(interval);
+  }, [isOpen, refetch]);
 
   // 扁平化所有页面的数据，并筛选当前 round
   const reasons = useMemo(() => {
@@ -133,7 +149,12 @@ export function ThinkListPanel({ isOpen, onClose, currentTrenchId }: ThinkListPa
             pages: ThinkReasonListResponseDto[];
             pageParams: number[];
           }>(thinkReasonKeys.infinite({ limit: 100 }), (oldData) => {
-            if (!oldData) return oldData;
+            if (!oldData) {
+              return {
+                pages: [{ thinkReasons: [newReason], total: 1, page: 1, limit: 100 }],
+                pageParams: [1],
+              };
+            }
 
             // 检查是否已存在（避免重复）
             const exists = oldData.pages.some((page) =>
@@ -141,7 +162,6 @@ export function ThinkListPanel({ isOpen, onClose, currentTrenchId }: ThinkListPa
             );
             if (exists) return oldData;
 
-            // 将新数据插入到第一页的最前面
             const newPages = [...oldData.pages];
             if (newPages.length > 0) {
               newPages[0] = {
