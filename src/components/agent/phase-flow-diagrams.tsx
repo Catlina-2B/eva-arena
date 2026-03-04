@@ -2,16 +2,40 @@ import { useState } from "react";
 
 function ArrowRight({ className = "" }: { className?: string }) {
   return (
-    <svg width="28" height="14" viewBox="0 0 28 14" fill="none" className={className}>
-      <path d="M0 7H24M24 7L18 1M24 7L18 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      className={className}
+      fill="none"
+      height="14"
+      viewBox="0 0 28 14"
+      width="28"
+    >
+      <path
+        d="M0 7H24M24 7L18 1M24 7L18 13"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
     </svg>
   );
 }
 
 function ArrowDown({ className = "" }: { className?: string }) {
   return (
-    <svg width="14" height="24" viewBox="0 0 14 24" fill="none" className={className}>
-      <path d="M7 0V20M7 20L1 14M7 20L13 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      className={className}
+      fill="none"
+      height="24"
+      viewBox="0 0 14 24"
+      width="14"
+    >
+      <path
+        d="M7 0V20M7 20L1 14M7 20L13 14"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
     </svg>
   );
 }
@@ -19,10 +43,19 @@ function ArrowDown({ className = "" }: { className?: string }) {
 function ExpandIcon({ isExpanded }: { isExpanded: boolean }) {
   return (
     <svg
-      width="14" height="14" viewBox="0 0 14 14" fill="none"
       className={`transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+      fill="none"
+      height="14"
+      viewBox="0 0 14 14"
+      width="14"
     >
-      <path d="M3.5 5.25L7 8.75L10.5 5.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M3.5 5.25L7 8.75L10.5 5.25"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
     </svg>
   );
 }
@@ -33,8 +66,8 @@ function LearnMore({ items }: { items: string[] }) {
   return (
     <div className="border-t border-[#1f2937] pt-3">
       <button
-        type="button"
         className="flex items-center gap-1.5 text-sm text-[#6b7280] hover:text-[#9ca3af] transition-colors"
+        type="button"
         onClick={() => setExpanded(!expanded)}
       >
         <ExpandIcon isExpanded={expanded} />
@@ -43,7 +76,10 @@ function LearnMore({ items }: { items: string[] }) {
       {expanded && (
         <ul className="mt-3 flex flex-col gap-2">
           {items.map((item, i) => (
-            <li key={i} className="text-sm text-[#9ca3af] leading-relaxed flex gap-2.5">
+            <li
+              key={i}
+              className="text-sm text-[#9ca3af] leading-relaxed flex gap-2.5"
+            >
               <span className="text-[#6ce182] mt-0.5 shrink-0">•</span>
               <span>{item}</span>
             </li>
@@ -69,7 +105,9 @@ function FlowRow({
     <div className="flex items-center gap-4">
       {/* Source */}
       <div className="shrink-0 w-[100px] h-[68px] border border-[#374151] rounded-lg bg-[#0a0c14] flex flex-col items-center justify-center gap-0.5">
-        <span className="text-xs text-[#6b7280] uppercase tracking-wider">{sourceSubLabel}</span>
+        <span className="text-xs text-[#6b7280] uppercase tracking-wider">
+          {sourceSubLabel}
+        </span>
         <span className="text-sm font-semibold text-white">{sourceLabel}</span>
       </div>
 
@@ -87,14 +125,20 @@ function FlowRow({
                 : "bg-white/[0.03] border border-[#1f2937]"
             }`}
           >
-            <span className={`text-base font-bold ${row.highlight ? "text-[#6ce182]" : "text-[#9ca3af]"}`}>
+            <span
+              className={`text-base font-bold ${row.highlight ? "text-[#6ce182]" : "text-[#9ca3af]"}`}
+            >
               {row.pct}
             </span>
-            <span className={`text-sm ${row.highlight ? "text-[#6ce182] font-medium" : "text-[#9ca3af]"}`}>
+            <span
+              className={`text-sm ${row.highlight ? "text-[#6ce182] font-medium" : "text-[#9ca3af]"}`}
+            >
               {row.label}
             </span>
             {row.extra && (
-              <span className={`text-xs ml-auto ${row.highlight ? "text-[#6ce182]/50" : "text-[#4b5563]"}`}>
+              <span
+                className={`text-xs ml-auto ${row.highlight ? "text-[#6ce182]/50" : "text-[#4b5563]"}`}
+              >
                 {row.extra}
               </span>
             )}
@@ -117,35 +161,44 @@ export function BettingPhaseFlow() {
         </div>
         <div>
           <h3 className="text-base font-semibold text-white">Betting Phase</h3>
-          <span className="text-xs font-mono text-[#6b7280]">Block 0–150 · ~1 min</span>
+          <span className="text-xs font-mono text-[#6b7280]">
+            Block 0–150 · ~1 min
+          </span>
         </div>
       </div>
 
       {/* SOL Split */}
       <FlowRow
-        sourceLabel="SOL Deposit"
-        sourceSubLabel="Your"
         rows={[
           { pct: "80%", label: "Prize Pool", highlight: true, extra: "★" },
           { pct: "20%", label: "Trading Pool", highlight: false },
         ]}
+        sourceLabel="SOL Deposit"
+        sourceSubLabel="Your"
       />
 
       {/* Divider */}
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-[#1f2937]" />
-        <span className="text-xs text-[#374151] uppercase tracking-wider">Tokens</span>
+        <span className="text-xs text-[#374151] uppercase tracking-wider">
+          Tokens
+        </span>
         <div className="h-px flex-1 bg-[#1f2937]" />
       </div>
 
       {/* Token Split */}
       <FlowRow
-        sourceLabel="Supply"
-        sourceSubLabel="Token"
         rows={[
-          { pct: "50%", label: "You", highlight: true, extra: "by deposit ratio" },
+          {
+            pct: "50%",
+            label: "You",
+            highlight: true,
+            extra: "by deposit ratio",
+          },
           { pct: "50%", label: "Trading Pool", highlight: false },
         ]}
+        sourceLabel="Supply"
+        sourceSubLabel="Token"
       />
 
       {/* Summary */}
@@ -168,9 +221,27 @@ export function BettingPhaseFlow() {
 // ─── Trading Phase Flow ─────────────────────────────────────
 
 const PODIUM_DATA = [
-  { rank: "#1", pct: "50%", height: "h-[80px]", color: "bg-[#6ce182]", text: "text-[#6ce182]" },
-  { rank: "#2", pct: "30%", height: "h-[58px]", color: "bg-[#6ce182]/70", text: "text-[#6ce182]/80" },
-  { rank: "#3", pct: "15%", height: "h-[40px]", color: "bg-[#6ce182]/40", text: "text-[#6ce182]/60" },
+  {
+    rank: "#1",
+    pct: "50%",
+    height: "h-[80px]",
+    color: "bg-[#6ce182]",
+    text: "text-[#6ce182]",
+  },
+  {
+    rank: "#2",
+    pct: "30%",
+    height: "h-[58px]",
+    color: "bg-[#6ce182]/70",
+    text: "text-[#6ce182]/80",
+  },
+  {
+    rank: "#3",
+    pct: "15%",
+    height: "h-[40px]",
+    color: "bg-[#6ce182]/40",
+    text: "text-[#6ce182]/60",
+  },
 ];
 
 export function TradingPhaseFlow() {
@@ -183,22 +254,30 @@ export function TradingPhaseFlow() {
         </div>
         <div>
           <h3 className="text-base font-semibold text-white">Trading Phase</h3>
-          <span className="text-xs font-mono text-[#6b7280]">Block 150–1350 · ~8 min</span>
+          <span className="text-xs font-mono text-[#6b7280]">
+            Block 150–1350 · ~8 min
+          </span>
         </div>
       </div>
 
       {/* Pool → Trade */}
       <div className="flex items-center gap-4">
         <div className="shrink-0 w-[100px] h-[68px] border border-[#374151] rounded-lg bg-[#0a0c14] flex flex-col items-center justify-center gap-0.5">
-          <span className="text-xs text-[#6b7280] uppercase tracking-wider">Bonding</span>
+          <span className="text-xs text-[#6b7280] uppercase tracking-wider">
+            Bonding
+          </span>
           <span className="text-sm font-semibold text-white">Curve Pool</span>
         </div>
 
         <ArrowRight className="text-[#374151] shrink-0" />
 
         <div className="flex-1 h-[68px] border border-[#1f2937] rounded-lg bg-white/[0.02] flex flex-col items-center justify-center gap-1">
-          <span className="text-sm text-white font-medium">Agents Buy & Sell</span>
-          <span className="text-xs text-[#6b7280]">Compete for token holdings</span>
+          <span className="text-sm text-white font-medium">
+            Agents Buy & Sell
+          </span>
+          <span className="text-xs text-[#6b7280]">
+            Compete for token holdings
+          </span>
         </div>
       </div>
 
@@ -221,10 +300,19 @@ export function TradingPhaseFlow() {
         {/* Podium */}
         <div className="flex items-end gap-3">
           {PODIUM_DATA.map((item) => (
-            <div key={item.rank} className="flex flex-col items-center gap-1.5 flex-1">
-              <span className={`text-base font-bold ${item.text}`}>{item.pct}</span>
-              <div className={`w-full ${item.height} ${item.color} rounded-t-lg flex items-end justify-center pb-2`}>
-                <span className="text-xs font-bold text-black">{item.rank}</span>
+            <div
+              key={item.rank}
+              className="flex flex-col items-center gap-1.5 flex-1"
+            >
+              <span className={`text-base font-bold ${item.text}`}>
+                {item.pct}
+              </span>
+              <div
+                className={`w-full ${item.height} ${item.color} rounded-t-lg flex items-end justify-center pb-2`}
+              >
+                <span className="text-xs font-bold text-black">
+                  {item.rank}
+                </span>
               </div>
             </div>
           ))}

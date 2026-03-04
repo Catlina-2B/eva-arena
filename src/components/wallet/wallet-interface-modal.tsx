@@ -2,9 +2,10 @@ import { Fragment, useState } from "react";
 import { createPortal } from "react-dom";
 import { useDisconnect } from "@particle-network/connectkit";
 
+import { TransactionLogModal } from "./transaction-log-modal";
+
 import { EvaButton } from "@/components/ui";
 import { DepositModal, WithdrawModal } from "@/components/agent";
-import { TransactionLogModal } from "./transaction-log-modal";
 import { useMyAgents, useAgentWithdraw } from "@/hooks";
 import { useTurnkeyBalanceStore } from "@/stores/turnkey-balance";
 import { useAuthStore } from "@/stores/auth";
@@ -272,7 +273,7 @@ export function WalletInterfaceModal({
         onClose={() => setIsTransactionLogOpen(false)}
       />
     </Fragment>,
-    document.body
+    document.body,
   );
 }
 

@@ -18,7 +18,10 @@ interface WithdrawModalProps {
   /** Connected wallet address (recipient) */
   recipientAddress: string;
   /** Callback with amount in lamports */
-  onWithdraw: (amountInLamports: number, recipientAddress: string) => Promise<void>;
+  onWithdraw: (
+    amountInLamports: number,
+    recipientAddress: string,
+  ) => Promise<void>;
   isWithdrawing?: boolean;
 }
 
@@ -37,7 +40,10 @@ export function WithdrawModal({
 
   // Calculate max withdrawable amount: balance - CU reserve
   const balanceInLamports = balanceInSol * LAMPORTS_PER_SOL;
-  const maxWithdrawableLamports = Math.max(0, balanceInLamports - DEFAULT_CU_RESERVE_LAMPORTS);
+  const maxWithdrawableLamports = Math.max(
+    0,
+    balanceInLamports - DEFAULT_CU_RESERVE_LAMPORTS,
+  );
   const maxWithdrawableSol = maxWithdrawableLamports / LAMPORTS_PER_SOL;
 
   const handleAmountChange = (value: string) => {
@@ -79,6 +85,7 @@ export function WithdrawModal({
       setError(null);
       // Convert SOL to lamports for API call
       const amountInLamports = Math.floor(amountInSol * LAMPORTS_PER_SOL);
+
       await onWithdraw(amountInLamports, recipientAddress);
       // Reset form on success
       setAmount("");

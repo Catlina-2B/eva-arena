@@ -10,21 +10,23 @@ import { useAuthStore } from "@/stores/auth";
  */
 export const thinkReasonKeys = {
   all: ["thinkReasons"] as const,
-  list: (params?: ThinkReasonQueryDto) => [...thinkReasonKeys.all, "list", params] as const,
-  infinite: (params?: Omit<ThinkReasonQueryDto, "page">) => [...thinkReasonKeys.all, "infinite", params] as const,
+  list: (params?: ThinkReasonQueryDto) =>
+    [...thinkReasonKeys.all, "list", params] as const,
+  infinite: (params?: Omit<ThinkReasonQueryDto, "page">) =>
+    [...thinkReasonKeys.all, "infinite", params] as const,
 };
 
 /**
  * Hook for getting agent think reasons (decision history)
  * 获取 Agent 的思考记录
- * 
+ *
  * @param params - Query parameters (trenchId, page, limit)
  * @param options - Optional settings
  * @param options.polling - Enable polling for real-time updates
  */
 export function useThinkReasons(
   params?: ThinkReasonQueryDto,
-  options?: { polling?: boolean }
+  options?: { polling?: boolean },
 ) {
   const { isAuthenticated } = useAuthStore();
   const { polling = false } = options ?? {};
@@ -62,7 +64,7 @@ export function useLatestThinkReason(options?: { polling?: boolean }) {
  */
 export function useThinkReasonsInfinite(
   params?: Omit<ThinkReasonQueryDto, "page">,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean },
 ) {
   const { isAuthenticated } = useAuthStore();
   const { enabled = true } = options ?? {};
@@ -75,10 +77,15 @@ export function useThinkReasonsInfinite(
     enabled: isAuthenticated && enabled,
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) => {
-      const totalLoaded = allPages.reduce((sum, page) => sum + page.thinkReasons.length, 0);
+      const totalLoaded = allPages.reduce(
+        (sum, page) => sum + page.thinkReasons.length,
+        0,
+      );
+
       if (totalLoaded >= lastPage.total) {
         return undefined;
       }
+
       return allPages.length + 1;
     },
     staleTime: 30 * 1000,

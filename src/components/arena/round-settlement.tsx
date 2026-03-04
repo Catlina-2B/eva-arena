@@ -10,39 +10,48 @@ interface RoundSettlementProps {
   } | null;
 }
 
-export function RoundSettlement({ round, currentUserAgent }: RoundSettlementProps) {
+export function RoundSettlement({
+  round,
+  currentUserAgent,
+}: RoundSettlementProps) {
   const winners = round.winners || [];
   const countdown = round.nextRoundCountdown || 0;
   const minutes = Math.floor(countdown / 60);
   const seconds = countdown % 60;
 
   // Top 3 winners
-  const top3Winners = winners.filter(w => w.rank <= 3);
-  
+  const top3Winners = winners.filter((w) => w.rank <= 3);
+
   // Calculate "Others" prize (remaining 5%)
   const top3Total = top3Winners.reduce((sum, w) => sum + w.prizeAmount, 0);
   const othersAmount = Math.max(0, round.totalPrizePool - top3Total);
-  const othersPercent = round.totalPrizePool > 0 
-    ? ((othersAmount / round.totalPrizePool) * 100).toFixed(0)
-    : "5";
+  const othersPercent =
+    round.totalPrizePool > 0
+      ? ((othersAmount / round.totalPrizePool) * 100).toFixed(0)
+      : "5";
 
   // Get prize percentage for each winner
   const getPrizePercent = (rank: number): string => {
     switch (rank) {
-      case 1: return "50";
-      case 2: return "30";
-      case 3: return "15";
-      default: return "5";
+      case 1:
+        return "50";
+      case 2:
+        return "30";
+      case 3:
+        return "15";
+      default:
+        return "5";
     }
   };
 
   return (
     <div className="relative">
       {/* Main card with border and corner decorations */}
-      <div 
+      <div
         className="relative border border-[#1f2937] overflow-hidden backdrop-blur-[10px]"
         style={{
-          background: "linear-gradient(180deg, rgba(16,67,47,0.2) 0%, rgba(10,12,18,0.4) 36%, rgba(22,34,27,0.2) 100%)",
+          background:
+            "linear-gradient(180deg, rgba(16,67,47,0.2) 0%, rgba(10,12,18,0.4) 36%, rgba(22,34,27,0.2) 100%)",
         }}
       >
         {/* Corner decorations */}
@@ -69,7 +78,7 @@ export function RoundSettlement({ round, currentUserAgent }: RoundSettlementProp
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[rgba(108,225,130,0.3)] to-transparent" />
 
         {/* Content */}
-        <div 
+        <div
           className="relative z-10 backdrop-blur-[6px] border border-[rgba(255,255,255,0.1)]"
           style={{ background: "rgba(0,0,0,0.4)" }}
         >
@@ -105,45 +114,50 @@ export function RoundSettlement({ round, currentUserAgent }: RoundSettlementProp
                 {/* Top 3 winners */}
                 {top3Winners.map((winner) => {
                   const isCurrentUserWinner = winner.isCurrentUser;
+
                   return (
-                  <div
-                    key={winner.rank}
-                    className={`flex items-center justify-between p-[13px] rounded-sm border ${
-                      isCurrentUserWinner 
-                        ? "border-eva-primary bg-eva-primary/10" 
-                        : "border-[rgba(255,255,255,0.05)]"
-                    }`}
-                    style={{
-                      background: isCurrentUserWinner 
-                        ? undefined 
-                        : winner.rank === 1 
-                          ? "rgba(255,255,255,0.03)" 
-                          : winner.rank === 2 
-                            ? "rgba(255,255,255,0.02)" 
-                            : "rgba(255,255,255,0.01)",
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono font-bold text-sm text-[#d946ef]">
-                        #{winner.rank}
-                      </span>
-                      <span className={`font-mono text-sm ${
-                        winner.rank === 1 ? "text-white" : 
-                        winner.rank === 2 ? "text-[#d1d5db]" : 
-                        "text-[#9ca3af]"
-                      }`}>
-                        {winner.agentName}
-                      </span>
+                    <div
+                      key={winner.rank}
+                      className={`flex items-center justify-between p-[13px] rounded-sm border ${
+                        isCurrentUserWinner
+                          ? "border-eva-primary bg-eva-primary/10"
+                          : "border-[rgba(255,255,255,0.05)]"
+                      }`}
+                      style={{
+                        background: isCurrentUserWinner
+                          ? undefined
+                          : winner.rank === 1
+                            ? "rgba(255,255,255,0.03)"
+                            : winner.rank === 2
+                              ? "rgba(255,255,255,0.02)"
+                              : "rgba(255,255,255,0.01)",
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono font-bold text-sm text-[#d946ef]">
+                          #{winner.rank}
+                        </span>
+                        <span
+                          className={`font-mono text-sm ${
+                            winner.rank === 1
+                              ? "text-white"
+                              : winner.rank === 2
+                                ? "text-[#d1d5db]"
+                                : "text-[#9ca3af]"
+                          }`}
+                        >
+                          {winner.agentName}
+                        </span>
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="font-mono font-bold text-sm text-[#4ade80]">
+                          {winner.prizeAmount.toFixed(2)} SOL
+                        </span>
+                        <span className="font-mono text-xs text-[#6b7280]">
+                          ({getPrizePercent(winner.rank)}%)
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="font-mono font-bold text-sm text-[#4ade80]">
-                        {winner.prizeAmount.toFixed(2)} SOL
-                      </span>
-                      <span className="font-mono text-xs text-[#6b7280]">
-                        ({getPrizePercent(winner.rank)}%)
-                      </span>
-                    </div>
-                  </div>
                   );
                 })}
 
@@ -170,7 +184,7 @@ export function RoundSettlement({ round, currentUserAgent }: RoundSettlementProp
             {/* Current user's settlement result */}
             {currentUserAgent && (
               <div className="mb-6">
-                <div 
+                <div
                   className="flex items-center justify-between p-4 rounded-sm border border-[rgba(74,222,128,0.2)] overflow-hidden relative"
                   style={{ background: "rgba(74,222,128,0.05)" }}
                 >
@@ -193,7 +207,7 @@ export function RoundSettlement({ round, currentUserAgent }: RoundSettlementProp
             )}
 
             {/* Next Round Countdown */}
-            <div 
+            <div
               className="border border-[rgba(255,255,255,0.1)] p-4 text-center backdrop-blur-sm max-w-[280px] mx-auto"
               style={{ background: "rgba(15,15,15,0.9)" }}
             >
@@ -216,7 +230,8 @@ export function RoundSettlement({ round, currentUserAgent }: RoundSettlementProp
               </div>
 
               <div className="text-5xl font-medium font-mono text-[#4ade80] tracking-[-2.4px]">
-                {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+                {String(minutes).padStart(2, "0")}:
+                {String(seconds).padStart(2, "0")}
               </div>
 
               <div className="font-mono text-[9px] text-[#4b5563] tracking-[0.09em] uppercase mt-1">
@@ -253,4 +268,3 @@ function CornerDecoration({ position }: CornerDecorationProps) {
     </div>
   );
 }
-

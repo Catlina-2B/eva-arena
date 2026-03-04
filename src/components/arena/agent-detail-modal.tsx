@@ -1,39 +1,71 @@
+import type { AgentRanking, ActivityItem } from "@/types";
+
 import { Fragment, useMemo, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
 
-import type { AgentRanking, ActivityItem } from "@/types";
-import { formatSmallNumber, transactionsToActivities } from "@/lib/trench-utils";
+import {
+  formatSmallNumber,
+  transactionsToActivities,
+} from "@/lib/trench-utils";
 import { useUserTransactions } from "@/hooks";
 import { getBalance } from "@/services/solana";
 
 // Robot icon SVG
 const RobotIcon = () => (
   <svg
-    width="32"
+    fill="none"
     height="32"
     viewBox="0 0 32 32"
-    fill="none"
+    width="32"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <rect x="8" y="10" width="16" height="14" rx="2" stroke="#6ce182" strokeWidth="1.5" />
-    <circle cx="12" cy="16" r="2" fill="#6ce182" />
-    <circle cx="20" cy="16" r="2" fill="#6ce182" />
-    <path d="M13 21h6" stroke="#6ce182" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M16 6v4" stroke="#6ce182" strokeWidth="1.5" strokeLinecap="round" />
-    <circle cx="16" cy="5" r="1.5" fill="#6ce182" />
-    <path d="M6 14v6" stroke="#6ce182" strokeWidth="1.5" strokeLinecap="round" />
-    <path d="M26 14v6" stroke="#6ce182" strokeWidth="1.5" strokeLinecap="round" />
+    <rect
+      height="14"
+      rx="2"
+      stroke="#6ce182"
+      strokeWidth="1.5"
+      width="16"
+      x="8"
+      y="10"
+    />
+    <circle cx="12" cy="16" fill="#6ce182" r="2" />
+    <circle cx="20" cy="16" fill="#6ce182" r="2" />
+    <path
+      d="M13 21h6"
+      stroke="#6ce182"
+      strokeLinecap="round"
+      strokeWidth="1.5"
+    />
+    <path
+      d="M16 6v4"
+      stroke="#6ce182"
+      strokeLinecap="round"
+      strokeWidth="1.5"
+    />
+    <circle cx="16" cy="5" fill="#6ce182" r="1.5" />
+    <path
+      d="M6 14v6"
+      stroke="#6ce182"
+      strokeLinecap="round"
+      strokeWidth="1.5"
+    />
+    <path
+      d="M26 14v6"
+      stroke="#6ce182"
+      strokeLinecap="round"
+      strokeWidth="1.5"
+    />
   </svg>
 );
 
 // External link icon
 const ExternalLinkIcon = () => (
   <svg
-    width="16"
+    fill="none"
     height="16"
     viewBox="0 0 16 16"
-    fill="none"
+    width="16"
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
@@ -58,19 +90,49 @@ const ExternalLinkIcon = () => (
 );
 
 // Action type label component
-function ActionLabel({ type }: { type: "buy" | "sell" | "deposit" | "withdraw" }) {
+function ActionLabel({
+  type,
+}: {
+  type: "buy" | "sell" | "deposit" | "withdraw";
+}) {
   const config = {
-    buy: { label: "BUY", bgColor: "bg-[rgba(108,225,130,0.1)]", textColor: "text-[#6ce182]" },
-    sell: { label: "SELL", bgColor: "bg-[rgba(248,113,113,0.1)]", textColor: "text-[#f87171]" },
-    deposit: { label: "DEPOSIT", bgColor: "bg-[rgba(108,225,130,0.1)]", textColor: "text-[#6ce182]" },
-    withdraw: { label: "WITHDRAW", bgColor: "bg-[rgba(248,113,113,0.1)]", textColor: "text-[#f87171]" },
+    buy: {
+      label: "BUY",
+      bgColor: "bg-[rgba(108,225,130,0.1)]",
+      textColor: "text-[#6ce182]",
+    },
+    sell: {
+      label: "SELL",
+      bgColor: "bg-[rgba(248,113,113,0.1)]",
+      textColor: "text-[#f87171]",
+    },
+    deposit: {
+      label: "DEPOSIT",
+      bgColor: "bg-[rgba(108,225,130,0.1)]",
+      textColor: "text-[#6ce182]",
+    },
+    withdraw: {
+      label: "WITHDRAW",
+      bgColor: "bg-[rgba(248,113,113,0.1)]",
+      textColor: "text-[#f87171]",
+    },
   };
 
   const { label, bgColor, textColor } = config[type] || config.buy;
 
   return (
-    <div className={clsx("px-2 py-0.5 rounded-sm w-12 flex items-center justify-center", bgColor)}>
-      <span className={clsx("text-[10px] font-semibold font-mono uppercase tracking-wider", textColor)}>
+    <div
+      className={clsx(
+        "px-2 py-0.5 rounded-sm w-12 flex items-center justify-center",
+        bgColor,
+      )}
+    >
+      <span
+        className={clsx(
+          "text-[10px] font-semibold font-mono uppercase tracking-wider",
+          textColor,
+        )}
+      >
         {label}
       </span>
     </div>
@@ -93,7 +155,7 @@ function MetricRow({
     <div
       className={clsx(
         "flex items-center justify-between py-2",
-        hasBorder && "border-b border-dashed border-[rgba(255,255,255,0.1)]"
+        hasBorder && "border-b border-dashed border-[rgba(255,255,255,0.1)]",
       )}
     >
       <span className="text-sm text-[#9ca3af] font-mono">{label}</span>
@@ -114,7 +176,8 @@ function ActivityRow({
   const actionText = `${formatSmallNumber(activity.solAmount)} SOL`;
 
   // Show price for buy/sell transactions
-  const isDepositOrWithdraw = activity.type === "deposit" || activity.type === "withdraw";
+  const isDepositOrWithdraw =
+    activity.type === "deposit" || activity.type === "withdraw";
   const priceText = isDepositOrWithdraw
     ? ""
     : `@${formatSmallNumber(activity.solAmount / activity.tokenAmount)}`;
@@ -126,9 +189,13 @@ function ActivityRow({
       <div className="flex items-center gap-4">
         <ActionLabel type={activity.type} />
         <div className="flex flex-col gap-0.5">
-          <span className="text-xs text-white font-mono font-medium">{actionText}</span>
+          <span className="text-xs text-white font-mono font-medium">
+            {actionText}
+          </span>
           {priceText && (
-            <span className="text-[10px] text-[#4b5563] font-mono">{priceText}</span>
+            <span className="text-[10px] text-[#4b5563] font-mono">
+              {priceText}
+            </span>
           )}
         </div>
       </div>
@@ -137,7 +204,9 @@ function ActivityRow({
           <span className="text-xs text-eva-primary font-mono font-medium">
             {activity.agentName}
           </span>
-          <span className="text-[10px] text-[#4b5563] font-mono">{timeAgo}</span>
+          <span className="text-[10px] text-[#4b5563] font-mono">
+            {timeAgo}
+          </span>
         </div>
         {activity.signature && (
           <button
@@ -163,6 +232,7 @@ function getTimeAgo(date: Date): string {
   if (diffSec < 60) return "just now";
   if (diffMin < 60) return `${diffMin}m ago`;
   if (diffHour < 24) return `${diffHour}h ago`;
+
   return `${Math.floor(diffHour / 24)}d ago`;
 }
 
@@ -206,10 +276,12 @@ export function AgentDetailModal({
   useEffect(() => {
     if (!isOpen || !agent?.userAddress) {
       setRpcSolBalance(null);
+
       return;
     }
 
     let cancelled = false;
+
     setIsLoadingBalance(true);
 
     getBalance(agent.userAddress)
@@ -236,15 +308,16 @@ export function AgentDetailModal({
   }, [isOpen, agent?.userAddress]);
 
   // Fetch transactions using agent's userAddress
-  const { data: transactionsData, isLoading: isLoadingTransactions } = useUserTransactions(
-    isOpen && agent?.userAddress ? trenchId : undefined,
-    {
-      userAddress: agent?.userAddress,
-      limit: 3,
-      txType: ['BUY', 'SELL', 'DEPOSIT', 'WITHDRAW'],
-    },
-    { polling: false }
-  );
+  const { data: transactionsData, isLoading: isLoadingTransactions } =
+    useUserTransactions(
+      isOpen && agent?.userAddress ? trenchId : undefined,
+      {
+        userAddress: agent?.userAddress,
+        limit: 3,
+        txType: ["BUY", "SELL", "DEPOSIT", "WITHDRAW"],
+      },
+      { polling: false },
+    );
 
   // Convert transactions to activities
   const recentActions = useMemo(() => {
@@ -252,6 +325,7 @@ export function AgentDetailModal({
       return detailData.recentActions;
     }
     if (!transactionsData?.transactions) return [];
+
     return transactionsToActivities(transactionsData.transactions).slice(0, 3);
   }, [detailData?.recentActions, transactionsData?.transactions]);
 
@@ -321,9 +395,9 @@ export function AgentDetailModal({
                 <div className="absolute inset-0 bg-[rgba(108,225,130,0.1)] blur-md" />
                 {agentAvatar ? (
                   <img
-                    src={agentAvatar}
                     alt={agentName}
                     className="relative w-full h-full object-cover"
+                    src={agentAvatar}
                   />
                 ) : (
                   <div className="relative">
@@ -359,21 +433,46 @@ export function AgentDetailModal({
                 </h3>
 
                 <div className="space-y-4">
-                  <MetricRow 
-                    label="SOL Balance" 
-                    value={isLoadingBalance ? "..." : formatSmallNumber(solBalance)} 
+                  <MetricRow
+                    label="SOL Balance"
+                    value={
+                      isLoadingBalance ? "..." : formatSmallNumber(solBalance)
+                    }
                   />
-                  <MetricRow label="Token Balance" value={tokenBalance.toLocaleString()} />
+                  <MetricRow
+                    label="Token Balance"
+                    value={tokenBalance.toLocaleString()}
+                  />
                   <MetricRow
                     label="Round PNL"
-                    value={roundPnl == null || isNaN(roundPnl) ? "--" : `${roundPnl >= 0 ? "+" : ""}${formatSmallNumber(roundPnl)} SOL`}
-                    valueColor={roundPnl == null || isNaN(roundPnl) ? "text-white" : roundPnl >= 0 ? "text-[#6ce182]" : "text-[#f87171]"}
+                    value={
+                      roundPnl == null || isNaN(roundPnl)
+                        ? "--"
+                        : `${roundPnl >= 0 ? "+" : ""}${formatSmallNumber(roundPnl)} SOL`
+                    }
+                    valueColor={
+                      roundPnl == null || isNaN(roundPnl)
+                        ? "text-white"
+                        : roundPnl >= 0
+                          ? "text-[#6ce182]"
+                          : "text-[#f87171]"
+                    }
                   />
                   <MetricRow
-                    label="Total PNL"
-                    value={totalPnl == null || isNaN(totalPnl) ? "--" : `${totalPnl >= 0 ? "+" : ""}${formatSmallNumber(totalPnl)} SOL`}
-                    valueColor={totalPnl == null || isNaN(totalPnl) ? "text-white" : totalPnl >= 0 ? "text-[#6ce182]" : "text-[#f87171]"}
                     hasBorder={false}
+                    label="Total PNL"
+                    value={
+                      totalPnl == null || isNaN(totalPnl)
+                        ? "--"
+                        : `${totalPnl >= 0 ? "+" : ""}${formatSmallNumber(totalPnl)} SOL`
+                    }
+                    valueColor={
+                      totalPnl == null || isNaN(totalPnl)
+                        ? "text-white"
+                        : totalPnl >= 0
+                          ? "text-[#6ce182]"
+                          : "text-[#f87171]"
+                    }
                   />
                 </div>
               </div>
@@ -394,13 +493,15 @@ export function AgentDetailModal({
                       <div className="w-5 h-5 border-2 border-eva-primary border-t-transparent rounded-full animate-spin" />
                     </div>
                   ) : recentActions.length > 0 ? (
-                    recentActions.slice(0, 3).map((action) => (
-                      <ActivityRow
-                        key={action.id}
-                        activity={action}
-                        onExternalLink={handleExternalLink}
-                      />
-                    ))
+                    recentActions
+                      .slice(0, 3)
+                      .map((action) => (
+                        <ActivityRow
+                          key={action.id}
+                          activity={action}
+                          onExternalLink={handleExternalLink}
+                        />
+                      ))
                   ) : (
                     <div className="text-sm text-eva-text-dim font-mono text-center py-8">
                       No recent actions
@@ -416,4 +517,3 @@ export function AgentDetailModal({
     document.body,
   );
 }
-

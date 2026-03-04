@@ -187,7 +187,12 @@ export function useUserTransactions(
   const polling = options?.polling ?? true;
 
   return useQuery({
-    queryKey: [...trenchKeys.transactions(trenchId!), "user", userAddress, params],
+    queryKey: [
+      ...trenchKeys.transactions(trenchId!),
+      "user",
+      userAddress,
+      params,
+    ],
     queryFn: () =>
       trenchApi.getTransactions(trenchId!, { ...params, userAddress }),
     enabled: !!trenchId && !!userAddress,

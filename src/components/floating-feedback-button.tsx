@@ -17,7 +17,7 @@ export function FloatingFeedbackButton() {
         "hover:border-eva-secondary hover:shadow-eva-secondary/40",
         "transition-all duration-300 ease-out",
         "cursor-pointer",
-        "bottom-6 left-4"
+        "bottom-6 left-4",
       )}
       title="Feedback"
       onClick={handleClick}

@@ -47,7 +47,10 @@ export function PreMarketBetting({ round }: PreMarketBettingProps) {
           <div className="px-6 pb-6">
             <div className="border-l-2 border-l-eva-primary pl-4 py-1">
               <p className="text-sm text-[#9ca3af] leading-relaxed font-mono">
-                We're currently in the Token Betting Phase. By setting up your Agent prompt, you can compete for up to 50% of the initial token allocation. Final distribution is calculated proportionally based on each agent's end-of-round funding results.
+                We're currently in the Token Betting Phase. By setting up your
+                Agent prompt, you can compete for up to 50% of the initial token
+                allocation. Final distribution is calculated proportionally
+                based on each agent's end-of-round funding results.
               </p>
             </div>
           </div>
@@ -60,7 +63,7 @@ export function PreMarketBetting({ round }: PreMarketBettingProps) {
                 <div className="text-[10px] font-mono font-bold text-[#9ca3af] tracking-[0.15em] uppercase mb-3">
                   Token Alloc
                 </div>
-                <div 
+                <div
                   className="grid grid-cols-2 divide-x divide-[rgba(255,255,255,0.1)] overflow-hidden"
                   style={{
                     background: "rgba(211, 87, 224, 0.1)",
@@ -69,13 +72,13 @@ export function PreMarketBetting({ round }: PreMarketBettingProps) {
                 >
                   <AllocationStat
                     label="Betting Phase"
-                    value={50}
                     labelColor="text-[#d946ef]"
+                    value={50}
                   />
                   <AllocationStat
                     label="Trading Phase"
-                    value={50}
                     labelColor="text-[#d946ef]"
+                    value={50}
                   />
                 </div>
               </div>
@@ -85,7 +88,7 @@ export function PreMarketBetting({ round }: PreMarketBettingProps) {
                 <div className="text-[10px] font-mono font-bold text-[#9ca3af] tracking-[0.15em] uppercase mb-3">
                   Founding Alloc
                 </div>
-                <div 
+                <div
                   className="grid grid-cols-2 divide-x divide-[rgba(255,255,255,0.1)] overflow-hidden"
                   style={{
                     background: "rgba(211, 87, 224, 0.1)",
@@ -94,13 +97,13 @@ export function PreMarketBetting({ round }: PreMarketBettingProps) {
                 >
                   <AllocationStat
                     label="Bonding Curve"
-                    value={round.lpAlloc}
                     labelColor="text-[#d946ef]"
+                    value={round.lpAlloc}
                   />
                   <AllocationStat
                     label="Prize Pool"
-                    value={round.prizeFund}
                     labelColor="text-[#d946ef]"
+                    value={round.prizeFund}
                   />
                 </div>
               </div>
@@ -115,7 +118,7 @@ export function PreMarketBetting({ round }: PreMarketBettingProps) {
 
             <div
               className="overflow-hidden"
-              style={{ 
+              style={{
                 background: "rgba(255, 255, 255, 0.03)",
                 border: "1px solid rgba(255, 255, 255, 0.1)",
               }}

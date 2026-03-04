@@ -21,7 +21,9 @@ function NavLink({ href, children, isActive }: NavLinkProps) {
     <Link
       className={clsx(
         "px-4 py-2 text-sm font-medium tracking-wider uppercase transition-colors",
-        isActive ? "text-eva-secondary" : "text-eva-text-dim hover:text-eva-text",
+        isActive
+          ? "text-eva-secondary"
+          : "text-eva-text-dim hover:text-eva-text",
       )}
       to={href}
     >
@@ -35,10 +37,10 @@ export function Navbar() {
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
-  
+
   // Get wallet address
   const { address } = useAccount();
-  
+
   // Get balance from global store
   const { balance } = useTurnkeyBalanceStore();
   const { isAuthenticated, user } = useAuthStore();
@@ -83,8 +85,18 @@ export function Navbar() {
                   className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium tracking-wider rounded transition-colors bg-eva-primary text-eva-darker hover:bg-eva-primary-dim cursor-pointer"
                   onClick={() => setIsDepositModalOpen(true)}
                 >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M3.4577 10.9995L10.6247 10.9995L10.6247 11.1665L3.4577 11.1665L3.4577 10.9995ZM3.74091 5.09131L6.10419 7.45361L6.9577 8.30713L6.9577 2.24951L7.12469 2.24951L7.12469 8.30713L10.3415 5.09033L10.4597 5.2085L7.04169 8.62646L3.62372 5.2085L3.74091 5.09131Z" fill="currentColor" stroke="currentColor"/>
+                  <svg
+                    fill="none"
+                    height="14"
+                    viewBox="0 0 14 14"
+                    width="14"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M3.4577 10.9995L10.6247 10.9995L10.6247 11.1665L3.4577 11.1665L3.4577 10.9995ZM3.74091 5.09131L6.10419 7.45361L6.9577 8.30713L6.9577 2.24951L7.12469 2.24951L7.12469 8.30713L10.3415 5.09033L10.4597 5.2085L7.04169 8.62646L3.62372 5.2085L3.74091 5.09131Z"
+                      fill="currentColor"
+                      stroke="currentColor"
+                    />
                   </svg>
                   Deposit
                 </button>
@@ -94,8 +106,8 @@ export function Navbar() {
               {isAuthenticated && (
                 <button
                   className="group hidden md:flex flex-col items-start gap-0.5 px-4 py-2 rounded-lg text-left hover:bg-eva-card-hover hover:text-eva-text transition-colors cursor-pointer"
-                  onClick={() => setIsWalletModalOpen(true)}
                   type="button"
+                  onClick={() => setIsWalletModalOpen(true)}
                 >
                   <span className="flex items-center gap-1 text-[10px] font-medium tracking-wider uppercase text-eva-text-dim group-hover:text-eva-text">
                     Balance
@@ -119,7 +131,9 @@ export function Navbar() {
                 </button>
               )}
 
-              <WalletConnectButton onOpenRules={() => setIsHowToPlayOpen(true)} />
+              <WalletConnectButton
+                onOpenRules={() => setIsHowToPlayOpen(true)}
+              />
 
               {/* Mobile menu toggle */}
               <button className="md:hidden p-2 text-eva-text-dim hover:text-eva-text">

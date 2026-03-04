@@ -12,6 +12,7 @@ export function WelcomeCard() {
       setOpen(true);
     });
   };
+
   return (
     <EvaCard className="text-center">
       <EvaCardContent className="py-8">

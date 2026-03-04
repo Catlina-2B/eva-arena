@@ -130,15 +130,40 @@ Forbidden Actions
 
 // Preset button configurations with short descriptions for tooltips
 export const BETTING_PRESET_BUTTONS = [
-  { key: 'newbie', label: 'Newbie', description: 'Conservative — invest 20–30% SOL, prioritize capital preservation' },
-  { key: 'balanced', label: 'Balanced Trader', description: 'Moderate — invest 40–60% SOL, aim for Top 3–5 efficiently' },
-  { key: 'whale', label: 'Whale', description: 'Aggressive — deploy 60–80% SOL, dominate early rankings' },
+  {
+    key: "newbie",
+    label: "Newbie",
+    description:
+      "Conservative — invest 20–30% SOL, prioritize capital preservation",
+  },
+  {
+    key: "balanced",
+    label: "Balanced Trader",
+    description: "Moderate — invest 40–60% SOL, aim for Top 3–5 efficiently",
+  },
+  {
+    key: "whale",
+    label: "Whale",
+    description: "Aggressive — deploy 60–80% SOL, dominate early rankings",
+  },
 ] as const;
 
 export const TRADING_PRESET_BUTTONS = [
-  { key: 'surfer', label: 'Surfer', description: 'Ride volatility — multiple small trades for realized profit' },
-  { key: 'sniper', label: 'Sniper', description: 'Wait for high-probability setups, strike fast and exit' },
-  { key: 'whale', label: 'Whale', description: 'Dominate Top 3 — use size to suppress competitors' },
+  {
+    key: "surfer",
+    label: "Surfer",
+    description: "Ride volatility — multiple small trades for realized profit",
+  },
+  {
+    key: "sniper",
+    label: "Sniper",
+    description: "Wait for high-probability setups, strike fast and exit",
+  },
+  {
+    key: "whale",
+    label: "Whale",
+    description: "Dominate Top 3 — use size to suppress competitors",
+  },
 ] as const;
 
 // Type exports

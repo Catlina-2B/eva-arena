@@ -16,6 +16,7 @@ export function CreateAgentCard({ onCreate }: CreateAgentCardProps) {
       navigate("/create-agent");
     }
   };
+
   return (
     <EvaCard className="text-center">
       <EvaCardContent className="py-8">

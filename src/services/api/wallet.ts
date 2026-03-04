@@ -49,11 +49,11 @@ export const walletApi = {
    * 获取钱包交易记录（充值/提现）
    */
   getTransactions: async (
-    params?: GetTransactionsQueryDto
+    params?: GetTransactionsQueryDto,
   ): Promise<WalletTransactionListResponseDto> => {
     const response = await apiClient.get<WalletTransactionListResponseDto>(
       "/api/wallet/transactions",
-      { params }
+      { params },
     );
 
     return response.data;

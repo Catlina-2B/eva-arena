@@ -1,7 +1,8 @@
+import type { ActivityItem } from "@/types";
+
 import { Fragment } from "react";
 import { createPortal } from "react-dom";
 
-import type { ActivityItem } from "@/types";
 import { formatSmallNumber } from "@/lib/trench-utils";
 
 interface ReasoningModalProps {
@@ -106,12 +107,16 @@ export function ReasoningModal({
                           <span className="text-eva-primary text-xs font-bold mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-eva-primary/20 flex items-center justify-center">
                             {index + 1}
                           </span>
-                          <span className="text-sm text-eva-text font-mono leading-relaxed">{point.trim()}</span>
+                          <span className="text-sm text-eva-text font-mono leading-relaxed">
+                            {point.trim()}
+                          </span>
                         </li>
                       ))}
                   </ol>
                 ) : (
-                  <p className="text-sm text-eva-text-dim italic font-mono">No reasoning available</p>
+                  <p className="text-sm text-eva-text-dim italic font-mono">
+                    No reasoning available
+                  </p>
                 )}
               </div>
             </div>
@@ -124,7 +129,9 @@ export function ReasoningModal({
               <div className="bg-black/30 border border-eva-border/50 rounded p-3">
                 <div className="flex items-center gap-2 font-mono text-xs">
                   <span className="text-blue-400 uppercase">EXECUTE</span>
-                  <span className="text-eva-text">{displayAction == 'HOLD' ? '--' : displayAction}</span>
+                  <span className="text-eva-text">
+                    {displayAction == "HOLD" ? "--" : displayAction}
+                  </span>
                 </div>
               </div>
             </div>
@@ -135,4 +142,3 @@ export function ReasoningModal({
     document.body,
   );
 }
-

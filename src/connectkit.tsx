@@ -2,7 +2,6 @@
 
 import React, { Suspense } from "react";
 import { ConnectKitProvider, createConfig } from "@particle-network/connectkit";
-import { authWalletConnectors } from "@particle-network/connectkit/auth";
 import { solanaWalletConnectors } from "@particle-network/connectkit/solana";
 import { EntryPosition, wallet } from "@particle-network/connectkit/wallet";
 // 从 @particle-network/connectkit/chains 导入 Solana 链

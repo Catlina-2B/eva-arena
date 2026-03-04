@@ -12,19 +12,24 @@ interface FloatingThinkButtonProps {
 function getSavedPosition(): { y: number; side: "left" | "right" } {
   try {
     const saved = localStorage.getItem("eva-think-button-position");
+
     if (saved) {
       return JSON.parse(saved);
     }
   } catch {
     // ignore
   }
+
   return { y: 50, side: "right" }; // 默认右侧 50%
 }
 
 // 保存位置到 localStorage
 function savePosition(y: number, side: "left" | "right") {
   try {
-    localStorage.setItem("eva-think-button-position", JSON.stringify({ y, side }));
+    localStorage.setItem(
+      "eva-think-button-position",
+      JSON.stringify({ y, side }),
+    );
   } catch {
     // ignore
   }
@@ -38,51 +43,63 @@ export function FloatingThinkButton({
   const [position, setPosition] = useState(getSavedPosition);
   const [isDragging, setIsDragging] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const dragStartRef = useRef<{ startY: number; startPosY: number } | null>(null);
+  const dragStartRef = useRef<{ startY: number; startPosY: number } | null>(
+    null,
+  );
 
   // 处理拖拽开始
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if (!buttonRef.current) return;
-    
-    e.preventDefault();
-    setIsDragging(true);
-    buttonRef.current.setPointerCapture(e.pointerId);
-    
-    dragStartRef.current = {
-      startY: e.clientY,
-      startPosY: position.y,
-    };
-  }, [position.y]);
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (!buttonRef.current) return;
+
+      e.preventDefault();
+      setIsDragging(true);
+      buttonRef.current.setPointerCapture(e.pointerId);
+
+      dragStartRef.current = {
+        startY: e.clientY,
+        startPosY: position.y,
+      };
+    },
+    [position.y],
+  );
 
   // 处理拖拽移动
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging || !dragStartRef.current) return;
-    
-    const deltaY = e.clientY - dragStartRef.current.startY;
-    const windowHeight = window.innerHeight;
-    const newY = dragStartRef.current.startPosY + (deltaY / windowHeight) * 100;
-    
-    // 限制在 10% - 90% 之间
-    const clampedY = Math.max(10, Math.min(90, newY));
-    
-    // 判断左右吸附
-    const windowWidth = window.innerWidth;
-    const newSide = e.clientX < windowWidth / 2 ? "left" : "right";
-    
-    setPosition({ y: clampedY, side: newSide });
-  }, [isDragging]);
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging || !dragStartRef.current) return;
+
+      const deltaY = e.clientY - dragStartRef.current.startY;
+      const windowHeight = window.innerHeight;
+      const newY =
+        dragStartRef.current.startPosY + (deltaY / windowHeight) * 100;
+
+      // 限制在 10% - 90% 之间
+      const clampedY = Math.max(10, Math.min(90, newY));
+
+      // 判断左右吸附
+      const windowWidth = window.innerWidth;
+      const newSide = e.clientX < windowWidth / 2 ? "left" : "right";
+
+      setPosition({ y: clampedY, side: newSide });
+    },
+    [isDragging],
+  );
 
   // 处理拖拽结束
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    if (!isDragging) return;
-    
-    setIsDragging(false);
-    buttonRef.current?.releasePointerCapture(e.pointerId);
-    dragStartRef.current = null;
-    
-    // 保存位置
-    savePosition(position.y, position.side);
-  }, [isDragging, position]);
+  const handlePointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging) return;
+
+      setIsDragging(false);
+      buttonRef.current?.releasePointerCapture(e.pointerId);
+      dragStartRef.current = null;
+
+      // 保存位置
+      savePosition(position.y, position.side);
+    },
+    [isDragging, position],
+  );
 
   // 处理点击（只在非拖拽时触发）
   const handleClick = useCallback(() => {
@@ -98,7 +115,9 @@ export function FloatingThinkButton({
         onToggle();
       }
     };
+
     window.addEventListener("keydown", handleKeyDown);
+
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onToggle]);
 
@@ -114,7 +133,7 @@ export function FloatingThinkButton({
         "transition-all duration-300 ease-out",
         isDragging && "opacity-80 scale-110 cursor-grabbing",
         !isDragging && "cursor-grab",
-        isOpen && "border-eva-primary shadow-eva-primary/50"
+        isOpen && "border-eva-primary shadow-eva-primary/50",
       )}
       style={{
         top: `${position.y}%`,
@@ -124,16 +143,16 @@ export function FloatingThinkButton({
       }}
       title="Agent 思考历史"
       onClick={handleClick}
+      onPointerCancel={handlePointerUp}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
     >
       {/* 脑部/灯泡图标 */}
       <svg
         className={clsx(
           "w-6 h-6 transition-colors",
-          isOpen ? "text-eva-primary" : "text-eva-text-dim"
+          isOpen ? "text-eva-primary" : "text-eva-text-dim",
         )}
         fill="none"
         stroke="currentColor"
@@ -146,7 +165,7 @@ export function FloatingThinkButton({
           strokeWidth={2}
         />
       </svg>
-      
+
       {/* 新消息指示器 */}
       {hasNew && !isOpen && (
         <span className="absolute -top-1 -right-1 w-3 h-3 bg-eva-primary rounded-full animate-pulse" />

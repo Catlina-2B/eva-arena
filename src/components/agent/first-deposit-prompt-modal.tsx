@@ -10,53 +10,53 @@ interface FirstDepositPromptModalProps {
 // Terminal/Command Line Icon for the modal
 const TerminalIcon = () => (
   <svg
-    width="32"
+    className="text-eva-primary"
+    fill="none"
     height="32"
     viewBox="0 0 32 32"
-    fill="none"
-    className="text-eva-primary"
+    width="32"
   >
     {/* Terminal window */}
     <rect
-      x="4"
-      y="6"
-      width="24"
+      fill="none"
       height="20"
       rx="2"
       stroke="currentColor"
       strokeWidth="1.5"
-      fill="none"
+      width="24"
+      x="4"
+      y="6"
     />
     {/* Prompt arrow > */}
     <path
       d="M9 16L13 20M9 16L13 12"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
     {/* Cursor underscore _ */}
     <line
-      x1="16"
-      y1="20"
-      x2="22"
-      y2="20"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
+      strokeWidth="2"
+      x1="16"
+      x2="22"
+      y1="20"
+      y2="20"
     />
   </svg>
 );
 
 // Close Icon
 const CloseIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+  <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
     <path
       d="M12 4L4 12M4 4L12 12"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.5"
     />
   </svg>
 );
@@ -64,18 +64,18 @@ const CloseIcon = () => (
 // Download/Deposit Arrow Icon
 const DepositArrowIcon = () => (
   <svg
-    width="16"
+    className="inline-block mr-2"
+    fill="none"
     height="16"
     viewBox="0 0 16 16"
-    fill="none"
-    className="inline-block mr-2"
+    width="16"
   >
     <path
       d="M8 3V13M8 13L4 9M8 13L12 9"
       stroke="currentColor"
-      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="2"
     />
   </svg>
 );
@@ -142,8 +142,8 @@ export function FirstDepositPromptModal({
 
           {/* Close Button */}
           <button
-            type="button"
             className="absolute top-4 right-4 text-[#4b5563] hover:text-white transition-colors"
+            type="button"
             onClick={handleClose}
           >
             <CloseIcon />
@@ -173,8 +173,8 @@ export function FirstDepositPromptModal({
 
             {/* Deposit Button */}
             <button
-              type="button"
               className="w-full h-12 bg-eva-primary text-eva-dark text-sm font-semibold uppercase tracking-[0.15em] hover:bg-eva-primary/90 transition-all flex items-center justify-center"
+              type="button"
               onClick={handleDeposit}
             >
               <DepositArrowIcon />
@@ -183,8 +183,8 @@ export function FirstDepositPromptModal({
 
             {/* Skip Link */}
             <button
-              type="button"
               className="mt-6 text-eva-text-dim text-xs tracking-[0.15em] uppercase hover:text-white transition-colors font-mono"
+              type="button"
               onClick={handleSkip}
             >
               [ SKIP FOR LATER ]
@@ -195,4 +195,3 @@ export function FirstDepositPromptModal({
     </Fragment>
   );
 }
-

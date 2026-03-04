@@ -9,54 +9,60 @@ interface StartTimingModalProps {
 
 // Robot/Agent Icon for the modal
 const AgentIcon = () => (
-  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" className="text-eva-primary">
+  <svg
+    className="text-eva-primary"
+    fill="none"
+    height="32"
+    viewBox="0 0 32 32"
+    width="32"
+  >
     {/* Robot head outline */}
     <rect
-      x="6"
-      y="10"
-      width="20"
+      fill="none"
       height="16"
       rx="2"
       stroke="currentColor"
       strokeWidth="1.5"
-      fill="none"
+      width="20"
+      x="6"
+      y="10"
     />
     {/* Antenna */}
     <line
-      x1="16"
-      y1="10"
-      x2="16"
-      y2="6"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
+      strokeWidth="1.5"
+      x1="16"
+      x2="16"
+      y1="10"
+      y2="6"
     />
-    <circle cx="16" cy="5" r="1.5" fill="currentColor" />
+    <circle cx="16" cy="5" fill="currentColor" r="1.5" />
     {/* Eyes */}
-    <rect x="10" y="15" width="4" height="3" rx="0.5" fill="currentColor" />
-    <rect x="18" y="15" width="4" height="3" rx="0.5" fill="currentColor" />
+    <rect fill="currentColor" height="3" rx="0.5" width="4" x="10" y="15" />
+    <rect fill="currentColor" height="3" rx="0.5" width="4" x="18" y="15" />
     {/* Mouth/Speaker grille */}
     <line
-      x1="11"
-      y1="22"
-      x2="21"
-      y2="22"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
+      strokeWidth="1.5"
+      x1="11"
+      x2="21"
+      y1="22"
+      y2="22"
     />
   </svg>
 );
 
 // Close Icon
 const CloseIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+  <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
     <path
       d="M12 4L4 12M4 4L12 12"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.5"
     />
   </svg>
 );
@@ -117,10 +123,10 @@ export function StartTimingModal({
 
           {/* Close Button */}
           <button
-            type="button"
             className="absolute top-4 right-4 text-[#4b5563] hover:text-white transition-colors"
-            onClick={onClose}
             disabled={isLoading}
+            type="button"
+            onClick={onClose}
           >
             <CloseIcon />
           </button>
@@ -155,18 +161,18 @@ export function StartTimingModal({
             {/* Action Buttons */}
             <div className="w-full flex flex-row gap-3">
               <button
-                type="button"
                 className="flex-1 h-12 bg-transparent border border-eva-primary text-eva-primary text-xs font-semibold uppercase tracking-[0.15em] hover:bg-eva-primary/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={handleSelectNow}
                 disabled={isLoading}
+                type="button"
+                onClick={handleSelectNow}
               >
                 {isLoading ? "PROCESSING..." : "RIGHT NOW"}
               </button>
               <button
-                type="button"
                 className="flex-1 h-12 bg-eva-primary text-eva-dark text-xs font-semibold uppercase tracking-[0.15em] hover:bg-eva-primary-dim transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={() => !isLoading && onSelectTiming("next")}
                 disabled={isLoading}
+                type="button"
+                onClick={() => !isLoading && onSelectTiming("next")}
               >
                 NEXT ROUND
               </button>
@@ -177,4 +183,3 @@ export function StartTimingModal({
     </Fragment>
   );
 }
-

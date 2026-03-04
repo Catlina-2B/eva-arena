@@ -87,11 +87,15 @@ apiClient.interceptors.response.use(
       } else if (apiResponse.code === TOKEN_EXPIRED_CODE) {
         // Token expired, logout and reject
         const { logout } = useAuthStore.getState();
+
         logout();
 
         return Promise.reject({
           code: apiResponse.code,
-          message: apiResponse.msg || apiResponse.message || "Token expired, please login again",
+          message:
+            apiResponse.msg ||
+            apiResponse.message ||
+            "Token expired, please login again",
           status: response.status,
         } as ApiError);
       } else {
@@ -161,7 +165,10 @@ apiClient.interceptors.response.use(
     const apiError: ApiError = {
       code: error.response?.data?.code ?? -1,
       message:
-        error.response?.data?.msg || error.response?.data?.message || error.message || "Network error",
+        error.response?.data?.msg ||
+        error.response?.data?.message ||
+        error.message ||
+        "Network error",
       status: error.response?.status,
     };
 

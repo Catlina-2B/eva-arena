@@ -125,7 +125,10 @@ export const agentApi = {
    * @param id - Agent ID
    * @param immediate - When activating: true = start immediately, false = wait for next round
    */
-  toggleStatus: async (id: string, immediate?: boolean): Promise<AgentPanelDto> => {
+  toggleStatus: async (
+    id: string,
+    immediate?: boolean,
+  ): Promise<AgentPanelDto> => {
     const response = await apiClient.patch<AgentPanelDto>(
       `/api/agents/${id}/toggle`,
       { immediate },
@@ -245,6 +248,7 @@ export const agentApi = {
    */
   uploadAvatar: async (file: File): Promise<AvatarUploadResponseDto> => {
     const formData = new FormData();
+
     formData.append("file", file);
 
     const response = await apiClient.post<AvatarUploadResponseDto>(

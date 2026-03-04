@@ -30,6 +30,7 @@ export function useAgentThinkReason(turnkeyAddress: string | undefined) {
   useEffect(() => {
     if (!turnkeyAddress) {
       setStatus("idle");
+
       return;
     }
 

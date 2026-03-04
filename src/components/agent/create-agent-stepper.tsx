@@ -8,7 +8,13 @@ interface StepperProps {
   onBack: () => void;
 }
 
-function StepIndicator({ step, currentStep }: { step: number; currentStep: number }) {
+function StepIndicator({
+  step,
+  currentStep,
+}: {
+  step: number;
+  currentStep: number;
+}) {
   const isActive = step === currentStep;
   const isCompleted = step < currentStep;
 
@@ -24,8 +30,14 @@ function StepIndicator({ step, currentStep }: { step: number; currentStep: numbe
         }`}
       >
         {isCompleted ? (
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <svg fill="none" height="12" viewBox="0 0 12 12" width="12">
+            <path
+              d="M2.5 6L5 8.5L9.5 3.5"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.5"
+            />
           </svg>
         ) : (
           step
@@ -33,7 +45,11 @@ function StepIndicator({ step, currentStep }: { step: number; currentStep: numbe
       </div>
       <span
         className={`text-xs font-medium uppercase tracking-wider transition-colors ${
-          isActive ? "text-white" : isCompleted ? "text-[#6ce182]" : "text-[#6b7280]"
+          isActive
+            ? "text-white"
+            : isCompleted
+              ? "text-[#6ce182]"
+              : "text-[#6b7280]"
         }`}
       >
         {STEPS[step - 1]}
@@ -52,16 +68,20 @@ function StepConnector({ isCompleted }: { isCompleted: boolean }) {
   );
 }
 
-export function CreateAgentStepper({ currentStep, children, onBack }: StepperProps) {
+export function CreateAgentStepper({
+  currentStep,
+  children,
+  onBack,
+}: StepperProps) {
   return (
     <div className="flex flex-col gap-8">
       {/* Progress Bar */}
       <div className="flex items-center gap-3">
-        <StepIndicator step={1} currentStep={currentStep} />
+        <StepIndicator currentStep={currentStep} step={1} />
         <StepConnector isCompleted={currentStep > 1} />
-        <StepIndicator step={2} currentStep={currentStep} />
+        <StepIndicator currentStep={currentStep} step={2} />
         <StepConnector isCompleted={currentStep > 2} />
-        <StepIndicator step={3} currentStep={currentStep} />
+        <StepIndicator currentStep={currentStep} step={3} />
       </div>
 
       {/* Step Content */}

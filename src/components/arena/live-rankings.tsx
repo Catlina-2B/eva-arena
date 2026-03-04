@@ -1,35 +1,35 @@
-import { useState } from "react";
-
 import type { AgentRanking } from "@/types";
 
+import { useState } from "react";
 import clsx from "clsx";
+
+import { AgentDetailModal, type AgentDetailData } from "./agent-detail-modal";
 
 import { RankBadge } from "@/components/ui";
 import { HeartFilledIcon } from "@/components/icons";
-import { AgentDetailModal, type AgentDetailData } from "./agent-detail-modal";
 
 // System Idle icon for empty state
 const SystemIdleIcon = () => (
   <svg
-    width="24"
+    fill="none"
     height="24"
     viewBox="0 0 24 24"
-    fill="none"
+    width="24"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <path d="M12 6V18" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" />
-    <path d="M8 10V18" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" />
-    <path d="M16 8V18" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" />
+    <path d="M12 6V18" stroke="#6B7280" strokeLinecap="round" strokeWidth="2" />
+    <path d="M8 10V18" stroke="#6B7280" strokeLinecap="round" strokeWidth="2" />
+    <path d="M16 8V18" stroke="#6B7280" strokeLinecap="round" strokeWidth="2" />
   </svg>
 );
 
 // Info icon for footer
 const InfoIcon = () => (
   <svg
-    width="12"
+    fill="none"
     height="12"
     viewBox="0 0 12 12"
-    fill="none"
+    width="12"
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
@@ -83,14 +83,17 @@ export function LiveRankings({
 }: LiveRankingsProps) {
   // Modal state
   const [selectedAgent, setSelectedAgent] = useState<AgentRanking | null>(null);
-  const [agentDetailData, setAgentDetailData] = useState<AgentDetailData | null>(null);
+  const [agentDetailData, setAgentDetailData] =
+    useState<AgentDetailData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   // Collapse state - when collapsed, only show user's agent if participating
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Find user's agent in rankings (if in top 3)
-  const userAgentInRankings = rankings.find(agent => agent.isCurrentUser || agent.isOwned);
+  const userAgentInRankings = rankings.find(
+    (agent) => agent.isCurrentUser || agent.isOwned,
+  );
 
   // Determine if user has participated (either in top 3 or outside top 3)
   const userHasParticipated = !!userAgentInRankings || !!currentUser;
@@ -113,6 +116,7 @@ export function LiveRankings({
     if (onLoadAgentDetail) {
       try {
         const data = await onLoadAgentDetail(agent.agentId);
+
         setAgentDetailData(data);
       } catch (error) {
         console.error("Failed to load agent detail:", error);
@@ -128,10 +132,12 @@ export function LiveRankings({
   };
 
   return (
-    <div className={clsx(
-      "overflow-hidden relative",
-      !embedded && "border border-eva-border"
-    )}>
+    <div
+      className={clsx(
+        "overflow-hidden relative",
+        !embedded && "border border-eva-border",
+      )}
+    >
       {/* Header with collapse button */}
       <div className="flex items-center justify-between px-3 pt-3 pb-2">
         <div className="flex items-center gap-2">
@@ -148,7 +154,7 @@ export function LiveRankings({
           <svg
             className={clsx(
               "w-3 h-3 transition-transform",
-              isCollapsed && "rotate-180"
+              isCollapsed && "rotate-180",
             )}
             fill="none"
             stroke="currentColor"
@@ -278,11 +284,11 @@ export function LiveRankings({
 
       {/* Agent Detail Modal */}
       <AgentDetailModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
         agent={selectedAgent}
-        trenchId={trenchId}
         detailData={agentDetailData}
+        isOpen={isModalOpen}
+        trenchId={trenchId}
+        onClose={handleCloseModal}
       />
     </div>
   );
@@ -305,12 +311,12 @@ function AgentAvatarIcon({ avatar, name }: { avatar?: string; name: string }) {
     <div className="w-8 h-8 rounded border border-eva-border bg-eva-dark overflow-hidden flex items-center justify-center">
       <svg className="w-full h-full" viewBox="0 0 32 32">
         <defs>
-          <linearGradient id="avatar-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="avatar-bg" x1="0%" x2="100%" y1="0%" y2="100%">
             <stop offset="0%" stopColor="#1a1a25" />
             <stop offset="100%" stopColor="#0a0a0f" />
           </linearGradient>
         </defs>
-        <rect fill="url(#avatar-bg)" width="32" height="32" />
+        <rect fill="url(#avatar-bg)" height="32" width="32" />
         <circle cx="16" cy="16" fill="#a855f7" opacity="0.6" r="8" />
         <circle cx="16" cy="16" fill="#e879f9" r="4" />
       </svg>
@@ -328,7 +334,12 @@ interface RankingRowProps {
   onClick?: (agent: AgentRanking) => void;
 }
 
-function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onClick }: RankingRowProps) {
+function RankingRow({
+  agent,
+  isBettingPhase = false,
+  isCurrentUser = false,
+  onClick,
+}: RankingRowProps) {
   const isFirst = agent.rank === 1;
   const isTop3CurrentUser = isCurrentUser && agent.rank <= 3;
 
@@ -344,13 +355,16 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
           className={clsx(
             "flex items-center justify-between p-[13px] transition-colors cursor-pointer",
             isTop3CurrentUser && "border-eva-primary bg-eva-primary/10",
-            "hover:bg-eva-card-hover"
+            "hover:bg-eva-card-hover",
           )}
           onClick={handleClick}
         >
           <div className="flex items-center gap-3">
             <RankBadge rank={agent.rank} />
-            <AgentAvatarIcon avatar={agent.agentAvatar} name={agent.agentName} />
+            <AgentAvatarIcon
+              avatar={agent.agentAvatar}
+              name={agent.agentName}
+            />
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-white">
@@ -390,6 +404,7 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
     if (amount >= 1_000) {
       return `${(amount / 1_000).toFixed(1)}K`;
     }
+
     return amount.toLocaleString();
   };
 
@@ -400,7 +415,7 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
         className={clsx(
           "flex items-center justify-between p-[13px] transition-colors cursor-pointer",
           isTop3CurrentUser && "border-eva-primary bg-eva-primary/10",
-          "hover:bg-eva-card-hover"
+          "hover:bg-eva-card-hover",
         )}
         onClick={handleClick}
       >
@@ -417,7 +432,8 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
               )}
             </div>
             <div className="text-[11px] text-eva-text-dim font-mono">
-              {formatTokenAmount(agent.tokenAmount)} • {agent.supplyPercentage.toFixed(1)}%
+              {formatTokenAmount(agent.tokenAmount)} •{" "}
+              {agent.supplyPercentage.toFixed(1)}%
             </div>
           </div>
         </div>
@@ -426,10 +442,11 @@ function RankingRow({ agent, isBettingPhase = false, isCurrentUser = false, onCl
           <div
             className={clsx(
               "text-sm font-mono font-medium",
-              agent.prizeAmount >= 0 ? "text-[#EAB308]" : "text-eva-danger"
+              agent.prizeAmount >= 0 ? "text-[#EAB308]" : "text-eva-danger",
             )}
           >
-            {agent.prizeAmount >= 0 ? "+" : ""}{agent.prizeAmount.toFixed(2)} SOL
+            {agent.prizeAmount >= 0 ? "+" : ""}
+            {agent.prizeAmount.toFixed(2)} SOL
           </div>
           <div className="text-[10px] text-eva-text-dim font-mono uppercase tracking-wider">
             Prize

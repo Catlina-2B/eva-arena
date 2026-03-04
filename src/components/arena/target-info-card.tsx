@@ -14,10 +14,10 @@ export function TargetInfoCard({ round }: TargetInfoCardProps) {
         <div className="flex items-center gap-4">
           {/* Token Avatar */}
           <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-eva-secondary/30 to-eva-primary/30 flex items-center justify-center border border-eva-border overflow-hidden">
-            <img 
-              src="/images/trench.png" 
-              alt="Trench" 
+            <img
+              alt="Trench"
               className="w-full h-full object-cover"
+              src="/images/trench.png"
             />
           </div>
 

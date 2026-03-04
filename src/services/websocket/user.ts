@@ -5,6 +5,7 @@ import type {
 } from "@/types/websocket";
 
 import { trenchSocketClient } from "./client";
+
 import { WsEventType } from "@/types/websocket";
 
 /**
@@ -38,8 +39,13 @@ export function subscribeUser(
 
   // Set up event listeners
   // Event format: { event: "agentThinkReason", data: {...}, timestamp: number }
-  const handleAgentThinkReason = (msg: { event: string; data: AgentThinkReasonEventDto; timestamp: number }) => {
+  const handleAgentThinkReason = (msg: {
+    event: string;
+    data: AgentThinkReasonEventDto;
+    timestamp: number;
+  }) => {
     const data = msg.data;
+
     console.log("[UserSocket] agentThinkReason received:", data.status, data);
     handlers.onAgentThinkReason?.(data);
   };

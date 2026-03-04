@@ -6,14 +6,15 @@ import { Fragment, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
 import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+
+import { ReasoningModal } from "./reasoning-modal";
+import { getSavedPosition } from "./floating-think-button";
 
 import { useThinkReasonsInfinite, thinkReasonKeys } from "@/hooks";
 import { useAuthStore } from "@/stores/auth";
 import { subscribeUser } from "@/services/websocket";
 import { EvaBadge } from "@/components/ui";
-import { ReasoningModal } from "./reasoning-modal";
-import { getSavedPosition } from "./floating-think-button";
-import { useState } from "react";
 
 interface ThinkListPanelProps {
   isOpen: boolean;
@@ -36,14 +37,16 @@ function formatRelativeTime(dateStr: string): string {
   if (diffMin < 60) return `${diffMin}m ago`;
   if (diffHour < 24) return `${diffHour}h ago`;
   if (diffDay < 7) return `${diffDay}d ago`;
-  
+
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 // 截断内容
 function truncateContent(content: string, maxLength: number = 60): string {
   const firstLine = content.split("\n")[0];
+
   if (firstLine.length <= maxLength) return firstLine;
+
   return firstLine.slice(0, maxLength) + "...";
 }
 
@@ -62,14 +65,22 @@ function thinkReasonToActivity(reason: ThinkReasonDto): ActivityItem {
     reason: {
       id: reason.id,
       content: reason.content,
-      action: reason.action || (reason.status === "ACTION" ? "Execute Trade" : "Hold Position"),
+      action:
+        reason.action ||
+        (reason.status === "ACTION" ? "Execute Trade" : "Hold Position"),
       createdAt: reason.createdAt,
     },
   };
 }
 
-export function ThinkListPanel({ isOpen, onClose, currentTrenchId }: ThinkListPanelProps) {
-  const [selectedReason, setSelectedReason] = useState<ThinkReasonDto | null>(null);
+export function ThinkListPanel({
+  isOpen,
+  onClose,
+  currentTrenchId,
+}: ThinkListPanelProps) {
+  const [selectedReason, setSelectedReason] = useState<ThinkReasonDto | null>(
+    null,
+  );
   const [isReasoningModalOpen, setIsReasoningModalOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -83,25 +94,33 @@ export function ThinkListPanel({ isOpen, onClose, currentTrenchId }: ThinkListPa
   // 获取思考记录 - 始终启用以支持 WebSocket 实时更新
   const { data, isLoading } = useThinkReasonsInfinite(
     { limit: 100 },
-    { enabled: true }
+    { enabled: true },
   );
 
   // 扁平化所有页面的数据，并筛选当前 round
   const reasons = useMemo(() => {
     if (!data?.pages) return [];
     const allReasons = data.pages.flatMap((page) => page.thinkReasons);
-    
+
     // 如果指定了 currentTrenchId，只显示当前 round 的记录
     if (currentTrenchId) {
-      return allReasons.filter((reason) => reason.trenchId === String(currentTrenchId));
+      return allReasons.filter(
+        (reason) => reason.trenchId === String(currentTrenchId),
+      );
     }
-    
+
     return allReasons;
   }, [data, currentTrenchId]);
 
   // 计算 action 和 inaction 数量
-  const actionCount = useMemo(() => reasons.filter(r => r.status === "ACTION").length, [reasons]);
-  const inactionCount = useMemo(() => reasons.filter(r => r.status === "INACTION").length, [reasons]);
+  const actionCount = useMemo(
+    () => reasons.filter((r) => r.status === "ACTION").length,
+    [reasons],
+  );
+  const inactionCount = useMemo(
+    () => reasons.filter((r) => r.status === "INACTION").length,
+    [reasons],
+  );
 
   // 订阅 WebSocket，实时更新思考记录
   useEffect(() => {
@@ -119,7 +138,8 @@ export function ThinkListPanel({ isOpen, onClose, currentTrenchId }: ThinkListPa
           const phase = event.phase === "bidding" ? "bidding" : "trading";
           const newReason: ThinkReasonDto = {
             id: event.id,
-            userAddress: event.turnkeyAddress || event.userAddress || turnkeyAddress,
+            userAddress:
+              event.turnkeyAddress || event.userAddress || turnkeyAddress,
             trenchId: event.trenchId,
             phase,
             status: event.status === "action" ? "ACTION" : "INACTION",
@@ -137,12 +157,14 @@ export function ThinkListPanel({ isOpen, onClose, currentTrenchId }: ThinkListPa
 
             // 检查是否已存在（避免重复）
             const exists = oldData.pages.some((page) =>
-              page.thinkReasons.some((r) => r.id === newReason.id)
+              page.thinkReasons.some((r) => r.id === newReason.id),
             );
+
             if (exists) return oldData;
 
             // 将新数据插入到第一页的最前面
             const newPages = [...oldData.pages];
+
             if (newPages.length > 0) {
               newPages[0] = {
                 ...newPages[0],
@@ -174,6 +196,7 @@ export function ThinkListPanel({ isOpen, onClose, currentTrenchId }: ThinkListPa
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         // 检查是否点击了浮动按钮
         const target = e.target as HTMLElement;
+
         if (target.closest("[data-think-button]")) return;
         onClose();
       }
@@ -213,7 +236,7 @@ export function ThinkListPanel({ isOpen, onClose, currentTrenchId }: ThinkListPa
           "bg-eva-darker border border-eva-border rounded-lg",
           "shadow-2xl shadow-black/50",
           "overflow-hidden",
-          "animate-fade-in"
+          "animate-fade-in",
         )}
         style={panelStyle}
       >
@@ -226,8 +249,18 @@ export function ThinkListPanel({ isOpen, onClose, currentTrenchId }: ThinkListPa
             className="p-1 text-eva-text-dim hover:text-eva-text transition-colors"
             onClick={onClose}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M6 18L18 6M6 6l12 12"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+              />
             </svg>
           </button>
         </div>
@@ -259,10 +292,9 @@ export function ThinkListPanel({ isOpen, onClose, currentTrenchId }: ThinkListPa
             </div>
           ) : reasons.length === 0 ? (
             <div className="text-center py-8 text-eva-text-dim text-sm">
-              {currentTrenchId 
+              {currentTrenchId
                 ? "No thinking records for this round yet"
-                : "No thinking records yet"
-              }
+                : "No thinking records yet"}
             </div>
           ) : (
             <div>
@@ -281,7 +313,9 @@ export function ThinkListPanel({ isOpen, onClose, currentTrenchId }: ThinkListPa
                       {formatRelativeTime(reason.createdAt)}
                     </span>
                     <EvaBadge
-                      variant={reason.status === "ACTION" ? "success" : "default"}
+                      variant={
+                        reason.status === "ACTION" ? "success" : "default"
+                      }
                     >
                       {reason.status}
                     </EvaBadge>
@@ -304,7 +338,8 @@ export function ThinkListPanel({ isOpen, onClose, currentTrenchId }: ThinkListPa
               {/* 列表底部说明 */}
               {reasons.length > 0 && (
                 <div className="text-center py-3 text-[10px] text-eva-text-dim font-mono">
-                  {reasons.length} record{reasons.length > 1 ? "s" : ""} in this round
+                  {reasons.length} record{reasons.length > 1 ? "s" : ""} in this
+                  round
                 </div>
               )}
             </div>
@@ -314,13 +349,13 @@ export function ThinkListPanel({ isOpen, onClose, currentTrenchId }: ThinkListPa
 
       {/* ReasoningModal */}
       <ReasoningModal
+        activity={selectedReason ? thinkReasonToActivity(selectedReason) : null}
         isOpen={isReasoningModalOpen}
         onClose={() => {
           setIsReasoningModalOpen(false);
         }}
-        activity={selectedReason ? thinkReasonToActivity(selectedReason) : null}
       />
     </Fragment>,
-    document.body
+    document.body,
   );
 }

@@ -1,55 +1,58 @@
+import type { StrategyOptimizePhase, BehaviorChangeSummary } from "@/types/api";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
 
-import { useOptimizeStrategy, useUpdateAgent } from "@/hooks/use-agents";
-import type { StrategyOptimizePhase } from "@/types/api";
 import { PromptDiff, parsePromptDiff, type DiffLine } from "./prompt-diff";
+import { BehaviorChangeCard } from "./behavior-change-card";
+
+import { useOptimizeStrategy, useUpdateAgent } from "@/hooks/use-agents";
 
 // SVG Icons
 const CloseIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+  <svg fill="none" height="14" viewBox="0 0 14 14" width="14">
     <path
       d="M1 1L13 13M1 13L13 1"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
+      strokeWidth="1.5"
     />
   </svg>
 );
 
 const CheckIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+  <svg fill="none" height="14" viewBox="0 0 14 14" width="14">
     <path
       d="M2 7L5.5 10.5L12 4"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.5"
     />
   </svg>
 );
 
 const SendIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+  <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
     <path
       d="M14.5 1.5L7 9M14.5 1.5L10 14.5L7 9M14.5 1.5L1.5 6L7 9"
       stroke="currentColor"
-      strokeWidth="1.2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.2"
     />
   </svg>
 );
 
 const AIIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <rect width="20" height="20" rx="4" fill="#1a1a2e" />
+  <svg fill="none" height="20" viewBox="0 0 20 20" width="20">
+    <rect fill="#1a1a2e" height="20" rx="4" width="20" />
     <path
       d="M6 8H14M6 12H11"
       stroke="#6ce182"
-      strokeWidth="1.5"
       strokeLinecap="round"
+      strokeWidth="1.5"
     />
   </svg>
 );
@@ -57,10 +60,10 @@ const AIIcon = () => (
 const LoadingSpinner = ({ size = 16 }: { size?: number }) => (
   <svg
     className="animate-spin"
-    width={size}
+    fill="none"
     height={size}
     viewBox="0 0 24 24"
-    fill="none"
+    width={size}
   >
     <circle
       cx="12"
@@ -73,8 +76,8 @@ const LoadingSpinner = ({ size = 16 }: { size?: number }) => (
     <path
       d="M12 2C6.48 2 2 6.48 2 12"
       stroke="currentColor"
-      strokeWidth="3"
       strokeLinecap="round"
+      strokeWidth="3"
     />
   </svg>
 );
@@ -90,6 +93,7 @@ interface UIMessage {
     isValid: boolean;
     optimizedPrompt?: string;
     changeSummary?: string;
+    behaviorChangeSummary?: BehaviorChangeSummary;
     errorMessage?: string;
     suggestions?: string[];
     diffLines?: DiffLine[];
@@ -103,6 +107,8 @@ interface EvolveMeDrawerProps {
   currentBettingPrompt: string;
   currentTradingPrompt: string;
   onSuccess?: () => void;
+  /** Called after a strategy update is successfully applied */
+  onApplySuccess?: () => void;
 }
 
 export function EvolveMeDrawer({
@@ -112,6 +118,7 @@ export function EvolveMeDrawer({
   currentBettingPrompt,
   currentTradingPrompt,
   onSuccess,
+  onApplySuccess,
 }: EvolveMeDrawerProps) {
   const optimizeMutation = useOptimizeStrategy();
   const updateAgentMutation = useUpdateAgent();
@@ -146,6 +153,7 @@ export function EvolveMeDrawer({
       const timer = setTimeout(() => {
         setIsVisible(false);
       }, 300);
+
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
@@ -169,7 +177,7 @@ export function EvolveMeDrawer({
           id: "welcome",
           type: "ai",
           content:
-            "Based on the current round, share your feelings or any feedback:\n\n• \"Should have sold earlier when price peaked\"\n• \"Be more aggressive when volume spikes\"\n• \"Hold longer during uptrends\"\n\nYour suggestions will be automatically merged into your strategy prompt and take effect from the next round.",
+            'Based on the current round, share your feelings or any feedback:\n\n• "Should have sold earlier when price peaked"\n• "Be more aggressive when volume spikes"\n• "Hold longer during uptrends"\n\nYour suggestions will be automatically merged into your strategy prompt and take effect from the next round.',
         },
       ]);
 
@@ -185,6 +193,7 @@ export function EvolveMeDrawer({
 
   const handleSend = useCallback(async () => {
     const input = inputValue.trim();
+
     if (!input || optimizeMutation.isPending) return;
 
     // Add user message
@@ -206,7 +215,10 @@ export function EvolveMeDrawer({
             : currentTradingPrompt;
 
         // 解析 diff
-        const diffLines = parsePromptDiff(currentPrompt, response.optimizedPrompt);
+        const diffLines = parsePromptDiff(
+          currentPrompt,
+          response.optimizedPrompt,
+        );
 
         // 保存待应用的优化
         setPendingOptimize({
@@ -224,6 +236,7 @@ export function EvolveMeDrawer({
             isValid: true,
             optimizedPrompt: response.optimizedPrompt,
             changeSummary: response.changeSummary,
+            behaviorChangeSummary: response.behaviorChangeSummary,
             diffLines,
           },
         });
@@ -232,7 +245,8 @@ export function EvolveMeDrawer({
         addMessage({
           id: `ai-error-${Date.now()}`,
           type: "ai",
-          content: response.errorMessage || "I couldn't understand your request.",
+          content:
+            response.errorMessage || "I couldn't understand your request.",
           optimizeResult: {
             phase: response.phase,
             isValid: false,
@@ -280,6 +294,7 @@ export function EvolveMeDrawer({
 
       setPendingOptimize(null);
       onSuccess?.();
+      onApplySuccess?.();
     } catch (error) {
       console.error("Failed to update agent:", error);
       addMessage({
@@ -288,7 +303,14 @@ export function EvolveMeDrawer({
         content: "Failed to update strategy. Please try again.",
       });
     }
-  }, [pendingOptimize, agentId, updateAgentMutation, addMessage, onSuccess]);
+  }, [
+    pendingOptimize,
+    agentId,
+    updateAgentMutation,
+    addMessage,
+    onSuccess,
+    onApplySuccess,
+  ]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -297,7 +319,7 @@ export function EvolveMeDrawer({
         handleSend();
       }
     },
-    [handleSend]
+    [handleSend],
   );
 
   if (!isVisible) return null;
@@ -311,7 +333,7 @@ export function EvolveMeDrawer({
       <div
         className={clsx(
           "fixed inset-0 bg-black/50 z-[100] transition-opacity duration-300",
-          isAnimating ? "opacity-100" : "opacity-0"
+          isAnimating ? "opacity-100" : "opacity-0",
         )}
         onClick={onClose}
       />
@@ -321,7 +343,7 @@ export function EvolveMeDrawer({
         className={clsx(
           "fixed right-0 top-0 bottom-0 w-[440px] bg-[#080808] border-l border-[#1f2937] z-[101] flex flex-col",
           "transition-transform duration-300 ease-out",
-          isAnimating ? "translate-x-0" : "translate-x-full"
+          isAnimating ? "translate-x-0" : "translate-x-full",
         )}
       >
         {/* Header */}
@@ -337,11 +359,11 @@ export function EvolveMeDrawer({
           <div className="flex items-center gap-1">
             {pendingOptimize && (
               <button
-                type="button"
                 className="flex items-center justify-center w-8 h-8 border border-[rgba(108,225,130,0.5)] text-[#6ce182] hover:bg-[#6ce182]/10 transition-colors disabled:opacity-50"
-                onClick={handleApply}
                 disabled={updateAgentMutation.isPending}
                 title="Apply changes"
+                type="button"
+                onClick={handleApply}
               >
                 {updateAgentMutation.isPending ? (
                   <LoadingSpinner size={14} />
@@ -351,10 +373,10 @@ export function EvolveMeDrawer({
               </button>
             )}
             <button
-              type="button"
               className="flex items-center justify-center w-8 h-8 border border-[rgba(255,255,255,0.1)] text-gray-400 hover:text-white transition-colors"
-              onClick={onClose}
               title="Close"
+              type="button"
+              onClick={onClose}
             >
               <CloseIcon />
             </button>
@@ -365,14 +387,23 @@ export function EvolveMeDrawer({
         <div className="px-4 py-3 bg-[#0d1117] border-b border-[#1f2937]">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-[#6ce182]/10 flex items-center justify-center flex-shrink-0">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 1v6M8 11v.01M8 15a7 7 0 100-14 7 7 0 000 14z" stroke="#6ce182" strokeWidth="1.5" strokeLinecap="round"/>
+              <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
+                <path
+                  d="M8 1v6M8 11v.01M8 15a7 7 0 100-14 7 7 0 000 14z"
+                  stroke="#6ce182"
+                  strokeLinecap="round"
+                  strokeWidth="1.5"
+                />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-white/90 font-medium mb-1">Real-time Feedback Loop</p>
+              <p className="text-xs text-white/90 font-medium mb-1">
+                Real-time Feedback Loop
+              </p>
               <p className="text-[11px] text-white/50 leading-relaxed">
-                Share your trading insights anytime. Your feedback will be analyzed and merged into the agent's strategy, taking effect from the <span className="text-[#6ce182]">next round</span>.
+                Share your trading insights anytime. Your feedback will be
+                analyzed and merged into the agent's strategy, taking effect
+                from the <span className="text-[#6ce182]">next round</span>.
               </p>
             </div>
           </div>
@@ -383,10 +414,10 @@ export function EvolveMeDrawer({
           {messages.map((message) => (
             <MessageBubble
               key={message.id}
+              hasPending={!!pendingOptimize}
+              isApplying={updateAgentMutation.isPending}
               message={message}
               onApply={handleApply}
-              isApplying={updateAgentMutation.isPending}
-              hasPending={!!pendingOptimize}
             />
           ))}
           {optimizeMutation.isPending && (
@@ -407,19 +438,19 @@ export function EvolveMeDrawer({
           <div className="flex items-center gap-2 bg-[#15171e] border border-[#1f2937] rounded px-4 py-3">
             <input
               ref={inputRef}
-              type="text"
               className="flex-1 bg-transparent text-sm text-white placeholder:text-gray-500 focus:outline-none no-focus-ring font-mono"
+              disabled={isLoading}
               placeholder="Tell me how to improve your strategy..."
+              type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={isLoading}
             />
             <button
-              type="button"
               className="p-1 text-[#6ce182] hover:text-[#5bd174] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleSend}
               disabled={!canSend}
+              type="button"
+              onClick={handleSend}
             >
               <SendIcon />
             </button>
@@ -427,7 +458,7 @@ export function EvolveMeDrawer({
         </div>
       </div>
     </>,
-    document.body
+    document.body,
   );
 }
 
@@ -467,42 +498,48 @@ function MessageBubble({
           </p>
         </div>
 
-        {/* Optimize result - Diff view */}
-        {message.optimizeResult?.isValid && message.optimizeResult.diffLines && (
-          <div className="space-y-3">
-            <PromptDiff
-              title={
-                message.optimizeResult.phase === "betting"
-                  ? "Betting Phase Strategy"
-                  : "Trading Phase Strategy"
-              }
-              lines={message.optimizeResult.diffLines}
-              collapsedLines={3}
-            />
+        {/* Optimize result - Behavior changes + Diff view */}
+        {message.optimizeResult?.isValid &&
+          message.optimizeResult.diffLines && (
+            <div className="space-y-3">
+              {message.optimizeResult.behaviorChangeSummary && (
+                <BehaviorChangeCard
+                  summary={message.optimizeResult.behaviorChangeSummary}
+                />
+              )}
+              <PromptDiff
+                collapsedLines={3}
+                lines={message.optimizeResult.diffLines}
+                title={
+                  message.optimizeResult.phase === "betting"
+                    ? "Betting Phase Strategy"
+                    : "Trading Phase Strategy"
+                }
+              />
 
-            {/* Apply button */}
-            {hasPending && (
-              <button
-                type="button"
-                className="flex items-center gap-2 px-4 py-3 bg-[#d357e0] text-black text-sm font-mono font-semibold rounded hover:bg-[#c045cf] transition-colors disabled:opacity-50"
-                onClick={onApply}
-                disabled={isApplying}
-              >
-                {isApplying ? (
-                  <>
-                    <LoadingSpinner size={14} />
-                    Applying...
-                  </>
-                ) : (
-                  <>
-                    <CheckIcon />
-                    Apply for next round
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        )}
+              {/* Apply button */}
+              {hasPending && (
+                <button
+                  className="flex items-center gap-2 px-4 py-3 bg-[#d357e0] text-black text-sm font-mono font-semibold rounded hover:bg-[#c045cf] transition-colors disabled:opacity-50"
+                  disabled={isApplying}
+                  type="button"
+                  onClick={onApply}
+                >
+                  {isApplying ? (
+                    <>
+                      <LoadingSpinner size={14} />
+                      Applying...
+                    </>
+                  ) : (
+                    <>
+                      <CheckIcon />
+                      Apply for next round
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
 
         {/* Error suggestions */}
         {message.optimizeResult &&

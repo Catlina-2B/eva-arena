@@ -28,4 +28,3 @@ export function useFirstDepositPrompt() {
 
   return { shouldShowPrompt, dismissPrompt };
 }
-

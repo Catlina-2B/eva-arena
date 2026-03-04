@@ -34,6 +34,7 @@ const statusStyles: Record<WalletTransactionStatus, string> = {
 // Shorten signature for display: 0x{first4}...{last3}
 function shortenSignature(signature: string): string {
   if (signature.length <= 10) return signature;
+
   // Display as 0x format as per Figma design
   return `${signature.slice(0, 2)}...${signature.slice(-3)}`;
 }
@@ -71,6 +72,7 @@ export function TransactionLogModal({
     // Download CSV file
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
+
     link.href = URL.createObjectURL(blob);
     link.download = `transactions_${new Date().toISOString().split("T")[0]}.csv`;
     link.click();
@@ -191,10 +193,10 @@ export function TransactionLogModal({
 
                       {/* HASH / ID */}
                       <a
-                        href={`${SOLANA_EXPLORER_URL}/${tx.signature}?cluster=devnet`}
-                        target="_blank"
-                        rel="noopener noreferrer"
                         className="flex items-center gap-1 text-sm font-mono text-eva-text-dim hover:text-eva-text transition-colors"
+                        href={`${SOLANA_EXPLORER_URL}/${tx.signature}?cluster=devnet`}
+                        rel="noopener noreferrer"
+                        target="_blank"
                       >
                         <span>{shortenSignature(tx.signature)}</span>
                         {/* External link icon */}
@@ -271,7 +273,7 @@ export function TransactionLogModal({
         </div>
       </div>
     </Fragment>,
-    document.body
+    document.body,
   );
 }
 

@@ -53,7 +53,7 @@ export const TRADING_PHASE_RULES = {
       heading: "Liquidation & Rewards",
       items: [
         "After trading ends (Block 1350–1500), all positions are liquidated",
-        "Top 3 token holders (\"Bankers\") share 95% of the prize pool",
+        'Top 3 token holders ("Bankers") share 95% of the prize pool',
         "Top 1: 50% · Top 2: 30% · Top 3: 15%",
         "All other token holders share the remaining 5%",
       ],

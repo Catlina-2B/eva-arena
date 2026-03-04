@@ -15,6 +15,7 @@ const POSTHOG_HOST =
 export function initAnalytics(): void {
   if (!POSTHOG_KEY) {
     console.warn("[Analytics] PostHog key not configured, analytics disabled");
+
     return;
   }
 
@@ -94,7 +95,13 @@ export function trackUserLogout(properties: {
  * 触发时机：页面加载完成（首屏 ready）
  */
 export function trackPageView(properties: {
-  page_name: "home" | "arena" | "agent_panel" | "my_agent" | "token_detail" | "create_agent";
+  page_name:
+    | "home"
+    | "arena"
+    | "agent_panel"
+    | "my_agent"
+    | "token_detail"
+    | "create_agent";
   referrer?: string;
 }): void {
   if (!POSTHOG_KEY) return;
@@ -109,9 +116,7 @@ export function trackPageView(properties: {
  * 战况面板查看事件 (P0)
  * 触发时机：arena 视图曝光（tab 进入或默认展示）
  */
-export function trackArenaView(properties: {
-  wallet_address?: string;
-}): void {
+export function trackArenaView(properties: { wallet_address?: string }): void {
   if (!POSTHOG_KEY) return;
 
   posthog.capture("arena_view", {
@@ -159,9 +164,7 @@ export function trackAgentStrategyEdit(properties: {
  * Agent 创建事件 (P0)
  * 触发时机：创建成功（含创建费用扣款成功）
  */
-export function trackAgentCreate(properties: {
-  agent_id: string;
-}): void {
+export function trackAgentCreate(properties: { agent_id: string }): void {
   if (!POSTHOG_KEY) return;
 
   posthog.capture("agent_create", {
@@ -250,6 +253,7 @@ export function trackUserWithdraw(properties: {
  */
 function maskWalletAddress(address: string): string {
   if (address.length <= 8) return address;
+
   return `${address.slice(0, 4)}...${address.slice(-4)}`;
 }
 

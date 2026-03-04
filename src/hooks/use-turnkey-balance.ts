@@ -68,4 +68,3 @@ export function useTurnkeyBalance(turnkeyAddress: string | undefined) {
     refetch: fetchInitialBalance,
   };
 }
-

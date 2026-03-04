@@ -1,3 +1,5 @@
+import type { WizardPhase } from "@/types/api";
+
 import { useCallback } from "react";
 
 import {
@@ -6,7 +8,6 @@ import {
   type BettingPresetKey,
 } from "@/constants/strategy-presets";
 import { BettingPhaseFlow } from "@/components/agent/phase-flow-diagrams";
-import type { WizardPhase } from "@/types/api";
 
 interface StepBettingStrategyProps {
   bettingStrategy: string;
@@ -19,29 +20,48 @@ interface StepBettingStrategyProps {
 }
 
 const LinkIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-    <path d="M7.58333 3.79167L8.75 2.625C9.07082 2.30418 9.5 2.125 9.94792 2.125C10.3958 2.125 10.825 2.30418 11.1458 2.625C11.4667 2.94582 11.6458 3.375 11.6458 3.82292C11.6458 4.27083 11.4667 4.7 11.1458 5.02083L8.8125 7.35417C8.49168 7.67499 8.0625 7.85417 7.61458 7.85417C7.16667 7.85417 6.7375 7.67499 6.41667 7.35417" stroke="#6ce182" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M6.41667 10.2083L5.25 11.375C4.92918 11.6958 4.5 11.875 4.05208 11.875C3.60417 11.875 3.175 11.6958 2.85417 11.375C2.53335 11.0542 2.35417 10.625 2.35417 10.1771C2.35417 9.72917 2.53335 9.3 2.85417 8.97917L5.1875 6.64583C5.50832 6.32501 5.9375 6.14583 6.38542 6.14583C6.83333 6.14583 7.2625 6.32501 7.58333 6.64583" stroke="#6ce182" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+  <svg fill="none" height="14" viewBox="0 0 14 14" width="14">
+    <path
+      d="M7.58333 3.79167L8.75 2.625C9.07082 2.30418 9.5 2.125 9.94792 2.125C10.3958 2.125 10.825 2.30418 11.1458 2.625C11.4667 2.94582 11.6458 3.375 11.6458 3.82292C11.6458 4.27083 11.4667 4.7 11.1458 5.02083L8.8125 7.35417C8.49168 7.67499 8.0625 7.85417 7.61458 7.85417C7.16667 7.85417 6.7375 7.67499 6.41667 7.35417"
+      stroke="#6ce182"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.2"
+    />
+    <path
+      d="M6.41667 10.2083L5.25 11.375C4.92918 11.6958 4.5 11.875 4.05208 11.875C3.60417 11.875 3.175 11.6958 2.85417 11.375C2.53335 11.0542 2.35417 10.625 2.35417 10.1771C2.35417 9.72917 2.53335 9.3 2.85417 8.97917L5.1875 6.64583C5.50832 6.32501 5.9375 6.14583 6.38542 6.14583C6.83333 6.14583 7.2625 6.32501 7.58333 6.64583"
+      stroke="#6ce182"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.2"
+    />
   </svg>
 );
 
-
 function PresetButton({
-  label, description, isFirst, isActive, onClick,
+  label,
+  description,
+  isFirst,
+  isActive,
+  onClick,
 }: {
-  label: string; description: string; isFirst: boolean; isActive: boolean; onClick: () => void;
+  label: string;
+  description: string;
+  isFirst: boolean;
+  isActive: boolean;
+  onClick: () => void;
 }) {
   const isPrimary = isFirst || isActive;
 
   return (
     <div className="relative group">
       <button
-        type="button"
         className={`h-8 px-4 text-xs font-medium rounded transition-colors ${
           isPrimary
             ? "bg-[#6ce182] text-black hover:bg-[#5bd174]"
             : "bg-transparent border border-[#374151] text-white hover:border-[#6ce182] hover:bg-[#374151]/30"
         }`}
+        type="button"
         onClick={onClick}
       >
         {label}
@@ -54,9 +74,13 @@ function PresetButton({
 }
 
 export function StepBettingStrategy({
-  bettingStrategy, activeBettingPreset,
-  onBettingStrategyChange, onPresetSelect, onOpenAIDrawer,
-  onBack, onNext,
+  bettingStrategy,
+  activeBettingPreset,
+  onBettingStrategyChange,
+  onPresetSelect,
+  onOpenAIDrawer,
+  onBack,
+  onNext,
 }: StepBettingStrategyProps) {
   const isStepValid = bettingStrategy.trim().length > 0;
 
@@ -64,6 +88,7 @@ export function StepBettingStrategy({
     (key: string) => {
       const presetKey = key as BettingPresetKey;
       const prompt = BETTING_STRATEGY_PRESETS[presetKey];
+
       if (prompt) onPresetSelect(key);
     },
     [onPresetSelect],
@@ -88,18 +113,18 @@ export function StepBettingStrategy({
                 {BETTING_PRESET_BUTTONS.map((preset, index) => (
                   <PresetButton
                     key={preset.key}
-                    label={preset.label}
                     description={preset.description}
-                    isFirst={index === 0 && activeBettingPreset === undefined}
                     isActive={activeBettingPreset === preset.key}
+                    isFirst={index === 0 && activeBettingPreset === undefined}
+                    label={preset.label}
                     onClick={() => handlePresetSelect(preset.key)}
                   />
                 ))}
               </div>
             </div>
             <button
-              type="button"
               className="flex items-center gap-1 h-8 px-4 border border-[#6ce182] rounded text-[#6ce182] text-xs font-semibold uppercase tracking-wider hover:bg-[#6ce182]/10 transition-colors"
+              type="button"
               onClick={() => onOpenAIDrawer("betting")}
             >
               <LinkIcon />
@@ -121,16 +146,16 @@ export function StepBettingStrategy({
       {/* Navigation */}
       <div className="flex items-center justify-between">
         <button
-          type="button"
           className="h-[44px] px-6 border border-[#374151] text-sm font-medium text-[#9ca3af] rounded hover:border-white/30 hover:text-white transition-colors"
+          type="button"
           onClick={onBack}
         >
           BACK
         </button>
         <button
-          type="button"
           className="h-[44px] px-8 bg-[#6ce182] text-sm font-semibold text-black rounded hover:bg-[#5bd174] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           disabled={!isStepValid}
+          type="button"
           onClick={onNext}
         >
           NEXT

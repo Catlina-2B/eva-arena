@@ -1,14 +1,18 @@
+import type { WizardPhase } from "@/types/api";
+
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AIPromptDrawer } from "@/components/agent";
-import { CreateAgentModeSelect, type CreateMode } from "@/components/agent/create-agent-mode-select";
+import {
+  CreateAgentModeSelect,
+  type CreateMode,
+} from "@/components/agent/create-agent-mode-select";
 import { CreateAgentStepper } from "@/components/agent/create-agent-stepper";
 import { StepNameAvatar } from "@/components/agent/steps/step-name-avatar";
 import { StepBettingStrategy } from "@/components/agent/steps/step-betting-strategy";
 import { StepTradingStrategy } from "@/components/agent/steps/step-trading-strategy";
 import DefaultLayout from "@/layouts/default";
-import { EvaButton } from "@/components/ui";
 import {
   useAgentLogos,
   useCreateAgent,
@@ -16,7 +20,6 @@ import {
   useUploadAvatar,
 } from "@/hooks/use-agents";
 import { useAuthStore } from "@/stores/auth";
-import type { WizardPhase } from "@/types/api";
 import {
   BETTING_STRATEGY_PRESETS,
   TRADING_STRATEGY_PRESETS,
@@ -40,50 +43,46 @@ const AVATAR_COLORS = [
 
 // SVG Icons
 const LinkIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+  <svg fill="none" height="14" viewBox="0 0 14 14" width="14">
     <path
       d="M7.58333 3.79167L8.75 2.625C9.07082 2.30418 9.5 2.125 9.94792 2.125C10.3958 2.125 10.825 2.30418 11.1458 2.625C11.4667 2.94582 11.6458 3.375 11.6458 3.82292C11.6458 4.27083 11.4667 4.7 11.1458 5.02083L8.8125 7.35417C8.49168 7.67499 8.0625 7.85417 7.61458 7.85417C7.16667 7.85417 6.7375 7.67499 6.41667 7.35417"
       stroke="#6ce182"
-      strokeWidth="1.2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.2"
     />
     <path
       d="M6.41667 10.2083L5.25 11.375C4.92918 11.6958 4.5 11.875 4.05208 11.875C3.60417 11.875 3.175 11.6958 2.85417 11.375C2.53335 11.0542 2.35417 10.625 2.35417 10.1771C2.35417 9.72917 2.53335 9.3 2.85417 8.97917L5.1875 6.64583C5.50832 6.32501 5.9375 6.14583 6.38542 6.14583C6.83333 6.14583 7.2625 6.32501 7.58333 6.64583"
       stroke="#6ce182"
-      strokeWidth="1.2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.2"
     />
   </svg>
 );
 
 const ClockIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+  <svg fill="none" height="12" viewBox="0 0 12 12" width="12">
     <circle cx="6" cy="6" r="5" stroke="#4B5563" strokeWidth="1.2" />
-    <path d="M6 3V6L8 8" stroke="#4B5563" strokeWidth="1.2" strokeLinecap="round" />
+    <path
+      d="M6 3V6L8 8"
+      stroke="#4B5563"
+      strokeLinecap="round"
+      strokeWidth="1.2"
+    />
   </svg>
 );
 
 const SolanaIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-    <path
-      d="M2.25 8.25L3.75 6.75H9.75L8.25 8.25H2.25Z"
-      fill="white"
-    />
-    <path
-      d="M2.25 3.75L3.75 5.25H9.75L8.25 3.75H2.25Z"
-      fill="white"
-    />
-    <path
-      d="M2.25 6L3.75 4.5H9.75L8.25 6H2.25Z"
-      fill="white"
-    />
+  <svg fill="none" height="12" viewBox="0 0 12 12" width="12">
+    <path d="M2.25 8.25L3.75 6.75H9.75L8.25 8.25H2.25Z" fill="white" />
+    <path d="M2.25 3.75L3.75 5.25H9.75L8.25 3.75H2.25Z" fill="white" />
+    <path d="M2.25 6L3.75 4.5H9.75L8.25 6H2.25Z" fill="white" />
   </svg>
 );
 
 const CreationFeeIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+  <svg fill="none" height="12" viewBox="0 0 12 12" width="12">
     <path
       d="M1 4C1 5.65575 2.34425 7 4 7C5.65575 7 7 5.65575 7 4C7 2.34425 5.65575 1 4 1C2.34425 1 1 2.34425 1 4V4"
       stroke="#D357E0"
@@ -112,26 +111,62 @@ const CreationFeeIcon = () => (
 );
 
 const ChevronDownIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-    <path d="M3 4.5L6 7.5L9 4.5" stroke="#6ce182" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  <svg fill="none" height="12" viewBox="0 0 12 12" width="12">
+    <path
+      d="M3 4.5L6 7.5L9 4.5"
+      stroke="#6ce182"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.5"
+    />
   </svg>
 );
 
 const PlusIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <path d="M12 5V19M5 12H19" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  <svg fill="none" height="24" viewBox="0 0 24 24" width="24">
+    <path
+      d="M12 5V19M5 12H19"
+      stroke="white"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+    />
   </svg>
 );
 
 const LoadingSpinner = () => (
-  <svg className="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="10" stroke="white" strokeOpacity="0.25" strokeWidth="3" />
-    <path d="M12 2C6.48 2 2 6.48 2 12" stroke="white" strokeWidth="3" strokeLinecap="round" />
+  <svg
+    className="animate-spin"
+    fill="none"
+    height="24"
+    viewBox="0 0 24 24"
+    width="24"
+  >
+    <circle
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="white"
+      strokeOpacity="0.25"
+      strokeWidth="3"
+    />
+    <path
+      d="M12 2C6.48 2 2 6.48 2 12"
+      stroke="white"
+      strokeLinecap="round"
+      strokeWidth="3"
+    />
   </svg>
 );
 
 // Supported image types and max file size
-const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+const SUPPORTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 // Avatar item component with skeleton loading
@@ -156,7 +191,6 @@ function AvatarItem({
 
   return (
     <button
-      type="button"
       className={`aspect-square w-full overflow-hidden transition-all duration-200 relative ${
         isSelected
           ? "border-2 border-[#6ce182]"
@@ -164,6 +198,7 @@ function AvatarItem({
       }`}
       style={{ backgroundColor: bgColor }}
       title={`Avatar ${index + 1}`}
+      type="button"
       onClick={onSelect}
     >
       {!isLoaded && (
@@ -199,17 +234,20 @@ function AddAvatarButton({
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (!file) return;
 
     // Validate file type
     if (!SUPPORTED_IMAGE_TYPES.includes(file.type)) {
       alert("不支持的文件格式，请上传 JPG、PNG、GIF 或 WebP 格式的图片");
+
       return;
     }
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       alert("文件大小超过限制，请上传小于 5MB 的图片");
+
       return;
     }
 
@@ -223,24 +261,24 @@ function AddAvatarButton({
     <div className="relative">
       <input
         ref={fileInputRef}
-        type="file"
         accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
         className="hidden"
-        onChange={handleFileChange}
         disabled={isUploading}
+        type="file"
+        onChange={handleFileChange}
       />
       <button
-        type="button"
         className={`aspect-square w-full bg-[#080a12] border flex items-center justify-center transition-colors ${
-          isUploading 
-            ? "border-[#6ce182]/50 cursor-wait" 
-            : uploadError 
-              ? "border-red-500 hover:border-red-400" 
+          isUploading
+            ? "border-[#6ce182]/50 cursor-wait"
+            : uploadError
+              ? "border-red-500 hover:border-red-400"
               : "border-white/10 hover:border-white/30"
         }`}
-        onClick={handleClick}
         disabled={isUploading}
         title={uploadError || "上传自定义头像"}
+        type="button"
+        onClick={handleClick}
       >
         {isUploading ? <LoadingSpinner /> : <PlusIcon />}
       </button>
@@ -249,13 +287,19 @@ function AddAvatarButton({
 }
 
 // AI Generated Button Component
-function AIGeneratedButton({ onClick, disabled }: { onClick?: () => void; disabled?: boolean }) {
+function AIGeneratedButton({
+  onClick,
+  disabled,
+}: {
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
   return (
     <button
-      type="button"
       className="flex items-center gap-1 h-8 px-4 border border-[#6ce182] rounded text-[#6ce182] text-xs font-semibold uppercase tracking-wider hover:bg-[#6ce182]/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      onClick={onClick}
       disabled={disabled}
+      type="button"
+      onClick={onClick}
     >
       <LinkIcon />
       <span>AI-GENERATED</span>
@@ -277,15 +321,15 @@ function StrategyPresetButton({
 }) {
   // First button or active button uses green background
   const isPrimary = isFirst || isActive;
-  
+
   return (
     <button
-      type="button"
       className={`h-8 px-4 text-xs font-medium rounded transition-colors ${
         isPrimary
-          ? 'bg-[#6ce182] text-black hover:bg-[#5bd174]'
-          : 'bg-transparent border border-[#374151] text-white hover:border-[#6ce182] hover:bg-[#374151]/30'
+          ? "bg-[#6ce182] text-black hover:bg-[#5bd174]"
+          : "bg-transparent border border-[#374151] text-white hover:border-[#6ce182] hover:bg-[#374151]/30"
       }`}
+      type="button"
       onClick={onClick}
     >
       {label}
@@ -312,8 +356,8 @@ function StrategyPresetButtons({
           label={preset.label}
           // Only show first button as default when activePreset is strictly undefined
           // When null (AI generated), no button should be highlighted
-          isFirst={index === 0 && activePreset === undefined}
           isActive={activePreset === preset.key}
+          isFirst={index === 0 && activePreset === undefined}
           onClick={() => onSelect(preset.key)}
         />
       ))}
@@ -364,19 +408,25 @@ export default function CreateAgentPage() {
 
   // AI Prompt Drawer state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [activeDrawerPhase, setActiveDrawerPhase] = useState<WizardPhase>("betting");
+  const [activeDrawerPhase, setActiveDrawerPhase] =
+    useState<WizardPhase>("betting");
 
   // Strategy preset state
   // undefined = initial state, show first button as default
   // null = explicitly no selection (e.g., AI generated), show no button highlighted
   // string = a specific preset is selected
-  const [activeBettingPreset, setActiveBettingPreset] = useState<BettingPresetKey | null | undefined>();
-  const [activeTradingPreset, setActiveTradingPreset] = useState<TradingPresetKey | null | undefined>();
+  const [activeBettingPreset, setActiveBettingPreset] = useState<
+    BettingPresetKey | null | undefined
+  >();
+  const [activeTradingPreset, setActiveTradingPreset] = useState<
+    TradingPresetKey | null | undefined
+  >();
 
   // Handle betting preset selection
   const handleBettingPresetSelect = useCallback((key: string) => {
     const presetKey = key as BettingPresetKey;
     const prompt = BETTING_STRATEGY_PRESETS[presetKey];
+
     if (prompt) {
       setBettingStrategy(prompt);
       setActiveBettingPreset(presetKey);
@@ -388,6 +438,7 @@ export default function CreateAgentPage() {
   const handleTradingPresetSelect = useCallback((key: string) => {
     const presetKey = key as TradingPresetKey;
     const prompt = TRADING_STRATEGY_PRESETS[presetKey];
+
     if (prompt) {
       setTradingStrategy(prompt);
       setActiveTradingPreset(presetKey);
@@ -402,19 +453,22 @@ export default function CreateAgentPage() {
   }, []);
 
   // Handle AI Prompt confirmation
-  const handleAIPromptConfirm = useCallback((prompt: string) => {
-    if (activeDrawerPhase === "betting") {
-      setBettingStrategy(prompt);
-      setHasUserEditedBetting(true);
-      // Set to null to explicitly indicate no preset selected (AI generated)
-      setActiveBettingPreset(null);
-    } else {
-      setTradingStrategy(prompt);
-      setHasUserEditedTrading(true);
-      // Set to null to explicitly indicate no preset selected (AI generated)
-      setActiveTradingPreset(null);
-    }
-  }, [activeDrawerPhase]);
+  const handleAIPromptConfirm = useCallback(
+    (prompt: string) => {
+      if (activeDrawerPhase === "betting") {
+        setBettingStrategy(prompt);
+        setHasUserEditedBetting(true);
+        // Set to null to explicitly indicate no preset selected (AI generated)
+        setActiveBettingPreset(null);
+      } else {
+        setTradingStrategy(prompt);
+        setHasUserEditedTrading(true);
+        // Set to null to explicitly indicate no preset selected (AI generated)
+        setActiveTradingPreset(null);
+      }
+    },
+    [activeDrawerPhase],
+  );
 
   // Pre-fill strategies with templates when loaded
   useEffect(() => {
@@ -434,19 +488,28 @@ export default function CreateAgentPage() {
   }, [logosData, selectedLogoUrl]);
 
   // Handle avatar upload
-  const handleAvatarUpload = useCallback(async (file: File) => {
-    try {
-      const result = await uploadAvatarMutation.mutateAsync(file);
-      // Add the uploaded URL to custom avatars and select it
-      setCustomAvatars((prev) => [...prev, result.url]);
-      setSelectedLogoUrl(result.url);
-    } catch (error) {
-      console.error("Failed to upload avatar:", error);
-    }
-  }, [uploadAvatarMutation]);
+  const handleAvatarUpload = useCallback(
+    async (file: File) => {
+      try {
+        const result = await uploadAvatarMutation.mutateAsync(file);
+
+        // Add the uploaded URL to custom avatars and select it
+        setCustomAvatars((prev) => [...prev, result.url]);
+        setSelectedLogoUrl(result.url);
+      } catch (error) {
+        console.error("Failed to upload avatar:", error);
+      }
+    },
+    [uploadAvatarMutation],
+  );
 
   const handleCreateAgent = async () => {
-    if (!agentName.trim() || !selectedLogoUrl || !bettingStrategy.trim() || !tradingStrategy.trim()) {
+    if (
+      !agentName.trim() ||
+      !selectedLogoUrl ||
+      !bettingStrategy.trim() ||
+      !tradingStrategy.trim()
+    ) {
       return;
     }
 
@@ -485,16 +548,21 @@ export default function CreateAgentPage() {
   }, []);
 
   const isFormValid =
-    agentName.trim() && selectedLogoUrl && bettingStrategy.trim() && tradingStrategy.trim();
+    agentName.trim() &&
+    selectedLogoUrl &&
+    bettingStrategy.trim() &&
+    tradingStrategy.trim();
   const isSubmitting = createAgentMutation.isPending;
 
   // Get selected avatar index for background color and large preview
-  const selectedIndex = logosData?.small?.findIndex(url => url === selectedLogoUrl) ?? 0;
+  const selectedIndex =
+    logosData?.small?.findIndex((url) => url === selectedLogoUrl) ?? 0;
   const selectedBgColor = AVATAR_COLORS[selectedIndex % AVATAR_COLORS.length];
   // Get the large version of the selected avatar for the preview
-  const selectedLargeLogoUrl = selectedIndex >= 0 && logosData?.large?.[selectedIndex] 
-    ? logosData.large[selectedIndex] 
-    : selectedLogoUrl;
+  const selectedLargeLogoUrl =
+    selectedIndex >= 0 && logosData?.large?.[selectedIndex]
+      ? logosData.large[selectedIndex]
+      : selectedLogoUrl;
 
   // --- Render: Mode Select ---
   if (createMode === "select") {
@@ -508,8 +576,8 @@ export default function CreateAgentPage() {
         />
         <AIPromptDrawer
           isOpen={isDrawerOpen}
-          onClose={() => setIsDrawerOpen(false)}
           phase={activeDrawerPhase}
+          onClose={() => setIsDrawerOpen(false)}
           onConfirm={handleAIPromptConfirm}
         />
       </DefaultLayout>
@@ -530,11 +598,11 @@ export default function CreateAgentPage() {
           {beginnerStep === 1 && (
             <StepNameAvatar
               agentName={agentName}
-              selectedLogoUrl={selectedLogoUrl}
               customAvatars={customAvatars}
-              logosData={logosData}
               isLoadingLogos={isLoadingLogos}
               isUploading={uploadAvatarMutation.isPending}
+              logosData={logosData}
+              selectedLogoUrl={selectedLogoUrl}
               uploadError={uploadAvatarMutation.isError}
               onAgentNameChange={setAgentName}
               onAvatarSelect={setSelectedLogoUrl}
@@ -545,39 +613,40 @@ export default function CreateAgentPage() {
           )}
           {beginnerStep === 2 && (
             <StepBettingStrategy
-              bettingStrategy={bettingStrategy}
               activeBettingPreset={activeBettingPreset}
-              onBettingStrategyChange={handleBeginnerBettingChange}
-              onPresetSelect={handleBettingPresetSelect}
-              onOpenAIDrawer={handleOpenAIDrawer}
+              bettingStrategy={bettingStrategy}
               onBack={() => setBeginnerStep(1)}
+              onBettingStrategyChange={handleBeginnerBettingChange}
               onNext={() => setBeginnerStep(3)}
+              onOpenAIDrawer={handleOpenAIDrawer}
+              onPresetSelect={handleBettingPresetSelect}
             />
           )}
           {beginnerStep === 3 && (
             <StepTradingStrategy
-              tradingStrategy={tradingStrategy}
               activeTradingPreset={activeTradingPreset}
-              isSubmitting={isSubmitting}
-              isAuthenticated={isAuthenticated}
               createError={
                 createAgentMutation.isError
-                  ? (createAgentMutation.error as { message?: string })?.message || "Failed to create agent. Please try again."
+                  ? (createAgentMutation.error as { message?: string })
+                      ?.message || "Failed to create agent. Please try again."
                   : null
               }
-              onTradingStrategyChange={handleBeginnerTradingChange}
-              onPresetSelect={handleTradingPresetSelect}
-              onOpenAIDrawer={handleOpenAIDrawer}
+              isAuthenticated={isAuthenticated}
+              isSubmitting={isSubmitting}
+              tradingStrategy={tradingStrategy}
               onBack={() => setBeginnerStep(2)}
+              onOpenAIDrawer={handleOpenAIDrawer}
+              onPresetSelect={handleTradingPresetSelect}
               onSubmit={handleCreateAgent}
+              onTradingStrategyChange={handleBeginnerTradingChange}
             />
           )}
         </CreateAgentStepper>
 
         <AIPromptDrawer
           isOpen={isDrawerOpen}
-          onClose={() => setIsDrawerOpen(false)}
           phase={activeDrawerPhase}
+          onClose={() => setIsDrawerOpen(false)}
           onConfirm={handleAIPromptConfirm}
         />
       </DefaultLayout>
@@ -601,9 +670,9 @@ export default function CreateAgentPage() {
           </div>
 
           {/* Avatar Preview Card */}
-          <div 
+          <div
             className="relative flex-1 min-h-[400px] border border-[#6ce182] overflow-hidden"
-            style={{ background: 'black' }}
+            style={{ background: "black" }}
           >
             {/* Selected Avatar Image (Large version for preview) */}
             {selectedLargeLogoUrl && (
@@ -618,12 +687,12 @@ export default function CreateAgentPage() {
 
         {/* Right Column - Form */}
         <div className="flex-1 flex flex-col gap-6 min-w-0">
-            {/* Avatar Selection */}
+          {/* Avatar Selection */}
           <div className="flex flex-col gap-3">
             <label className="text-xs font-medium text-[#9ca3af] uppercase tracking-wider">
-                Select Avatar
-              </label>
-            
+              Select Avatar
+            </label>
+
             {/* Avatar Grid */}
             <div className="flex flex-col gap-3">
               {isLoadingLogos ? (
@@ -641,75 +710,83 @@ export default function CreateAgentPage() {
                       <div
                         key={`skeleton-2-${index}`}
                         className="aspect-square bg-eva-border/50 animate-pulse"
-                    />
-                  ))}
-                </div>
+                      />
+                    ))}
+                  </div>
                 </>
               ) : (
                 <>
                   {/* First Row - Avatars 1-7 */}
                   <div className="grid grid-cols-7 gap-3">
-                    {logosData?.small?.slice(0, 7).map((url, index) => (
-                    <AvatarItem
-                        key={`avatar-row1-${index}`}
-                      index={index}
-                      isSelected={selectedLogoUrl === url}
-                        bgColor={AVATAR_COLORS[index % AVATAR_COLORS.length]}
-                      url={url}
-                      onSelect={() => setSelectedLogoUrl(url)}
-                    />
-                  ))}
-                </div>
+                    {logosData?.small
+                      ?.slice(0, 7)
+                      .map((url, index) => (
+                        <AvatarItem
+                          key={`avatar-row1-${index}`}
+                          bgColor={AVATAR_COLORS[index % AVATAR_COLORS.length]}
+                          index={index}
+                          isSelected={selectedLogoUrl === url}
+                          url={url}
+                          onSelect={() => setSelectedLogoUrl(url)}
+                        />
+                      ))}
+                  </div>
                   {/* Second Row - Avatars 8-13 + Custom Avatars + Add Button */}
                   <div className="grid grid-cols-7 gap-3">
-                    {logosData?.small?.slice(7, 13).map((url, index) => (
-                      <AvatarItem
-                        key={`avatar-row2-${index}`}
-                        index={index + 7}
-                        isSelected={selectedLogoUrl === url}
-                        bgColor={AVATAR_COLORS[(index + 7) % AVATAR_COLORS.length]}
-                        url={url}
-                        onSelect={() => setSelectedLogoUrl(url)}
-                      />
-                    ))}
+                    {logosData?.small
+                      ?.slice(7, 13)
+                      .map((url, index) => (
+                        <AvatarItem
+                          key={`avatar-row2-${index}`}
+                          bgColor={
+                            AVATAR_COLORS[(index + 7) % AVATAR_COLORS.length]
+                          }
+                          index={index + 7}
+                          isSelected={selectedLogoUrl === url}
+                          url={url}
+                          onSelect={() => setSelectedLogoUrl(url)}
+                        />
+                      ))}
                     {/* Custom uploaded avatars */}
                     {customAvatars.map((url, index) => (
                       <AvatarItem
                         key={`custom-avatar-${index}`}
+                        bgColor="#1a1a2e"
                         index={13 + index}
                         isSelected={selectedLogoUrl === url}
-                        bgColor="#1a1a2e"
                         url={url}
                         onSelect={() => setSelectedLogoUrl(url)}
                       />
                     ))}
                     <AddAvatarButton
-                      onUpload={handleAvatarUpload}
                       isUploading={uploadAvatarMutation.isPending}
-                      uploadError={uploadAvatarMutation.isError ? "上传失败，请重试" : null}
+                      uploadError={
+                        uploadAvatarMutation.isError ? "上传失败，请重试" : null
+                      }
+                      onUpload={handleAvatarUpload}
                     />
                   </div>
                 </>
               )}
             </div>
-            </div>
+          </div>
 
-            {/* Agent Name */}
+          {/* Agent Name */}
           <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold text-[#9ca3af] uppercase tracking-wider">
               Agent Name
             </label>
             <div className="bg-black border border-[#374151]">
               <input
-                type="text"
                 className="w-full px-[17px] py-[19px] bg-transparent text-sm font-medium text-white placeholder:text-[#4b5563] focus:outline-none"
-                placeholder="e.g. Eva.1"
                 maxLength={20}
+                placeholder="e.g. Eva.1"
+                type="text"
                 value={agentName}
                 onChange={(e) => setAgentName(e.target.value)}
               />
             </div>
-            </div>
+          </div>
 
           {/* Betting Strategy Prompt */}
           <div className="flex flex-col gap-2 flex-1 min-h-0">
@@ -719,12 +796,14 @@ export default function CreateAgentPage() {
                   Betting Strategy Prompt
                 </label>
                 <StrategyPresetButtons
-                  presets={BETTING_PRESET_BUTTONS}
                   activePreset={activeBettingPreset}
+                  presets={BETTING_PRESET_BUTTONS}
                   onSelect={handleBettingPresetSelect}
                 />
               </div>
-              <AIGeneratedButton onClick={() => handleOpenAIDrawer("betting")} />
+              <AIGeneratedButton
+                onClick={() => handleOpenAIDrawer("betting")}
+              />
             </div>
             <div className="flex-1 min-h-[100px] bg-black border border-[#374151]">
               <textarea
@@ -749,12 +828,14 @@ export default function CreateAgentPage() {
                   Trading Strategy Prompt
                 </label>
                 <StrategyPresetButtons
-                  presets={TRADING_PRESET_BUTTONS}
                   activePreset={activeTradingPreset}
+                  presets={TRADING_PRESET_BUTTONS}
                   onSelect={handleTradingPresetSelect}
                 />
               </div>
-              <AIGeneratedButton onClick={() => handleOpenAIDrawer("trading")} />
+              <AIGeneratedButton
+                onClick={() => handleOpenAIDrawer("trading")}
+              />
             </div>
             <div className="flex-1 min-h-[100px] bg-black border border-[#374151]">
               <textarea
@@ -771,41 +852,41 @@ export default function CreateAgentPage() {
             </div>
           </div>
 
-            {/* Error Message */}
-            {createAgentMutation.isError && (
+          {/* Error Message */}
+          {createAgentMutation.isError && (
             <div className="p-4 bg-red-500/10 border border-red-500/50">
-                <span className="text-sm font-mono text-red-400">
-                  {(createAgentMutation.error as { message?: string })?.message || "Failed to create agent. Please try again."}
-                </span>
-              </div>
-            )}
+              <span className="text-sm font-mono text-red-400">
+                {(createAgentMutation.error as { message?: string })?.message ||
+                  "Failed to create agent. Please try again."}
+              </span>
+            </div>
+          )}
 
-            {/* Bottom Bar - Info & Action */}
-              <div className="flex items-center gap-4">
-
+          {/* Bottom Bar - Info & Action */}
+          <div className="flex items-center gap-4">
             {/* Creation Fee */}
             <div className="flex-1 h-[54px] bg-[#15171e] border border-[#1f2937] px-[17px] flex items-center justify-between">
               <span className="text-xs font-medium text-[#6b7280] uppercase tracking-wider">
-                    Creation Fee
-                  </span>
+                Creation Fee
+              </span>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-white">
-                    0.1 SOL
-                  </span>
+                  0.1 SOL
+                </span>
                 <CreationFeeIcon />
               </div>
-              </div>
+            </div>
 
             {/* Create Agent Button */}
             <button
-              type="button"
               className="flex-1 h-[54px] bg-[#6ce182] border border-[#6ce182] rounded flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#5bd174] transition-colors"
-                disabled={!isFormValid || isSubmitting || !isAuthenticated}
-                onClick={handleCreateAgent}
-              >
+              disabled={!isFormValid || isSubmitting || !isAuthenticated}
+              type="button"
+              onClick={handleCreateAgent}
+            >
               <span className="font-semibold text-sm text-black uppercase tracking-wider">
                 {isSubmitting ? "CREATING..." : "CREATE AGENT"}
-                  </span>
+              </span>
             </button>
           </div>
         </div>
@@ -814,8 +895,8 @@ export default function CreateAgentPage() {
       {/* AI Prompt Drawer */}
       <AIPromptDrawer
         isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
         phase={activeDrawerPhase}
+        onClose={() => setIsDrawerOpen(false)}
         onConfirm={handleAIPromptConfirm}
       />
     </DefaultLayout>

@@ -147,7 +147,6 @@ export function calculateBlockProgress(
   return { currentBlock, totalBlocks, phase };
 }
 
-
 /**
  * Convert TrenchDetailDto to ArenaRound for UI components
  *
@@ -186,8 +185,10 @@ export function trenchToArenaRound(
 
   // Calculate next round countdown based on remaining blocks in liquidation phase
   let nextRoundCountdown: number | undefined;
+
   if (phase === "liquidation") {
     const remainingBlocks = totalBlocks - currentBlock;
+
     nextRoundCountdown = Math.max(
       0,
       Math.ceil((remainingBlocks * BLOCK_TIMING.MS_PER_BLOCK) / 1000),
@@ -276,9 +277,8 @@ export function leaderboardToRankings(
     const depositedSol = parseFloat(item.depositedSol);
     const betAmount = depositedSol / 1e9; // Convert lamports to SOL
     // Calculate allocation percent, clamped to 0-100 to prevent race condition flashes
-    const rawAllocationPercent = totalDeposited > 0 
-      ? (depositedSol / totalDeposited) * 100 
-      : 0;
+    const rawAllocationPercent =
+      totalDeposited > 0 ? (depositedSol / totalDeposited) * 100 : 0;
     const allocationPercent = Math.min(100, Math.max(0, rawAllocationPercent));
 
     rankings.push({
@@ -311,7 +311,7 @@ export function getCurrentUserRanking(
   totalDepositedSol?: string,
 ): AgentRanking | null {
   if (!leaderboard?.currentUser) return null;
-  
+
   // Only return if user is not in top 3
   if (leaderboard.currentUser.rank <= 3) return null;
 
@@ -321,9 +321,8 @@ export function getCurrentUserRanking(
   const depositedSol = parseFloat(leaderboard.currentUser.depositedSol);
   const betAmount = depositedSol / 1e9;
   // Calculate allocation percent, clamped to 0-100 to prevent race condition flashes
-  const rawAllocationPercent = totalDeposited > 0 
-    ? (depositedSol / totalDeposited) * 100 
-    : 0;
+  const rawAllocationPercent =
+    totalDeposited > 0 ? (depositedSol / totalDeposited) * 100 : 0;
   const allocationPercent = Math.min(100, Math.max(0, rawAllocationPercent));
 
   return {
@@ -350,10 +349,11 @@ export function getThirdPlaceTokenAmount(
   leaderboard: LeaderboardResponseDto | undefined,
 ): number {
   if (!leaderboard?.topThree?.length) return 0;
-  
-  const thirdPlace = leaderboard.topThree.find(item => item.rank === 3);
+
+  const thirdPlace = leaderboard.topThree.find((item) => item.rank === 3);
+
   if (!thirdPlace) return 0;
-  
+
   return parseInt(thirdPlace.tokenBalance) / 1e6;
 }
 
@@ -452,6 +452,7 @@ export function formatSmallNumber(
 
   // Count leading zeros in decimal part
   let zeroCount = 0;
+
   for (let i = 0; i < decimalPart.length; i++) {
     if (decimalPart[i] === "0") {
       zeroCount++;
@@ -489,6 +490,7 @@ export function formatSmallNumber(
 
   // Otherwise, format normally from first non-zero digit
   const firstNonZeroIndex = decimalPart.search(/[1-9]/);
+
   if (firstNonZeroIndex === -1) {
     // All zeros in decimal part
     return trimTrailingZeros ? intPart : `${intPart}.${decimalPart}`;
@@ -526,6 +528,7 @@ export function formatPrice(num: number): string {
   // Normal numbers (>= 0.0001): use fixed decimals
   if (absNum >= 0.0001) {
     const decimals = absNum >= 1 ? 4 : 6;
+
     return num.toFixed(decimals).replace(/\.?0+$/, "");
   }
 

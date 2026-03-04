@@ -49,7 +49,7 @@ export const agentKeys = {
  */
 export function useMyAgents(
   status?: AgentStatus,
-  options?: { polling?: boolean }
+  options?: { polling?: boolean },
 ) {
   const { isAuthenticated } = useAuthStore();
   const { polling = false } = options ?? {};
@@ -189,6 +189,7 @@ export function useToggleAgentStatus() {
     onSuccess: (_, { id }, context) => {
       // 埋点：根据之前的状态判断是启动还是暂停
       const previousStatus = context?.previousPanel?.status;
+
       if (previousStatus === "PAUSED" || previousStatus === "WAITING") {
         // 之前是暂停/等待状态，现在是启动
         trackAgentStart({ agent_id: id });

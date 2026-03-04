@@ -235,7 +235,13 @@ export interface AvatarUploadResponseDto {
 // ============== Trench Types ==============
 
 export type TrenchStatus = "BIDDING" | "TRADING" | "ENDED";
-export type TransactionType = "DEPOSIT" | "WITHDRAW" | "BUY" | "SELL" | "CLAIM" | "PRIZE";
+export type TransactionType =
+  | "DEPOSIT"
+  | "WITHDRAW"
+  | "BUY"
+  | "SELL"
+  | "CLAIM"
+  | "PRIZE";
 
 export interface TrenchListItemDto {
   id: number;
@@ -606,6 +612,28 @@ export interface OptimizeStrategyRequest {
   userInput: string;
 }
 
+/** 行为变化条目 */
+export interface BehaviorChangeItem {
+  /** 变更的参数名称 */
+  parameter: string;
+  /** 变更前的值（新增规则时为 null） */
+  before: string | null;
+  /** 变更后的值 */
+  after: string;
+  /** 受影响的决策行为说明 */
+  impact: string;
+}
+
+/** 行为变化摘要 */
+export interface BehaviorChangeSummary {
+  /** 具体变更列表 */
+  changes: BehaviorChangeItem[];
+  /** 总体影响说明 */
+  overallImpact: string;
+  /** 风险提示 */
+  riskNote: string | null;
+}
+
 /** 策略优化响应 */
 export interface OptimizeStrategyResponse {
   /** 识别出的策略阶段 */
@@ -616,6 +644,8 @@ export interface OptimizeStrategyResponse {
   optimizedPrompt?: string;
   /** 修改说明 */
   changeSummary?: string;
+  /** 行为变化摘要（仅当 isValid 为 true） */
+  behaviorChangeSummary?: BehaviorChangeSummary;
   /** 错误消息（当 isValid 为 false） */
   errorMessage?: string;
   /** 建议（当输入无效时给用户的建议） */

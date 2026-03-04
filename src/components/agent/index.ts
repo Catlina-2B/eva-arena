@@ -3,6 +3,7 @@
  */
 
 export { AIPromptDrawer } from "./ai-prompt-drawer";
+export { BehaviorChangeCard } from "./behavior-change-card";
 export { CreateAgentModeSelect } from "./create-agent-mode-select";
 export type { CreateMode } from "./create-agent-mode-select";
 export { CreateAgentStepper } from "./create-agent-stepper";
@@ -15,4 +16,3 @@ export { PromptDiff, parsePromptDiff } from "./prompt-diff";
 export type { DiffLine } from "./prompt-diff";
 export { StartTimingModal } from "./start-timing-modal";
 export { WithdrawModal } from "./withdraw-modal";
-

@@ -1,6 +1,8 @@
+import type { ActivityItem } from "@/types";
+
 import { useState } from "react";
 
-import type { ActivityItem } from "@/types";
+import { AgentDetailModal, type AgentDetailData } from "./agent-detail-modal";
 
 import {
   EvaCard,
@@ -12,7 +14,6 @@ import {
 } from "@/components/ui";
 import { formatTimeAgo } from "@/services/mock";
 import { formatSmallNumber } from "@/lib/trench-utils";
-import { AgentDetailModal, type AgentDetailData } from "./agent-detail-modal";
 
 interface LiveActivityProps {
   activities: ActivityItem[];
@@ -20,10 +21,17 @@ interface LiveActivityProps {
   onLoadAgentDetail?: (userAddress: string) => Promise<AgentDetailData | null>;
 }
 
-export function LiveActivity({ activities, trenchId, onLoadAgentDetail }: LiveActivityProps) {
+export function LiveActivity({
+  activities,
+  trenchId,
+  onLoadAgentDetail,
+}: LiveActivityProps) {
   // Modal state
-  const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
-  const [agentDetailData, setAgentDetailData] = useState<AgentDetailData | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(
+    null,
+  );
+  const [agentDetailData, setAgentDetailData] =
+    useState<AgentDetailData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Handle agent name click
@@ -36,6 +44,7 @@ export function LiveActivity({ activities, trenchId, onLoadAgentDetail }: LiveAc
     if (onLoadAgentDetail) {
       try {
         const data = await onLoadAgentDetail(activity.userAddress);
+
         setAgentDetailData(data);
       } catch (error) {
         console.error("Failed to load agent detail:", error);
@@ -67,9 +76,9 @@ export function LiveActivity({ activities, trenchId, onLoadAgentDetail }: LiveAc
           {/* Activity list */}
           <div className="max-h-80 overflow-y-auto">
             {activities.map((activity) => (
-              <ActivityRow 
-                key={activity.id} 
-                activity={activity} 
+              <ActivityRow
+                key={activity.id}
+                activity={activity}
                 onAgentClick={handleAgentClick}
               />
             ))}
@@ -79,20 +88,24 @@ export function LiveActivity({ activities, trenchId, onLoadAgentDetail }: LiveAc
 
       {/* Agent Detail Modal */}
       <AgentDetailModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        agent={selectedActivity ? {
-          rank: 0,
-          agentId: selectedActivity.agentId,
-          agentName: selectedActivity.agentName,
-          userAddress: selectedActivity.userAddress,
-          tokenAmount: 0,
-          pnlSol: 0,
-          prizeAmount: 0,
-          supplyPercentage: 0,
-        } : null}
-        trenchId={trenchId}
+        agent={
+          selectedActivity
+            ? {
+                rank: 0,
+                agentId: selectedActivity.agentId,
+                agentName: selectedActivity.agentName,
+                userAddress: selectedActivity.userAddress,
+                tokenAmount: 0,
+                pnlSol: 0,
+                prizeAmount: 0,
+                supplyPercentage: 0,
+              }
+            : null
+        }
         detailData={agentDetailData}
+        isOpen={isModalOpen}
+        trenchId={trenchId}
+        onClose={handleCloseModal}
       />
     </>
   );
@@ -153,14 +166,15 @@ function ActivityRow({ activity, onAgentClick }: ActivityRowProps) {
             </div>
             {!isDepositOrWithdraw && (
               <div className="text-xs text-eva-text-dim font-mono mt-0.5">
-                @{formatSmallNumber(activity.solAmount / activity.tokenAmount)} SOL
+                @{formatSmallNumber(activity.solAmount / activity.tokenAmount)}{" "}
+                SOL
               </div>
             )}
           </div>
         </div>
         <div className="flex items-center gap-3 text-right">
           <div>
-            <button 
+            <button
               className="text-sm text-[#D357E0] hover:underline cursor-pointer bg-transparent border-none p-0 text-right"
               onClick={handleNameClick}
             >

@@ -282,12 +282,14 @@ export function useWalletAuth(
     // Skip if no address or if this is the first mount
     if (!address) {
       prevAddressRef.current = null;
+
       return;
     }
 
     // If this is the first address we're seeing, just record it
     if (prevAddressRef.current === null) {
       prevAddressRef.current = address;
+
       return;
     }
 

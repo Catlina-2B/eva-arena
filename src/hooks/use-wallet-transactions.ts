@@ -1,10 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { useAuthStore } from "@/stores/auth";
-import {
-  walletApi,
-  GetTransactionsQueryDto,
-} from "@/services/api/wallet";
+import { walletApi, GetTransactionsQueryDto } from "@/services/api/wallet";
 
 /**
  * Query keys for wallet

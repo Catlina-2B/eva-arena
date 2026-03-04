@@ -5,13 +5,13 @@ interface ModeSelectProps {
 }
 
 const ArrowIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+  <svg fill="none" height="20" viewBox="0 0 20 20" width="20">
     <path
       d="M4 10H16M16 10L11 5M16 10L11 15"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.5"
     />
   </svg>
 );
@@ -31,8 +31,8 @@ export function CreateAgentModeSelect({ onSelect }: ModeSelectProps) {
       <div className="flex gap-6 w-full max-w-[720px]">
         {/* Beginner Card */}
         <button
-          type="button"
           className="group flex-1 bg-[#0d0f17] border border-[#1f2937] p-8 text-left transition-all duration-200 hover:border-[#6ce182]/60 hover:bg-[#0d0f17]/80"
+          type="button"
           onClick={() => onSelect("beginner")}
         >
           <h2 className="text-xl font-display text-white tracking-wide mb-4">
@@ -49,8 +49,8 @@ export function CreateAgentModeSelect({ onSelect }: ModeSelectProps) {
 
         {/* Experienced Card */}
         <button
-          type="button"
           className="group flex-1 bg-[#0d0f17] border border-[#1f2937] p-8 text-left transition-all duration-200 hover:border-[#6ce182]/60 hover:bg-[#0d0f17]/80"
+          type="button"
           onClick={() => onSelect("expert")}
         >
           <h2 className="text-xl font-display text-white tracking-wide mb-4">

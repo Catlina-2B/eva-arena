@@ -32,7 +32,9 @@ export function subscribeTrench(
   trenchId: number,
   handlers: TrenchEventHandlers,
 ): () => void {
-  console.log(`[TrenchSocket] subscribeTrench called with trenchId: ${trenchId}`);
+  console.log(
+    `[TrenchSocket] subscribeTrench called with trenchId: ${trenchId}`,
+  );
   const socket = trenchSocketClient.getSocket();
 
   // Connect if not connected
@@ -73,13 +75,18 @@ export function subscribeTrench(
 
   // Subscribe to trench after connection
   const doSubscribe = () => {
-    console.log(`[TrenchSocket] Emitting subscribeTrench for trenchId: ${trenchId}`);
+    console.log(
+      `[TrenchSocket] Emitting subscribeTrench for trenchId: ${trenchId}`,
+    );
     socket.emit(
       WsEventType.SUBSCRIBE_TRENCH,
       { trenchId },
       (response: SubscribeTrenchResponse) => {
         if (response?.success) {
-          console.log(`[TrenchSocket] Subscribed to trench ${trenchId}`, response);
+          console.log(
+            `[TrenchSocket] Subscribed to trench ${trenchId}`,
+            response,
+          );
         } else {
           console.error(
             `[TrenchSocket] Failed to subscribe to trench ${trenchId}`,
@@ -95,7 +102,9 @@ export function subscribeTrench(
     console.log("[TrenchSocket] Socket connected, subscribing immediately");
     doSubscribe();
   } else {
-    console.log("[TrenchSocket] Socket not connected yet, waiting for connect event");
+    console.log(
+      "[TrenchSocket] Socket not connected yet, waiting for connect event",
+    );
     socket.once("connect", doSubscribe);
   }
 

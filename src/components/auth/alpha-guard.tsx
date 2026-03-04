@@ -1,11 +1,11 @@
 import { type ReactNode } from "react";
 import { useAccount, useDisconnect } from "@particle-network/connectkit";
 
+import { NotInWhitelistPrompt } from "./not-in-whitelist-prompt";
+
 import { useAuthStore } from "@/stores/auth";
 import { useWalletAuth } from "@/hooks/use-wallet-auth";
-
 import { ConnectWalletPrompt } from "@/components/wallet";
-import { NotInWhitelistPrompt } from "./not-in-whitelist-prompt";
 
 export interface AlphaGuardProps {
   children: ReactNode;
@@ -22,10 +22,7 @@ export interface AlphaGuardProps {
  * - Login rejected (not whitelisted): Shows access restricted message
  * - Authenticated: Shows children
  */
-export function AlphaGuard({
-  children,
-  rejectedMessage,
-}: AlphaGuardProps) {
+export function AlphaGuard({ children, rejectedMessage }: AlphaGuardProps) {
   const { isConnected, address } = useAccount();
   const { disconnect } = useDisconnect();
   const { isAuthenticated, logout } = useAuthStore();

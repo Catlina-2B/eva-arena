@@ -4,6 +4,7 @@ import { Fragment, useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 
 import { AIPromptDrawer } from "./ai-prompt-drawer";
+
 import { trackAgentStrategyEdit } from "@/services/analytics";
 
 // Avatar item component with skeleton loading
@@ -48,40 +49,56 @@ function AvatarItem({
   );
 }
 
-import { useAgentLogos, useUpdateAgent, useUploadAvatar } from "@/hooks/use-agents";
+import {
+  useAgentLogos,
+  useUpdateAgent,
+  useUploadAvatar,
+} from "@/hooks/use-agents";
 
 // Supported image types and max file size
-const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+const SUPPORTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 // Link Icon for AI Generate button
 const LinkIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+  <svg fill="none" height="14" viewBox="0 0 14 14" width="14">
     <path
       d="M7.58333 3.79167L8.75 2.625C9.07082 2.30418 9.5 2.125 9.94792 2.125C10.3958 2.125 10.825 2.30418 11.1458 2.625C11.4667 2.94582 11.6458 3.375 11.6458 3.82292C11.6458 4.27083 11.4667 4.7 11.1458 5.02083L8.8125 7.35417C8.49168 7.67499 8.0625 7.85417 7.61458 7.85417C7.16667 7.85417 6.7375 7.67499 6.41667 7.35417"
       stroke="currentColor"
-      strokeWidth="1.2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.2"
     />
     <path
       d="M6.41667 10.2083L5.25 11.375C4.92918 11.6958 4.5 11.875 4.05208 11.875C3.60417 11.875 3.175 11.6958 2.85417 11.375C2.53335 11.0542 2.35417 10.625 2.35417 10.1771C2.35417 9.72917 2.53335 9.3 2.85417 8.97917L5.1875 6.64583C5.50832 6.32501 5.9375 6.14583 6.38542 6.14583C6.83333 6.14583 7.2625 6.32501 7.58333 6.64583"
       stroke="currentColor"
-      strokeWidth="1.2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.2"
     />
   </svg>
 );
 
 // AI Generated Button Component
-function AIGeneratedButton({ onClick, disabled }: { onClick?: () => void; disabled?: boolean }) {
+function AIGeneratedButton({
+  onClick,
+  disabled,
+}: {
+  onClick?: () => void;
+  disabled?: boolean;
+}) {
   return (
     <button
-      type="button"
       className="flex items-center gap-1 h-7 px-3 border border-eva-primary rounded text-eva-primary text-xs font-semibold uppercase tracking-wider hover:bg-eva-primary/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      onClick={onClick}
       disabled={disabled}
+      type="button"
+      onClick={onClick}
     >
       <LinkIcon />
       <span>AI-GENERATED</span>
@@ -123,7 +140,8 @@ export function EditAgentModal({
 
   // AI Drawer state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [activeDrawerPhase, setActiveDrawerPhase] = useState<WizardPhase>("betting");
+  const [activeDrawerPhase, setActiveDrawerPhase] =
+    useState<WizardPhase>("betting");
 
   // File input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -138,15 +156,19 @@ export function EditAgentModal({
   const uploadAvatarMutation = useUploadAvatar();
 
   // Handle avatar upload
-  const handleAvatarUpload = useCallback(async (file: File) => {
-    try {
-      const result = await uploadAvatarMutation.mutateAsync(file);
-      setCustomAvatars((prev) => [...prev, result.url]);
-      setSelectedLogo(result.url);
-    } catch (error) {
-      console.error("Failed to upload avatar:", error);
-    }
-  }, [uploadAvatarMutation]);
+  const handleAvatarUpload = useCallback(
+    async (file: File) => {
+      try {
+        const result = await uploadAvatarMutation.mutateAsync(file);
+
+        setCustomAvatars((prev) => [...prev, result.url]);
+        setSelectedLogo(result.url);
+      } catch (error) {
+        console.error("Failed to upload avatar:", error);
+      }
+    },
+    [uploadAvatarMutation],
+  );
 
   // Handle AI Generated button click
   const handleOpenAIDrawer = useCallback((phase: WizardPhase) => {
@@ -155,27 +177,33 @@ export function EditAgentModal({
   }, []);
 
   // Handle AI Prompt confirmation
-  const handleAIPromptConfirm = useCallback((prompt: string) => {
-    if (activeDrawerPhase === "betting") {
-      setBettingStrategyPrompt(prompt);
-    } else {
-      setTradingStrategyPrompt(prompt);
-    }
-  }, [activeDrawerPhase]);
+  const handleAIPromptConfirm = useCallback(
+    (prompt: string) => {
+      if (activeDrawerPhase === "betting") {
+        setBettingStrategyPrompt(prompt);
+      } else {
+        setTradingStrategyPrompt(prompt);
+      }
+    },
+    [activeDrawerPhase],
+  );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+
     if (!file) return;
 
     // Validate file type
     if (!SUPPORTED_IMAGE_TYPES.includes(file.type)) {
       alert("不支持的文件格式，请上传 JPG、PNG、GIF 或 WebP 格式的图片");
+
       return;
     }
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       alert("文件大小超过限制，请上传小于 5MB 的图片");
+
       return;
     }
 
@@ -191,7 +219,11 @@ export function EditAgentModal({
       setBettingStrategyPrompt(agent.bettingStrategyPrompt || "");
       setTradingStrategyPrompt(agent.tradingStrategyPrompt || "");
       // If agent has a custom logo not in preset list, add it to customAvatars
-      if (agent.logo && logosData?.small && !logosData.small.includes(agent.logo)) {
+      if (
+        agent.logo &&
+        logosData?.small &&
+        !logosData.small.includes(agent.logo)
+      ) {
         setCustomAvatars([agent.logo]);
       } else {
         setCustomAvatars([]);
@@ -237,12 +269,14 @@ export function EditAgentModal({
     // Skip if no changes
     if (Object.keys(updateData).length === 0) {
       onClose();
+
       return;
     }
 
     // If agent is active, show pause confirmation instead of saving directly
     if (isAgentActive) {
       setShowPauseConfirm(true);
+
       return;
     }
 
@@ -285,6 +319,7 @@ export function EditAgentModal({
       await onPauseAgent();
       // Then save the changes
       const updateData = getUpdateData();
+
       await saveChanges(updateData);
     } catch {
       // Error is handled by the caller
@@ -440,7 +475,11 @@ export function EditAgentModal({
                           : "border-eva-border text-eva-text-dim hover:border-eva-primary hover:text-eva-primary"
                     }`}
                     disabled={uploadAvatarMutation.isPending}
-                    title={uploadAvatarMutation.isError ? "上传失败，点击重试" : "上传自定义头像"}
+                    title={
+                      uploadAvatarMutation.isError
+                        ? "上传失败，点击重试"
+                        : "上传自定义头像"
+                    }
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                   >
@@ -472,7 +511,9 @@ export function EditAgentModal({
                 <label className="text-xs font-mono text-eva-text-dim uppercase tracking-widest">
                   Betting Phase Strategy
                 </label>
-                <AIGeneratedButton onClick={() => handleOpenAIDrawer("betting")} />
+                <AIGeneratedButton
+                  onClick={() => handleOpenAIDrawer("betting")}
+                />
               </div>
               <textarea
                 className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono placeholder:text-eva-muted focus:outline-none focus:border-eva-primary transition-colors resize-none h-28 text-sm"
@@ -488,7 +529,9 @@ export function EditAgentModal({
                 <label className="text-xs font-mono text-eva-text-dim uppercase tracking-widest">
                   Trading Phase Strategy
                 </label>
-                <AIGeneratedButton onClick={() => handleOpenAIDrawer("trading")} />
+                <AIGeneratedButton
+                  onClick={() => handleOpenAIDrawer("trading")}
+                />
               </div>
               <textarea
                 className="w-full px-4 py-3 bg-eva-darker border border-eva-border rounded-lg text-eva-text font-mono placeholder:text-eva-muted focus:outline-none focus:border-eva-primary transition-colors resize-none h-28 text-sm"
@@ -513,8 +556,8 @@ export function EditAgentModal({
       {/* AI Prompt Drawer */}
       <AIPromptDrawer
         isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
         phase={activeDrawerPhase}
+        onClose={() => setIsDrawerOpen(false)}
         onConfirm={handleAIPromptConfirm}
       />
 
@@ -536,29 +579,35 @@ export function EditAgentModal({
               {/* Corner decorations */}
               <div className="absolute top-0 left-0 w-4 h-4 pointer-events-none z-20">
                 <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
-                  <path d="M0 0 L16 0 L16 1 L1 1 L1 16 L0 16 Z" fill="#00ff88" />
+                  <path
+                    d="M0 0 L16 0 L16 1 L1 1 L1 16 L0 16 Z"
+                    fill="#00ff88"
+                  />
                 </svg>
               </div>
               <div className="absolute bottom-0 right-0 w-4 h-4 pointer-events-none z-20 rotate-180">
                 <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
-                  <path d="M0 0 L16 0 L16 1 L1 1 L1 16 L0 16 Z" fill="#00ff88" />
+                  <path
+                    d="M0 0 L16 0 L16 1 L1 1 L1 16 L0 16 Z"
+                    fill="#00ff88"
+                  />
                 </svg>
               </div>
 
               {/* Close Button */}
               <button
-                type="button"
                 className="absolute top-4 right-4 text-[#4b5563] hover:text-white transition-colors"
-                onClick={() => setShowPauseConfirm(false)}
                 disabled={isPausing || updateMutation.isPending}
+                type="button"
+                onClick={() => setShowPauseConfirm(false)}
               >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
                   <path
                     d="M12 4L4 12M4 4L12 12"
                     stroke="currentColor"
-                    strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
+                    strokeWidth="1.5"
                   />
                 </svg>
               </button>
@@ -567,13 +616,58 @@ export function EditAgentModal({
               <div className="px-8 pt-10 pb-8 flex flex-col items-center">
                 {/* Agent Icon */}
                 <div className="w-16 h-16 rounded-full border border-eva-primary/30 bg-eva-dark/60 flex items-center justify-center mb-6">
-                  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" className="text-eva-primary">
-                    <rect x="6" y="10" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
-                    <line x1="16" y1="10" x2="16" y2="6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                    <circle cx="16" cy="5" r="1.5" fill="currentColor" />
-                    <rect x="10" y="15" width="4" height="3" rx="0.5" fill="currentColor" />
-                    <rect x="18" y="15" width="4" height="3" rx="0.5" fill="currentColor" />
-                    <line x1="11" y1="22" x2="21" y2="22" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <svg
+                    className="text-eva-primary"
+                    fill="none"
+                    height="32"
+                    viewBox="0 0 32 32"
+                    width="32"
+                  >
+                    <rect
+                      fill="none"
+                      height="16"
+                      rx="2"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      width="20"
+                      x="6"
+                      y="10"
+                    />
+                    <line
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeWidth="1.5"
+                      x1="16"
+                      x2="16"
+                      y1="10"
+                      y2="6"
+                    />
+                    <circle cx="16" cy="5" fill="currentColor" r="1.5" />
+                    <rect
+                      fill="currentColor"
+                      height="3"
+                      rx="0.5"
+                      width="4"
+                      x="10"
+                      y="15"
+                    />
+                    <rect
+                      fill="currentColor"
+                      height="3"
+                      rx="0.5"
+                      width="4"
+                      x="18"
+                      y="15"
+                    />
+                    <line
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeWidth="1.5"
+                      x1="11"
+                      x2="21"
+                      y1="22"
+                      y2="22"
+                    />
                   </svg>
                 </div>
 
@@ -598,22 +692,24 @@ export function EditAgentModal({
                 <div className="w-full flex gap-3">
                   {/* Cancel Button */}
                   <button
-                    type="button"
                     className="flex-1 h-12 bg-transparent border border-eva-text-dim text-eva-text-dim text-xs font-semibold uppercase tracking-[0.15em] hover:border-white hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={() => setShowPauseConfirm(false)}
                     disabled={isPausing || updateMutation.isPending}
+                    type="button"
+                    onClick={() => setShowPauseConfirm(false)}
                   >
                     CANCEL
                   </button>
 
                   {/* Pause & Save Button */}
                   <button
-                    type="button"
                     className="flex-1 h-12 bg-eva-primary border border-eva-primary text-eva-dark text-xs font-semibold uppercase tracking-[0.15em] hover:bg-eva-primary/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={handlePauseAndSave}
                     disabled={isPausing || updateMutation.isPending}
+                    type="button"
+                    onClick={handlePauseAndSave}
                   >
-                    {(isPausing || updateMutation.isPending) ? "PROCESSING..." : "PAUSE & SAVE"}
+                    {isPausing || updateMutation.isPending
+                      ? "PROCESSING..."
+                      : "PAUSE & SAVE"}
                   </button>
                 </div>
               </div>
@@ -627,4 +723,3 @@ export function EditAgentModal({
 }
 
 export default EditAgentModal;
-

@@ -11,9 +11,27 @@ import { useAuthStore } from "@/stores/auth";
 // 规则/玩法 Icon (Book icon)
 function RulesIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M1.16669 1.75H4.66669C5.95449 1.75 7.00002 2.79553 7.00002 4.08333V12.25C7.00002 11.2841 6.21587 10.5 5.25002 10.5H1.16669V1.75" stroke="#6B7280" strokeWidth="1.16667" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M12.8333 1.75H9.33333C8.04553 1.75 7 2.79553 7 4.08333V12.25C7 11.2841 7.78415 10.5 8.75 10.5H12.8333V1.75" stroke="#6B7280" strokeWidth="1.16667" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg
+      fill="none"
+      height="14"
+      viewBox="0 0 14 14"
+      width="14"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M1.16669 1.75H4.66669C5.95449 1.75 7.00002 2.79553 7.00002 4.08333V12.25C7.00002 11.2841 6.21587 10.5 5.25002 10.5H1.16669V1.75"
+        stroke="#6B7280"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.16667"
+      />
+      <path
+        d="M12.8333 1.75H9.33333C8.04553 1.75 7 2.79553 7 4.08333V12.25C7 11.2841 7.78415 10.5 8.75 10.5H12.8333V1.75"
+        stroke="#6B7280"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.16667"
+      />
     </svg>
   );
 }
@@ -90,11 +108,13 @@ export function WalletConnectButton({ onOpenRules }: WalletConnectButtonProps) {
               <div className="w-px h-6 bg-eva-border" />
               <button
                 className="flex items-center gap-1.5 px-3 py-1.5 transition-colors hover:opacity-80 cursor-pointer"
-                onClick={onOpenRules}
                 title="Game Rules"
+                onClick={onOpenRules}
               >
                 <RulesIcon />
-                <span className="text-sm font-medium tracking-wider text-eva-text-dim">RULES</span>
+                <span className="text-sm font-medium tracking-wider text-eva-text-dim">
+                  RULES
+                </span>
               </button>
             </>
           )}

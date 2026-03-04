@@ -36,7 +36,7 @@ export function ArenaHeader({ round }: ArenaHeaderProps) {
   // Progress is continuous across all phases, not reset per phase
   const percentage = Math.min(
     100,
-    Math.max(0, (currentBlock / round.totalBlocks) * 100)
+    Math.max(0, (currentBlock / round.totalBlocks) * 100),
   );
 
   return (
@@ -48,9 +48,9 @@ export function ArenaHeader({ round }: ArenaHeaderProps) {
             {/* Token Avatar */}
             <div className="w-16 h-16 rounded-lg bg-gradient-to-br flex-shrink-0 from-eva-secondary/30 to-eva-primary/30 flex items-center justify-center border border-eva-border overflow-hidden">
               <img
-                src="/images/trench.png"
                 alt="Trench"
                 className="w-full h-full object-cover"
+                src="/images/trench.png"
               />
             </div>
 
@@ -112,7 +112,7 @@ export function ArenaHeader({ round }: ArenaHeaderProps) {
                     key={i}
                     className={clsx(
                       "flex-1 h-1.5 transition-colors",
-                      isFilled ? "bg-eva-primary" : "bg-eva-border/50"
+                      isFilled ? "bg-eva-primary" : "bg-eva-border/50",
                     )}
                   />
                 );

@@ -1,42 +1,42 @@
 // Lock Icon SVG
 const LockIcon = () => (
-  <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+  <svg fill="none" height="32" viewBox="0 0 32 32" width="32">
     <path
       d="M22 12V10C22 6.68629 19.3137 4 16 4C12.6863 4 10 6.68629 10 10V12"
       stroke="#f59e0b"
-      strokeWidth="2"
       strokeLinecap="round"
+      strokeWidth="2"
     />
     <rect
-      x="8"
-      y="12"
-      width="16"
-      height="14"
-      rx="2"
       fill="#f59e0b"
       fillOpacity="0.2"
+      height="14"
+      rx="2"
       stroke="#f59e0b"
       strokeWidth="2"
+      width="16"
+      x="8"
+      y="12"
     />
-    <circle cx="16" cy="19" r="2" fill="#f59e0b" />
+    <circle cx="16" cy="19" fill="#f59e0b" r="2" />
     <path
       d="M16 21V23"
       stroke="#f59e0b"
-      strokeWidth="2"
       strokeLinecap="round"
+      strokeWidth="2"
     />
   </svg>
 );
 
 // X Icon for decoration
 const XMarkIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+  <svg fill="none" height="14" viewBox="0 0 14 14" width="14">
     <path
       d="M10.5 3.5L3.5 10.5M3.5 3.5L10.5 10.5"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.5"
     />
   </svg>
 );
@@ -88,7 +88,8 @@ export function NotInWhitelistPrompt({
         {/* Info Box */}
         <div className="w-full mb-6 bg-[rgba(245,158,11,0.05)] border-l-2 border-[rgba(245,158,11,0.5)] px-4 py-4">
           <p className="text-sm text-[#fbbf24] leading-normal">
-            {message || "You are not on the Alpha testing whitelist and cannot access this feature at this time."}
+            {message ||
+              "You are not on the Alpha testing whitelist and cannot access this feature at this time."}
           </p>
         </div>
 
@@ -109,7 +110,17 @@ export function NotInWhitelistPrompt({
         {/* Info text */}
         <div className="w-full mb-6 text-center">
           <p className="text-xs text-eva-text-dim leading-relaxed">
-            The Alpha testing phase is only available to whitelisted users. Please <a href="https://forms.gle/6t1XbFqwe2vZncES8" target="_blank" className="underline">contact us</a> to request access.
+            The Alpha testing phase is only available to whitelisted users.
+            Please{" "}
+            <a
+              className="underline"
+              href="https://forms.gle/6t1XbFqwe2vZncES8"
+              rel="noreferrer"
+              target="_blank"
+            >
+              contact us
+            </a>{" "}
+            to request access.
           </p>
         </div>
 

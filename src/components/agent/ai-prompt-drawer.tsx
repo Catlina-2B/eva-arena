@@ -1,6 +1,3 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-
-import { useChatWizard, useGenerateFromChat } from "@/hooks/use-agents";
 import type {
   ChatQuestion,
   ChatQuestionOption,
@@ -10,50 +7,54 @@ import type {
   WizardPhase,
 } from "@/types/api";
 
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { useChatWizard, useGenerateFromChat } from "@/hooks/use-agents";
+
 // SVG Icons
 const CloseIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+  <svg fill="none" height="14" viewBox="0 0 14 14" width="14">
     <path
       d="M1 1L13 13M1 13L13 1"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
+      strokeWidth="1.5"
     />
   </svg>
 );
 
 const CheckIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+  <svg fill="none" height="14" viewBox="0 0 14 14" width="14">
     <path
       d="M2 7L5.5 10.5L12 4"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.5"
     />
   </svg>
 );
 
 const SendIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+  <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
     <path
       d="M14.5 1.5L7 9M14.5 1.5L10 14.5L7 9M14.5 1.5L1.5 6L7 9"
       stroke="currentColor"
-      strokeWidth="1.2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.2"
     />
   </svg>
 );
 
 const AIIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-    <rect width="20" height="20" rx="4" fill="#1a1a2e" />
+  <svg fill="none" height="20" viewBox="0 0 20 20" width="20">
+    <rect fill="#1a1a2e" height="20" rx="4" width="20" />
     <path
       d="M6 8H14M6 12H11"
       stroke="#6ce182"
-      strokeWidth="1.5"
       strokeLinecap="round"
+      strokeWidth="1.5"
     />
   </svg>
 );
@@ -61,10 +62,10 @@ const AIIcon = () => (
 const LoadingSpinner = ({ size = 16 }: { size?: number }) => (
   <svg
     className="animate-spin"
-    width={size}
+    fill="none"
     height={size}
     viewBox="0 0 24 24"
-    fill="none"
+    width={size}
   >
     <circle
       cx="12"
@@ -77,8 +78,8 @@ const LoadingSpinner = ({ size = 16 }: { size?: number }) => (
     <path
       d="M12 2C6.48 2 2 6.48 2 12"
       stroke="currentColor"
-      strokeWidth="3"
       strokeLinecap="round"
+      strokeWidth="3"
     />
   </svg>
 );
@@ -146,7 +147,6 @@ export function AIPromptDrawer({
         inputRef.current?.focus();
       }, 300);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, phase]);
 
   const addMessage = useCallback((message: UIMessage) => {
@@ -181,7 +181,6 @@ export function AIPromptDrawer({
     } finally {
       setIsStarting(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
   const handleChatResponse = useCallback(
@@ -233,7 +232,8 @@ export function AIPromptDrawer({
           setCurrentQuestion(response.currentQuestion || null);
           // Add suggestions to the last message if retry/off_topic
           if (response.suggestions && newMessages.length > 0) {
-            newMessages[newMessages.length - 1].suggestions = response.suggestions;
+            newMessages[newMessages.length - 1].suggestions =
+              response.suggestions;
           }
           break;
         case "completed":
@@ -297,13 +297,7 @@ export function AIPromptDrawer({
         });
       }
     },
-    [
-      phase,
-      conversationState,
-      chatMutation,
-      addMessage,
-      handleChatResponse,
-    ],
+    [phase, conversationState, chatMutation, addMessage, handleChatResponse],
   );
 
   const handleOptionClick = useCallback(
@@ -400,19 +394,19 @@ export function AIPromptDrawer({
           <div className="flex items-center gap-2">
             {generatedResult && (
               <button
-                type="button"
                 className="p-1.5 text-[#6ce182] hover:bg-[#6ce182]/10 rounded transition-colors"
-                onClick={handleConfirm}
                 title="Confirm"
+                type="button"
+                onClick={handleConfirm}
               >
                 <CheckIcon />
               </button>
             )}
             <button
-              type="button"
               className="p-1.5 text-gray-400 hover:text-white transition-colors"
-              onClick={onClose}
               title="Close"
+              type="button"
+              onClick={onClose}
             >
               <CloseIcon />
             </button>
@@ -429,12 +423,12 @@ export function AIPromptDrawer({
             messages.map((message) => (
               <MessageBubble
                 key={message.id}
-                message={message}
-                onOptionClick={handleOptionClick}
-                onGenerate={handleGenerate}
-                onRetry={handleRetry}
-                onConfirm={handleConfirm}
                 isGenerating={generateMutation.isPending}
+                message={message}
+                onConfirm={handleConfirm}
+                onGenerate={handleGenerate}
+                onOptionClick={handleOptionClick}
+                onRetry={handleRetry}
               />
             ))
           )}
@@ -456,23 +450,23 @@ export function AIPromptDrawer({
           <div className="flex items-center gap-2 bg-[#15171e] border border-[#1f2937] rounded px-3 py-2">
             <input
               ref={inputRef}
-              type="text"
               className="flex-1 bg-transparent text-sm text-white placeholder:text-gray-500 focus:outline-none no-focus-ring"
+              disabled={isLoading || isCompleted}
               placeholder={
                 isCompleted
                   ? "Conversation completed"
                   : "Type your answer or select an option..."
               }
+              type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              disabled={isLoading || isCompleted}
             />
             <button
-              type="button"
               className="p-1 text-[#6ce182] hover:text-[#5bd174] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => sendMessage(inputValue)}
               disabled={!canSend}
+              type="button"
+              onClick={() => sendMessage(inputValue)}
             >
               <SendIcon />
             </button>
@@ -538,10 +532,10 @@ function MessageBubble({
             {message.question.options.map((option) => (
               <button
                 key={option.value}
-                type="button"
                 className="px-3 py-1.5 text-xs font-mono rounded border bg-transparent border-[#374151] text-gray-300 hover:border-[#6ce182] hover:text-[#6ce182] transition-colors"
-                onClick={() => onOptionClick(option)}
                 title={option.description}
+                type="button"
+                onClick={() => onOptionClick(option)}
               >
                 {option.label}
               </button>
@@ -580,17 +574,17 @@ function MessageBubble({
 
             <div className="flex gap-2">
               <button
-                type="button"
                 className="flex-1 py-2 bg-transparent border border-[#374151] text-gray-300 text-xs font-semibold rounded hover:border-gray-500 transition-colors"
+                type="button"
                 onClick={onRetry}
               >
                 Start Over
               </button>
               <button
-                type="button"
                 className="flex-1 py-2 bg-[#6ce182] border border-[#6ce182] text-black text-xs font-semibold rounded hover:bg-[#5bd174] transition-colors disabled:opacity-50"
-                onClick={onGenerate}
                 disabled={isGenerating}
+                type="button"
+                onClick={onGenerate}
               >
                 {isGenerating ? (
                   <span className="flex items-center justify-center gap-2">
@@ -650,15 +644,15 @@ function MessageBubble({
 
             <div className="flex gap-2">
               <button
-                type="button"
                 className="flex-1 py-2 bg-transparent border border-[#374151] text-gray-300 text-xs font-semibold rounded hover:border-gray-500 transition-colors"
+                type="button"
                 onClick={onRetry}
               >
                 Start Over
               </button>
               <button
-                type="button"
                 className="flex-1 py-2 bg-[#6ce182] border border-[#6ce182] text-black text-xs font-semibold rounded hover:bg-[#5bd174] transition-colors"
+                type="button"
                 onClick={onConfirm}
               >
                 Confirm

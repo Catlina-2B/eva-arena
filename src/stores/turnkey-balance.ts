@@ -55,4 +55,3 @@ export const useTurnkeyBalanceStore = create<TurnkeyBalanceState>((set) => ({
       subscriptionId: null,
     }),
 }));
-

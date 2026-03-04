@@ -35,7 +35,10 @@ interface TradingPhaseChartProps {
   userTransactions?: TransactionDto[];
 }
 
-export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChartProps) {
+export function TradingPhaseChart({
+  round,
+  userTransactions,
+}: TradingPhaseChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<"Area"> | null>(null);
@@ -43,13 +46,22 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
   const [realtimePrices, setRealtimePrices] = useState<
     { time: UTCTimestamp; value: number }[]
   >([]);
-  
+
   // Tooltip state for user trade markers
-  const [hoveredMarker, setHoveredMarker] = useState<UserTradeMarker | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
+  const [hoveredMarker, setHoveredMarker] = useState<UserTradeMarker | null>(
+    null,
+  );
+  const [tooltipPosition, setTooltipPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   // Pulse marker position for latest trade
-  const [pulsePosition, setPulsePosition] = useState<{ x: number; y: number; type: "buy" | "sell" } | null>(null);
+  const [pulsePosition, setPulsePosition] = useState<{
+    x: number;
+    y: number;
+    type: "buy" | "sell";
+  } | null>(null);
 
   // Use database primary key ID for API calls
   const trenchDbId = round.trenchDbId;
@@ -63,12 +75,12 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
   // Subscribe to WebSocket for real-time price updates
   const handlePriceUpdate = useCallback((data: PriceUpdateEventDto) => {
     const value = parseFloat(data.priceSol);
-    
+
     // Skip invalid values
     if (isNaN(value) || !isFinite(value)) {
       return;
     }
-    
+
     const newPoint = {
       time: Math.floor(data.timestamp / 1000) as UTCTimestamp,
       value,
@@ -77,9 +89,11 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
     setRealtimePrices((prev) => {
       // Avoid duplicates
       const lastPoint = prev[prev.length - 1];
+
       if (lastPoint && lastPoint.time === newPoint.time) {
         return prev;
       }
+
       return [...prev, newPoint];
     });
   }, []);
@@ -110,7 +124,10 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
 
     // Combine and deduplicate
     const allPoints = [...apiChartData, ...realtimePrices];
-    const uniquePoints = new Map<number, { time: UTCTimestamp; value: number }>();
+    const uniquePoints = new Map<
+      number,
+      { time: UTCTimestamp; value: number }
+    >();
 
     for (const point of allPoints) {
       uniquePoints.set(point.time, point);
@@ -126,47 +143,56 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
 
   // Convert user transactions to trade markers
   const userTradeMarkers = useMemo((): UserTradeMarker[] => {
-    if (!userTransactions || userTransactions.length === 0 || chartData.length === 0) {
+    if (
+      !userTransactions ||
+      userTransactions.length === 0 ||
+      chartData.length === 0
+    ) {
       return [];
     }
 
     // Filter only BUY and SELL transactions
     const buySellTxs = userTransactions.filter(
-      (tx) => tx.txType === "BUY" || tx.txType === "SELL"
+      (tx) => tx.txType === "BUY" || tx.txType === "SELL",
     );
 
     // Create a map of timestamps to prices for quick lookup
     const priceMap = new Map<number, number>();
+
     for (const point of chartData) {
       priceMap.set(point.time, point.value);
     }
 
-    return buySellTxs.map((tx): UserTradeMarker => {
-      // Get timestamp from blockTime or createdAt
-      const timestamp = tx.blockTime
-        ? tx.blockTime
-        : Math.floor(new Date(tx.createdAt).getTime() / 1000);
+    return buySellTxs
+      .map((tx): UserTradeMarker => {
+        // Get timestamp from blockTime or createdAt
+        const timestamp = tx.blockTime
+          ? tx.blockTime
+          : Math.floor(new Date(tx.createdAt).getTime() / 1000);
 
-      // Find the closest price point to this transaction time
-      let price = 0;
-      let closestTimeDiff = Infinity;
-      for (const [time, value] of priceMap.entries()) {
-        const timeDiff = Math.abs(time - timestamp);
-        if (timeDiff < closestTimeDiff) {
-          closestTimeDiff = timeDiff;
-          price = value;
+        // Find the closest price point to this transaction time
+        let price = 0;
+        let closestTimeDiff = Infinity;
+
+        for (const [time, value] of priceMap.entries()) {
+          const timeDiff = Math.abs(time - timestamp);
+
+          if (timeDiff < closestTimeDiff) {
+            closestTimeDiff = timeDiff;
+            price = value;
+          }
         }
-      }
 
-      return {
-        time: timestamp as UTCTimestamp,
-        price,
-        type: tx.txType === "BUY" ? "buy" as const : "sell" as const,
-        tokenAmount: tx.tokenAmount ? parseFloat(tx.tokenAmount) / 1e6 : 0,
-        solAmount: tx.solAmount ? parseFloat(tx.solAmount) / 1e9 : 0,
-        signature: tx.signature,
-      };
-    }).sort((a, b) => a.time - b.time);
+        return {
+          time: timestamp as UTCTimestamp,
+          price,
+          type: tx.txType === "BUY" ? ("buy" as const) : ("sell" as const),
+          tokenAmount: tx.tokenAmount ? parseFloat(tx.tokenAmount) / 1e6 : 0,
+          solAmount: tx.solAmount ? parseFloat(tx.solAmount) / 1e9 : 0,
+          signature: tx.signature,
+        };
+      })
+      .sort((a, b) => a.time - b.time);
   }, [userTransactions, chartData]);
 
   // Convert trade markers to lightweight-charts markers format
@@ -204,7 +230,11 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
         priceFormatter: (price: number) => formatSmallNumber(price, 4, 4, true),
         timeFormatter: (timestamp: number) => {
           const date = new Date(timestamp * 1000);
-          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+          return date.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
         },
       },
       width: chartContainerRef.current.clientWidth,
@@ -219,7 +249,11 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
         secondsVisible: false,
         tickMarkFormatter: (time: number) => {
           const date = new Date(time * 1000);
-          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+          return date.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
         },
       },
       crosshair: {
@@ -251,9 +285,10 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
 
     chartRef.current = chart;
     seriesRef.current = series;
-    
+
     // Create series markers plugin
     const seriesMarkers = createSeriesMarkers(series, []);
+
     markersRef.current = seriesMarkers;
 
     // Handle resize
@@ -287,8 +322,13 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
 
   // Update pulse position for latest marker
   useEffect(() => {
-    if (!chartRef.current || !seriesRef.current || userTradeMarkers.length === 0) {
+    if (
+      !chartRef.current ||
+      !seriesRef.current ||
+      userTradeMarkers.length === 0
+    ) {
       setPulsePosition(null);
+
       return;
     }
 
@@ -299,16 +339,22 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
     const updatePulsePosition = () => {
       try {
         // Get time coordinate
-        const timeCoordinate = chart.timeScale().timeToCoordinate(latestMarker.time as Time);
+        const timeCoordinate = chart
+          .timeScale()
+          .timeToCoordinate(latestMarker.time as Time);
+
         if (timeCoordinate === null) {
           setPulsePosition(null);
+
           return;
         }
 
         // Get price coordinate
         const priceCoordinate = series.priceToCoordinate(latestMarker.price);
+
         if (priceCoordinate === null) {
           setPulsePosition(null);
+
           return;
         }
 
@@ -330,26 +376,38 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
       updatePulsePosition();
     };
 
-    chart.timeScale().subscribeVisibleTimeRangeChange(handleVisibleTimeRangeChange);
+    chart
+      .timeScale()
+      .subscribeVisibleTimeRangeChange(handleVisibleTimeRangeChange);
 
     return () => {
-      chart.timeScale().unsubscribeVisibleTimeRangeChange(handleVisibleTimeRangeChange);
+      chart
+        .timeScale()
+        .unsubscribeVisibleTimeRangeChange(handleVisibleTimeRangeChange);
     };
   }, [userTradeMarkers, filteredData]);
 
   // Handle crosshair move for tooltip display
   useEffect(() => {
-    if (!chartRef.current || !seriesRef.current || userTradeMarkers.length === 0) {
+    if (
+      !chartRef.current ||
+      !seriesRef.current ||
+      userTradeMarkers.length === 0
+    ) {
       return;
     }
 
     const chart = chartRef.current;
     const series = seriesRef.current;
 
-    const handleCrosshairMove = (param: { time?: Time; point?: { x: number; y: number } }) => {
+    const handleCrosshairMove = (param: {
+      time?: Time;
+      point?: { x: number; y: number };
+    }) => {
       if (!param.point) {
         setHoveredMarker(null);
         setTooltipPosition(null);
+
         return;
       }
 
@@ -370,7 +428,7 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
 
         // Calculate Euclidean distance from mouse to marker
         const distance = Math.sqrt(
-          Math.pow(mouseX - markerX, 2) + Math.pow(mouseY - markerY, 2)
+          Math.pow(mouseX - markerX, 2) + Math.pow(mouseY - markerY, 2),
         );
 
         if (distance < closestDistance) {
@@ -400,6 +458,7 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
     if (chartData.length > 0) {
       return chartData[chartData.length - 1].value;
     }
+
     return round.tokenPrice;
   }, [chartData, round.tokenPrice]);
 
@@ -471,7 +530,9 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
               <div className="flex items-center gap-1.5">
                 <div
                   className={`w-1.5 h-1.5 rounded-full ${
-                    isConnected ? "bg-eva-primary animate-pulse" : "bg-eva-danger"
+                    isConnected
+                      ? "bg-eva-primary animate-pulse"
+                      : "bg-eva-danger"
                   }`}
                 />
                 <span className="text-xs text-white/30 font-mono">
@@ -479,7 +540,6 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
                 </span>
               </div>
             </div>
-
           </div>
 
           {/* Chart container */}
@@ -489,24 +549,30 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
               <div
                 ref={chartContainerRef}
                 className="w-full"
-                style={{ height: 300, visibility: (isLoading || filteredData.length === 0) ? 'hidden' : 'visible' }}
+                style={{
+                  height: 300,
+                  visibility:
+                    isLoading || filteredData.length === 0
+                      ? "hidden"
+                      : "visible",
+                }}
               />
 
               {/* User Trade Tooltip */}
               {hoveredMarker && tooltipPosition && (
                 <TradeTooltip
+                  containerRef={chartContainerRef}
                   marker={hoveredMarker}
                   position={tooltipPosition}
-                  containerRef={chartContainerRef}
                 />
               )}
 
               {/* Pulse animation for latest trade marker */}
               {pulsePosition && !isLoading && filteredData.length > 0 && (
                 <PulseMarker
+                  type={pulsePosition.type}
                   x={pulsePosition.x}
                   y={pulsePosition.y}
-                  type={pulsePosition.type}
                 />
               )}
 
@@ -577,7 +643,9 @@ interface PulseMarkerProps {
 function PulseMarker({ x, y, type }: PulseMarkerProps) {
   const isBuy = type === "buy";
   const color = isBuy ? "#34d399" : "#f87171";
-  const glowColor = isBuy ? "rgba(52, 211, 153, 0.4)" : "rgba(248, 113, 113, 0.4)";
+  const glowColor = isBuy
+    ? "rgba(52, 211, 153, 0.4)"
+    : "rgba(248, 113, 113, 0.4)";
 
   return (
     <div
@@ -675,14 +743,15 @@ function TradeTooltip({ marker, position, containerRef }: TradeTooltipProps) {
   const isBuy = marker.type === "buy";
   const tooltipWidth = 150;
   const tooltipHeight = 90;
-  
+
   // Calculate position to keep tooltip within chart bounds
   let left = position.x;
   let top = position.y - tooltipHeight - 20; // Above the point
-  
+
   // Ensure tooltip doesn't go off the right edge
   if (containerRef.current) {
     const containerWidth = containerRef.current.clientWidth;
+
     if (left + tooltipWidth / 2 > containerWidth) {
       left = containerWidth - tooltipWidth / 2 - 10;
     }
@@ -690,23 +759,24 @@ function TradeTooltip({ marker, position, containerRef }: TradeTooltipProps) {
       left = tooltipWidth / 2 + 10;
     }
   }
-  
+
   // If tooltip would be above the chart, show below the point
   if (top < 0) {
     top = position.y + 20;
   }
-  
+
   // Format time
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp * 1000);
-    return date.toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit', 
-      second: '2-digit',
-      hour12: false 
+
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
     });
   };
-  
+
   // Format token amount with K/M suffix
   const formatTokenAmount = (amount: number) => {
     if (amount >= 1_000_000) {
@@ -715,6 +785,7 @@ function TradeTooltip({ marker, position, containerRef }: TradeTooltipProps) {
     if (amount >= 1_000) {
       return `${(amount / 1_000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}K`;
     }
+
     return amount.toFixed(0);
   };
 
@@ -756,7 +827,7 @@ function TradeTooltip({ marker, position, containerRef }: TradeTooltipProps) {
             {formatTime(marker.time)}
           </span>
         </div>
-        
+
         {/* Content */}
         <div className="px-3 py-2 space-y-1">
           {/* Amount row */}
@@ -783,7 +854,15 @@ function TradeTooltip({ marker, position, containerRef }: TradeTooltipProps) {
               Price
             </span>
             <span className="font-mono text-[10px] text-zinc-300 font-bold">
-              {marker.tokenAmount > 0 ? formatSmallNumber(marker.solAmount / marker.tokenAmount, 4, 4, true) : "—"} SOL
+              {marker.tokenAmount > 0
+                ? formatSmallNumber(
+                    marker.solAmount / marker.tokenAmount,
+                    4,
+                    4,
+                    true,
+                  )
+                : "—"}{" "}
+              SOL
             </span>
           </div>
         </div>

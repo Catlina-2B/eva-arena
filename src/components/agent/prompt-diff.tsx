@@ -2,25 +2,25 @@ import { useState, useMemo } from "react";
 
 // Arrow icons for expand/collapse
 const ArrowDownIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+  <svg fill="none" height="14" viewBox="0 0 14 14" width="14">
     <path
       d="M3.5 5.25L7 8.75L10.5 5.25"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.5"
     />
   </svg>
 );
 
 const ArrowUpIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+  <svg fill="none" height="14" viewBox="0 0 14 14" width="14">
     <path
       d="M3.5 8.75L7 5.25L10.5 8.75"
       stroke="currentColor"
-      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
+      strokeWidth="1.5"
     />
   </svg>
 );
@@ -56,7 +56,7 @@ export function PromptDiff({
   // 过滤出有变化的行（add 或 remove）
   const changedLines = useMemo(
     () => lines.filter((line) => line.type !== "unchanged"),
-    [lines]
+    [lines],
   );
 
   // 决定显示哪些行
@@ -64,6 +64,7 @@ export function PromptDiff({
     if (isExpanded) {
       return changedLines;
     }
+
     return changedLines.slice(0, collapsedLines);
   }, [changedLines, isExpanded, collapsedLines]);
 
@@ -99,8 +100,8 @@ export function PromptDiff({
       {/* Expand/Collapse Toggle */}
       {hasMoreLines && (
         <button
-          type="button"
           className="w-full flex items-center justify-center gap-1 py-2 text-sm font-mono text-white hover:bg-white/5 transition-colors"
+          type="button"
           onClick={() => setIsExpanded(!isExpanded)}
         >
           {isExpanded ? (
@@ -153,7 +154,7 @@ function DiffLineItem({ line }: { line: DiffLine }) {
  */
 export function parsePromptDiff(
   oldPrompt: string,
-  newPrompt: string
+  newPrompt: string,
 ): DiffLine[] {
   const oldLines = oldPrompt.split("\n").filter((l) => l.trim());
   const newLines = newPrompt.split("\n").filter((l) => l.trim());

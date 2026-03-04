@@ -8,12 +8,18 @@ import type {
 } from "@/types/api";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAccount } from "@particle-network/connectkit";
 
 import DefaultLayout from "@/layouts/default";
 import { EvaCard, EvaCardContent, EvaButton, EvaBadge } from "@/components/ui";
-import { DepositModal, EditAgentModal, FirstDepositPromptModal, StartTimingModal, WithdrawModal } from "@/components/agent";
+import {
+  DepositModal,
+  EditAgentModal,
+  FirstDepositPromptModal,
+  StartTimingModal,
+  WithdrawModal,
+} from "@/components/agent";
 import { ConnectWalletPrompt } from "@/components/wallet/connect-wallet-prompt";
 import { TransactionLogModal } from "@/components/wallet/transaction-log-modal";
 import { ReasoningModal } from "@/components/arena/reasoning-modal";
@@ -117,8 +123,10 @@ function PnlChart({ timeline, isLoading, onHoverChange }: PnlChartProps) {
     // Find closest point
     let closestIndex = 0;
     let minDistance = Infinity;
+
     pointPositions.forEach((point, index) => {
       const distance = Math.abs(point.x - mouseX);
+
       if (distance < minDistance) {
         minDistance = distance;
         closestIndex = index;
@@ -127,6 +135,7 @@ function PnlChart({ timeline, isLoading, onHoverChange }: PnlChartProps) {
 
     setHoverIndex(closestIndex);
     const point = pointPositions[closestIndex];
+
     onHoverChange?.(point.pnl, point.timestamp);
   };
 
@@ -143,6 +152,7 @@ function PnlChart({ timeline, isLoading, onHoverChange }: PnlChartProps) {
       day: "numeric",
     });
     const timeStr = date.toLocaleTimeString("en-US", { hour12: false });
+
     return `${dateStr} ${timeStr}`;
   };
 
@@ -279,7 +289,10 @@ function TradeTypeBadge({ type }: { type: TransactionType }) {
     DEPOSIT: { variant: "default", label: "DEPOSIT" },
   };
 
-  const { variant, label } = config[type] ?? { variant: "default" as const, label: type };
+  const { variant, label } = config[type] ?? {
+    variant: "default" as const,
+    label: type,
+  };
 
   return <EvaBadge variant={variant}>{label}</EvaBadge>;
 }
@@ -295,7 +308,9 @@ function TradeHistoryTable({
   isLoading?: boolean;
 }) {
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(
+    null,
+  );
   const [isReasoningModalOpen, setIsReasoningModalOpen] = useState(false);
   const itemsPerPage = 10;
   const totalPages = Math.ceil(total / itemsPerPage);
@@ -308,6 +323,7 @@ function TradeHistoryTable({
       DEPOSIT: "deposit",
       WITHDRAW: "withdraw",
     };
+
     return {
       id: tx.signature,
       type: typeMap[tx.txType] || "buy",
@@ -316,14 +332,18 @@ function TradeHistoryTable({
       userAddress: tx.userAddress,
       tokenAmount: tx.tokenAmount ? parseFloat(tx.tokenAmount) / 1e6 : 0,
       solAmount: tx.solAmount ? parseFloat(tx.solAmount) / 1e9 : 0,
-      timestamp: tx.blockTime ? new Date(tx.blockTime * 1000) : new Date(tx.createdAt),
+      timestamp: tx.blockTime
+        ? new Date(tx.blockTime * 1000)
+        : new Date(tx.createdAt),
       signature: tx.signature,
-      reason: tx.reason ? {
-        id: tx.reason.id,
-        content: tx.reason.content,
-        action: tx.reason.action,
-        createdAt: tx.reason.createdAt,
-      } : undefined,
+      reason: tx.reason
+        ? {
+            id: tx.reason.id,
+            content: tx.reason.content,
+            action: tx.reason.action,
+            createdAt: tx.reason.createdAt,
+          }
+        : undefined,
     };
   };
 
@@ -345,6 +365,7 @@ function TradeHistoryTable({
   const paginatedTransactions = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
+
     return transactions.slice(startIndex, endIndex);
   }, [transactions, currentPage, itemsPerPage]);
 
@@ -496,12 +517,12 @@ function TradeHistoryTable({
 
       {/* Reasoning Modal */}
       <ReasoningModal
+        activity={selectedActivity}
         isOpen={isReasoningModalOpen}
         onClose={() => {
           setIsReasoningModalOpen(false);
           setSelectedActivity(null);
         }}
-        activity={selectedActivity}
       />
 
       {/* Pagination */}
@@ -578,7 +599,8 @@ function HistoryRow({
   onToggle: () => void;
   currentTrenchId?: number;
 }) {
-  const isCurrentBatch = currentTrenchId !== undefined && trenchId === currentTrenchId;
+  const isCurrentBatch =
+    currentTrenchId !== undefined && trenchId === currentTrenchId;
   // Fetch user's transactions only when expanded (no polling for history)
   // Use logged-in user's wallet address (not turnkey address)
   const { data: transactionsData, isLoading: isTransactionsLoading } =
@@ -604,9 +626,7 @@ function HistoryRow({
             <div className="text-sm font-mono text-eva-text">
               ROUND: {round.tokenName}
             </div>
-            <div className="text-xs text-eva-text-dim">
-              Rank: #{round.rank}
-            </div>
+            <div className="text-xs text-eva-text-dim">Rank: #{round.rank}</div>
           </div>
         </div>
 
@@ -686,13 +706,9 @@ function historyItemToRound(item: TrenchHistoryItemDto): ExtendedHistoryRound {
 // Play icon component
 function PlayIcon() {
   return (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      viewBox="0 0 21 20"
-    >
-      <path 
-        d="M16.1466 10.3468L7.31442 16.2349C7.12295 16.3625 6.86425 16.3108 6.7366 16.1194C6.69098 16.0509 6.66663 15.9705 6.66663 15.8882V4.11198C6.66663 3.88185 6.85318 3.69531 7.08329 3.69531C7.16555 3.69531 7.24598 3.71966 7.31442 3.76529L16.1466 9.65337C16.338 9.78104 16.3898 10.0398 16.2621 10.2312C16.2316 10.277 16.1924 10.3163 16.1466 10.3468Z" 
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 21 20">
+      <path
+        d="M16.1466 10.3468L7.31442 16.2349C7.12295 16.3625 6.86425 16.3108 6.7366 16.1194C6.69098 16.0509 6.66663 15.9705 6.66663 15.8882V4.11198C6.66663 3.88185 6.85318 3.69531 7.08329 3.69531C7.16555 3.69531 7.24598 3.71966 7.31442 3.76529L16.1466 9.65337C16.338 9.78104 16.3898 10.0398 16.2621 10.2312C16.2316 10.277 16.1924 10.3163 16.1466 10.3468Z"
         fill="#D357E0"
       />
     </svg>
@@ -702,13 +718,9 @@ function PlayIcon() {
 // Pause icon component
 function PauseIcon() {
   return (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      viewBox="0 0 21 20"
-    >
-      <path 
-        d="M6.66689 4.1665H8.88905L8.88884 15.8332H6.66669L6.66689 4.1665ZM11.1112 4.1665H13.3334L13.3331 15.8332H11.111L11.1112 4.1665Z" 
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 21 20">
+      <path
+        d="M6.66689 4.1665H8.88905L8.88884 15.8332H6.66669L6.66689 4.1665ZM11.1112 4.1665H13.3334L13.3331 15.8332H11.111L11.1112 4.1665Z"
         fill="#6CE182"
       />
     </svg>
@@ -718,36 +730,32 @@ function PauseIcon() {
 // Hourglass icon component for waiting state
 function HourglassIcon() {
   return (
-    <svg
-      className="w-5 h-5"
-      fill="none"
-      viewBox="0 0 20 20"
-    >
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 20 20">
       <path
         d="M5.83337 2.5H14.1667V5.83333C14.1667 7.67428 12.6743 9.16667 10.8334 9.16667H9.16671C7.32576 9.16667 5.83337 7.67428 5.83337 5.83333V2.5Z"
         stroke="currentColor"
-        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
+        strokeWidth="1.5"
       />
       <path
         d="M5.83337 17.5H14.1667V14.1667C14.1667 12.3257 12.6743 10.8333 10.8334 10.8333H9.16671C7.32576 10.8333 5.83337 12.3257 5.83337 14.1667V17.5Z"
         stroke="currentColor"
-        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
+        strokeWidth="1.5"
       />
       <path
         d="M4.16663 2.5H15.8333"
         stroke="currentColor"
-        strokeWidth="1.5"
         strokeLinecap="round"
+        strokeWidth="1.5"
       />
       <path
         d="M4.16663 17.5H15.8333"
         stroke="currentColor"
-        strokeWidth="1.5"
         strokeLinecap="round"
+        strokeWidth="1.5"
       />
     </svg>
   );
@@ -869,16 +877,17 @@ function AgentInfo({
 
           {/* Status Toggle Button */}
           <button
-            disabled={isToggling || isWaiting}
             className={`h-[44px] min-w-[240px] px-8 text-sm font-semibold uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 ${
               isWaiting
                 ? "text-white bg-[#4b5563] cursor-not-allowed"
-                : isActive 
+                : isActive
                   ? "text-black bg-eva-primary hover:bg-eva-primary-dim"
                   : "text-black bg-[#D357E0] hover:bg-[#C045CF]"
             }`}
+            disabled={isToggling || isWaiting}
             style={{
-              clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)"
+              clipPath:
+                "polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%)",
             }}
             onClick={onToggleStatus}
           >
@@ -913,11 +922,15 @@ export default function MyAgentPage() {
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isStartTimingModalOpen, setIsStartTimingModalOpen] = useState(false);
-  const [isTransactionLogModalOpen, setIsTransactionLogModalOpen] = useState(false);
+  const [isTransactionLogModalOpen, setIsTransactionLogModalOpen] =
+    useState(false);
   const [hoverPnl, setHoverPnl] = useState<number | null>(null);
 
   // First deposit prompt state
-  const { shouldShowPrompt: showFirstDepositPrompt, dismissPrompt: dismissFirstDepositPrompt } = useFirstDepositPrompt();
+  const {
+    shouldShowPrompt: showFirstDepositPrompt,
+    dismissPrompt: dismissFirstDepositPrompt,
+  } = useFirstDepositPrompt();
 
   // Auth state
   const { isAuthenticated } = useIsAuthenticated();
@@ -926,12 +939,18 @@ export default function MyAgentPage() {
   const turnkeyAddress = user?.turnkeyAddress;
 
   // Fetch user's agents (with polling to detect WAITING -> ACTIVE transitions)
-  const { data: agentsData, isLoading: isAgentsLoading, refetch: refetchAgents } = useMyAgents(undefined, { polling: true });
+  const {
+    data: agentsData,
+    isLoading: isAgentsLoading,
+    refetch: refetchAgents,
+  } = useMyAgents(undefined, { polling: true });
   const agents = agentsData?.agents ?? [];
   const primaryAgent = agents[0];
 
   // Fetch full agent detail (includes strategy prompts)
-  const { data: agentDetail, refetch: refetchAgentDetail } = useAgent(primaryAgent?.id);
+  const { data: agentDetail, refetch: refetchAgentDetail } = useAgent(
+    primaryAgent?.id,
+  );
 
   // Fetch agent panel data
   const {
@@ -961,10 +980,11 @@ export default function MyAgentPage() {
   } = useTrenchHistoryInfinite(10);
 
   // Infinite scroll detection
-  const [loadMoreRef, isLoadMoreVisible] = useIntersectionObserver<HTMLDivElement>({
-    enabled: hasNextPage && !isFetchingNextPage,
-    rootMargin: "200px", // Start loading 200px before reaching the bottom
-  });
+  const [loadMoreRef, isLoadMoreVisible] =
+    useIntersectionObserver<HTMLDivElement>({
+      enabled: hasNextPage && !isFetchingNextPage,
+      rootMargin: "200px", // Start loading 200px before reaching the bottom
+    });
 
   // Trigger load more when scrolling to bottom
   useEffect(() => {
@@ -1189,12 +1209,14 @@ export default function MyAgentPage() {
                   </h3>
                   {(() => {
                     const displayPnl = hoverPnl !== null ? hoverPnl : pnl;
+
                     return (
                       <div
                         className={`font-mono text-xl font-bold transition-colors ${displayPnl >= 0 ? "text-eva-primary" : "text-eva-danger"}`}
                       >
                         {displayPnl >= 0 ? "+" : ""}
-                        {displayPnl.toFixed(2)} <span className="text-sm">SOL</span>
+                        {displayPnl.toFixed(2)}{" "}
+                        <span className="text-sm">SOL</span>
                       </div>
                     );
                   })()}
@@ -1273,11 +1295,13 @@ export default function MyAgentPage() {
               )}
 
               {/* End of List */}
-              {!hasNextPage && historyRounds.length > 0 && !isHistoryLoading && (
-                <div className="text-center py-4 text-xs text-eva-text-dim font-mono">
-                  — END OF HISTORY —
-                </div>
-              )}
+              {!hasNextPage &&
+                historyRounds.length > 0 &&
+                !isHistoryLoading && (
+                  <div className="text-center py-4 text-xs text-eva-text-dim font-mono">
+                    — END OF HISTORY —
+                  </div>
+                )}
             </div>
           )}
         </div>
@@ -1312,8 +1336,8 @@ export default function MyAgentPage() {
       <EditAgentModal
         agent={agentDetail ?? null}
         isAgentActive={displayAgent.status === "ACTIVE"}
-        isPausing={toggleStatusMutation.isPending}
         isOpen={isEditModalOpen}
+        isPausing={toggleStatusMutation.isPending}
         onClose={() => setIsEditModalOpen(false)}
         onPauseAgent={async () => {
           await toggleStatusMutation.mutateAsync({ id: displayAgent.id });
@@ -1327,17 +1351,17 @@ export default function MyAgentPage() {
 
       {/* Start Timing Modal */}
       <StartTimingModal
+        isLoading={toggleStatusMutation.isPending}
         isOpen={isStartTimingModalOpen}
         onClose={() => setIsStartTimingModalOpen(false)}
         onSelectTiming={(timing) => {
           // immediate=true for "now", immediate=false for "next round"
           const immediate = timing === "now";
+
           toggleStatusMutation.mutate({ id: displayAgent.id, immediate });
           setIsStartTimingModalOpen(false);
         }}
-        isLoading={toggleStatusMutation.isPending}
       />
-
 
       {/* First Deposit Prompt Modal - shown for first-time users */}
       <FirstDepositPromptModal
