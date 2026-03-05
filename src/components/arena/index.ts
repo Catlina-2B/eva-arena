@@ -14,3 +14,5 @@ export * from "./welcome-onboarding-modal";
 export * from "./agent-detail-modal";
 export * from "./floating-think-button";
 export * from "./think-list-panel";
+export * from "./guided-tour";
+export * from "./contextual-tip";

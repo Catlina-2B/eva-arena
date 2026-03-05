@@ -1,4 +1,4 @@
-import type { ArenaRound } from "@/types";
+import type { ArenaRound, AgentRanking } from "@/types";
 import type { AgentDetailData } from "@/components/arena/agent-detail-modal";
 
 import { useCallback, useMemo, useState, useEffect, useRef } from "react";
@@ -18,12 +18,15 @@ import {
   WelcomeOnboardingModal,
   FloatingThinkButton,
   ThinkListPanel,
+  GuidedTour,
+  useTourCompleted,
+  useNewUserTourCompleted,
+  NEW_USER_TOUR_STEPS,
+  RETURNING_USER_TOUR_STEPS,
+  ContextualTip,
 } from "@/components/arena";
-import {
-  EditAgentModal,
-  EvolveMeDrawer,
-  StartTimingModal,
-} from "@/components/agent";
+import type { TipId } from "@/components/arena/contextual-tip";
+import { EditAgentModal, EvolveMeDrawer, StartTimingModal } from "@/components/agent";
 import {
   useCurrentTrench,
   useLeaderboard,
@@ -46,7 +49,11 @@ import {
   getThirdPlaceTokenAmount,
   transactionsToActivities,
 } from "@/lib/trench-utils";
-import { mockArenaRound, mockRankings, mockActivities } from "@/services/mock";
+import {
+  mockArenaRound,
+  mockRankings,
+  mockActivities,
+} from "@/services/mock";
 import { agentApi } from "@/services/api";
 import { trackPageView, trackArenaView } from "@/services/analytics";
 
@@ -61,6 +68,16 @@ export default function ArenaPage() {
 
   // First visit detection for welcome modal
   const { isFirstVisit, markVisited } = useFirstVisit();
+
+  // Guided tour (starts after welcome modal is dismissed)
+  const { isTourCompleted, markTourCompleted } = useTourCompleted();
+  const { isNewUserTourCompleted, markNewUserTourCompleted } = useNewUserTourCompleted();
+  const [isTourActive, setIsTourActive] = useState(false);
+  const [isNewUserTourActive, setIsNewUserTourActive] = useState(false);
+
+  // Contextual tip
+  const [activeTip, setActiveTip] = useState<TipId | null>(null);
+  const prevPhaseRef = useRef<string | null>(null);
 
   // Fetch current trench from API
   const {
@@ -97,12 +114,20 @@ export default function ArenaPage() {
   );
 
   // Fetch user's agents (with polling to detect WAITING -> ACTIVE transitions)
-  const { data: agentsData, refetch: refetchAgents } = useMyAgents(undefined, {
-    polling: true,
-  });
+  const { data: agentsData, refetch: refetchAgents } = useMyAgents(undefined, { polling: true });
   const userAgents = agentsData?.agents ?? [];
   const hasAgent = userAgents.length > 0;
   const primaryAgent = userAgents[0];
+
+  // Auto-trigger returning user tour after first agent is created
+  const hadAgentRef = useRef(hasAgent);
+  useEffect(() => {
+    if (!hadAgentRef.current && hasAgent && !isTourCompleted && isAuthenticated) {
+      setIsNewUserTourActive(false);
+      setTimeout(() => setIsTourActive(true), 800);
+    }
+    hadAgentRef.current = hasAgent;
+  }, [hasAgent, isTourCompleted, isAuthenticated]);
 
   // Fetch user's buy/sell transactions for chart markers
   // Use the primary agent's turnkey address when available
@@ -113,29 +138,26 @@ export default function ArenaPage() {
       txType: ["BUY", "SELL"],
       limit: 100, // Get all buy/sell transactions for the chart
     },
-    { polling: true },
+    { polling: true }
   );
 
   // Fetch full agent detail for edit modal
-  const { data: agentDetail, refetch: refetchAgentDetail } = useAgent(
-    primaryAgent?.id,
-  );
+  const { data: agentDetail, refetch: refetchAgentDetail } = useAgent(primaryAgent?.id);
 
   // Edit modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
+  
   // Start timing modal state
   const [isStartTimingModalOpen, setIsStartTimingModalOpen] = useState(false);
 
   // Evolve Me drawer state
   const [isEvolveMeOpen, setIsEvolveMeOpen] = useState(false);
 
-  // Pending strategy update state (set after successful apply in Evolve Me drawer)
-  const [hasPendingStrategyUpdate, setHasPendingStrategyUpdate] =
-    useState(false);
-
   // Think list panel state
   const [isThinkPanelOpen, setIsThinkPanelOpen] = useState(false);
+
+  // Pending strategy update state (set after successful apply in Evolve Me drawer)
+  const [hasPendingStrategyUpdate, setHasPendingStrategyUpdate] = useState(false);
 
   // Rank change tracking
   const previousRankRef = useRef<number | undefined>(undefined);
@@ -188,40 +210,37 @@ export default function ArenaPage() {
   }, [leaderboardData]);
 
   // Calculate user's agent ranking info
+  // First check top-3 list, then fall back to currentUser from the API
   const userAgentRankingInfo = useMemo(() => {
-    if (!primaryAgent?.turnkeyAddress || rankings.length === 0) {
+    const totalAgents = leaderboardData?.totalParticipants ?? rankings.length;
+
+    if (!primaryAgent?.turnkeyAddress) {
       return { rank: undefined, gapToTop3: undefined, totalAgents: undefined };
     }
 
-    // Find user's rank in the rankings list
+    // Check if user is in the top-3 list
     const userRankIndex = rankings.findIndex(
-      (r) => r.userAddress === primaryAgent.turnkeyAddress,
+      (r) => r.userAddress === primaryAgent.turnkeyAddress
     );
 
-    if (userRankIndex === -1) {
-      return {
-        rank: undefined,
-        gapToTop3: undefined,
-        totalAgents: rankings.length,
-      };
+    if (userRankIndex !== -1) {
+      const rank = userRankIndex + 1;
+      return { rank, gapToTop3: 0, totalAgents };
     }
 
-    const rank = userRankIndex + 1; // Convert 0-based index to 1-based rank
-    const userTokenAmount = rankings[userRankIndex]?.tokenAmount ?? 0;
-
-    // Calculate gap to top 3 (difference from 3rd place)
-    let gapToTop3 = 0;
-
-    if (rank > 3 && thirdPlaceTokenAmount > 0) {
-      gapToTop3 = Math.max(0, thirdPlaceTokenAmount - userTokenAmount);
+    // Fall back to currentUser from leaderboard API (covers rank > 3)
+    if (leaderboardData?.currentUser) {
+      const rank = leaderboardData.currentUser.rank;
+      const userTokenAmount = parseInt(leaderboardData.currentUser.tokenBalance) / 1e6;
+      let gapToTop3 = 0;
+      if (rank > 3 && thirdPlaceTokenAmount > 0) {
+        gapToTop3 = Math.max(0, thirdPlaceTokenAmount - userTokenAmount);
+      }
+      return { rank, gapToTop3, totalAgents };
     }
 
-    return {
-      rank,
-      gapToTop3,
-      totalAgents: rankings.length,
-    };
-  }, [primaryAgent?.turnkeyAddress, rankings, thirdPlaceTokenAmount]);
+    return { rank: undefined, gapToTop3: undefined, totalAgents: totalAgents || undefined };
+  }, [primaryAgent?.turnkeyAddress, rankings, leaderboardData, thirdPlaceTokenAmount]);
 
   // Track rank changes
   useEffect(() => {
@@ -230,7 +249,6 @@ export default function ArenaPage() {
     if (currentRank === undefined) {
       previousRankRef.current = undefined;
       setRankChange(0);
-
       return;
     }
 
@@ -239,13 +257,35 @@ export default function ArenaPage() {
     // Only track changes after we have a previous rank (not on initial load)
     if (previousRank !== undefined && previousRank !== currentRank) {
       const change = previousRank - currentRank; // Positive = improved
-
       setRankChange(change);
     }
 
     // Update previous rank
     previousRankRef.current = currentRank;
   }, [userAgentRankingInfo.rank]);
+
+  // Contextual tips on phase transitions
+  useEffect(() => {
+    if (!currentRound || !isAuthenticated || !hasAgent || !isTourCompleted) return;
+
+    const phase = currentRound.phase;
+    const prev = prevPhaseRef.current;
+    prevPhaseRef.current = phase;
+
+    if (!prev || prev === phase) return;
+
+    // Entering liquidation from trading = round just ended
+    if (prev === "trading" && phase === "liquidation") {
+      const rank = userAgentRankingInfo.rank;
+      if (rank !== undefined && rank <= 3) {
+        setActiveTip("compare_after_win");
+      } else if (rank !== undefined && rank > 3) {
+        setActiveTip("retry_after_loss");
+      } else {
+        setActiveTip("evolve_after_round");
+      }
+    }
+  }, [currentRound?.phase, isAuthenticated, hasAgent, isTourCompleted, userAgentRankingInfo.rank]);
 
   // Auto-clear rank change indicator after 30 seconds
   useEffect(() => {
@@ -266,11 +306,7 @@ export default function ArenaPage() {
       trenchId: tx.trenchId,
       txType: tx.txType as "DEPOSIT" | "WITHDRAW" | "BUY" | "SELL" | "CLAIM",
       userAddress: tx.userAddress,
-      agentName:
-        tx.agentName ||
-        (tx.userAddress
-          ? `Agent ${tx.userAddress.slice(0, 8)}`
-          : "Unknown Agent"),
+      agentName: tx.agentName || (tx.userAddress ? `Agent ${tx.userAddress.slice(0, 8)}` : "Unknown Agent"),
       solAmount: tx.solAmount,
       tokenAmount: tx.tokenAmount,
       totalDeposited: tx.totalDeposited,
@@ -298,21 +334,14 @@ export default function ArenaPage() {
     async (agentId: string): Promise<AgentDetailData | null> => {
       // Find the agent in rankings to get userAddress
       const agent = rankings.find((r) => r.agentId === agentId);
-
       if (!agent?.userAddress) {
-        console.warn(
-          "Agent not found in rankings or missing userAddress:",
-          agentId,
-        );
-
+        console.warn("Agent not found in rankings or missing userAddress:", agentId);
         return null;
       }
 
       try {
-        const panelData = await agentApi.getAgentPanelByUserAddress(
-          agent.userAddress,
-        );
-
+        const panelData = await agentApi.getAgentPanelByUserAddress(agent.userAddress);
+        
         // Convert AgentPanelDto to AgentDetailData
         return {
           agentId: panelData.id,
@@ -328,7 +357,6 @@ export default function ArenaPage() {
         };
       } catch (error) {
         console.error("Failed to load agent panel data:", error);
-
         return null;
       }
     },
@@ -340,11 +368,10 @@ export default function ArenaPage() {
     async (userAddress: string): Promise<AgentDetailData | null> => {
       // Find agent in rankings to get avatar and tokenAmount if available
       const agent = rankings.find((r) => r.userAddress === userAddress);
-
+      
       try {
-        const panelData =
-          await agentApi.getAgentPanelByUserAddress(userAddress);
-
+        const panelData = await agentApi.getAgentPanelByUserAddress(userAddress);
+        
         // Convert AgentPanelDto to AgentDetailData
         return {
           agentId: panelData.id,
@@ -373,7 +400,6 @@ export default function ArenaPage() {
             recentActions: [],
           };
         }
-
         return null;
       }
     },
@@ -471,9 +497,41 @@ export default function ArenaPage() {
   return (
     <DefaultLayout>
       {/* Welcome Onboarding Modal for first-time visitors */}
-      <WelcomeOnboardingModal isOpen={isFirstVisit} onClose={markVisited} />
+      <WelcomeOnboardingModal isOpen={isFirstVisit} onClose={() => {
+        markVisited();
+        if (isAuthenticated) {
+          setTimeout(() => {
+            if (hasAgent && !isTourCompleted) {
+              setIsTourActive(true);
+            } else if (!hasAgent && !isNewUserTourCompleted) {
+              setIsNewUserTourActive(true);
+            }
+          }, 600);
+        }
+      }} />
+
+      {/* Guided Tour — new user (no agent yet) */}
+      <GuidedTour
+        isOpen={isNewUserTourActive}
+        steps={NEW_USER_TOUR_STEPS}
+        onComplete={() => {
+          setIsNewUserTourActive(false);
+          markNewUserTourCompleted();
+        }}
+      />
+
+      {/* Guided Tour — returning user (has agent) */}
+      <GuidedTour
+        isOpen={isTourActive}
+        steps={RETURNING_USER_TOUR_STEPS}
+        onComplete={() => {
+          setIsTourActive(false);
+          markTourCompleted();
+        }}
+      />
 
       <div className="space-y-4">
+
         {/* Development Mode Indicator */}
         {!USE_REAL_DATA && (
           <div className="flex items-center gap-2 p-3 bg-white/5 border border-eva-border/30">
@@ -491,31 +549,36 @@ export default function ArenaPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left column: Phase panel + Activity */}
           <div className="lg:col-span-2 space-y-4">
-            {renderPhasePanel()}
-            <LiveActivity
-              activities={activities}
-              trenchId={trenchId}
-              onLoadAgentDetail={handleLoadAgentDetailByUserAddress}
-            />
+            <div data-tour="phase-panel">
+              {renderPhasePanel()}
+            </div>
+            <div data-tour="activity">
+              <LiveActivity
+                activities={activities}
+                trenchId={trenchId}
+                onLoadAgentDetail={handleLoadAgentDetailByUserAddress}
+              />
+            </div>
           </div>
 
           {/* Right column: Rankings above My Agent */}
           <div className="space-y-4">
             {/* Rankings - always show at top */}
+            <div data-tour="rankings">
             <LiveRankings
-              currentUser={currentUserRanking}
-              isBettingPhase={currentRound.phase === "betting"}
-              isSkipped={
-                currentRound.phase === "trading" && !currentRound.hasBets
-              }
               rankings={rankings}
+              currentUser={currentUserRanking}
               thirdPlaceTokenAmount={thirdPlaceTokenAmount}
+              isSkipped={currentRound.phase === "trading" && !currentRound.hasBets}
+              isBettingPhase={currentRound.phase === "betting"}
               trenchId={trenchId}
               onLoadAgentDetail={handleLoadAgentDetail}
             />
+            </div>
 
             {/* My Agent or Welcome/Create Card below */}
             {isAuthenticated && hasAgent && primaryAgent ? (
+              <div data-tour="agent-card">
               <AgentDashboardCard
                 agent={{
                   id: primaryAgent.id,
@@ -523,54 +586,43 @@ export default function ArenaPage() {
                   avatar: primaryAgent.logo,
                   createdAt: new Date(primaryAgent.createdAt),
                   status:
-                    primaryAgent.status === "ACTIVE"
-                      ? "running"
-                      : primaryAgent.status === "WAITING"
-                        ? "waiting"
-                        : "paused",
+                    primaryAgent.status === "ACTIVE" ? "running" : primaryAgent.status === "WAITING" ? "waiting" : "paused",
                   balance: turnkeyBalance || primaryAgent.currentBalance,
                   totalDeposit: 0,
                   totalWithdraw: 0,
                   pnl: primaryAgent.totalPnl,
                   frequency: parseInt(primaryAgent.frequency) || 10,
                 }}
-                gapToTop3={userAgentRankingInfo.gapToTop3}
-                hasPendingStrategyUpdate={hasPendingStrategyUpdate}
                 isToggling={toggleAgentStatus.isPending}
-                rank={userAgentRankingInfo.rank}
-                roundPnl={
-                  trenchData?.pnlSol ? parseFloat(trenchData.pnlSol) / 1e9 : 0
-                }
+                roundPnl={trenchData?.pnlSol ? parseFloat(trenchData.pnlSol) / 1e9 : 0}
                 solBalance={turnkeyBalance || primaryAgent.currentBalance}
-                tokenBalance={
-                  trenchData?.tokenBalance
-                    ? parseFloat(trenchData.tokenBalance) / 1e6
-                    : 0
-                }
-                tokenChangePercent={
-                  (trenchData?.tokenBalance
-                    ? parseFloat(trenchData.tokenBalance) / 1e9
-                    : 0) * 100
-                }
-                totalAgents={userAgentRankingInfo.totalAgents}
+                tokenBalance={trenchData?.tokenBalance ? parseFloat(trenchData.tokenBalance) / 1e6 : 0}
+                tokenChangePercent={(trenchData?.tokenBalance ? parseFloat(trenchData.tokenBalance) / 1e9 : 0) * 100}
                 totalPnl={primaryAgent.totalPnl}
                 trenchId={trenchId}
                 turnkeyAddress={primaryAgent.turnkeyAddress}
+                rank={userAgentRankingInfo.rank}
+                gapToTop3={userAgentRankingInfo.gapToTop3}
+                totalAgents={userAgentRankingInfo.totalAgents}
+                hasPendingStrategyUpdate={hasPendingStrategyUpdate}
+                onEvolveMe={() => setIsEvolveMeOpen(true)}
                 onEditName={() => {
                   // Refresh agent detail before opening modal to ensure latest data
                   refetchAgentDetail();
                   setIsEditModalOpen(true);
                 }}
-                onEvolveMe={() => setIsEvolveMeOpen(true)}
-                onPauseSystem={() =>
-                  toggleAgentStatus.mutate({ id: primaryAgent.id })
-                }
+                onPauseSystem={() => toggleAgentStatus.mutate({ id: primaryAgent.id })}
                 onStartSystem={() => setIsStartTimingModalOpen(true)}
               />
+              </div>
             ) : (
               <>
                 {!isAuthenticated && <WelcomeCard />}
-                {isAuthenticated && !hasAgent && <CreateAgentCard />}
+                {isAuthenticated && !hasAgent && (
+                  <div data-tour="create-agent">
+                    <CreateAgentCard />
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -581,8 +633,8 @@ export default function ArenaPage() {
       <EditAgentModal
         agent={agentDetail ?? null}
         isAgentActive={primaryAgent?.status === "ACTIVE"}
-        isOpen={isEditModalOpen}
         isPausing={toggleAgentStatus.isPending}
+        isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         onPauseAgent={async () => {
           if (primaryAgent) {
@@ -598,27 +650,26 @@ export default function ArenaPage() {
       {/* Start Timing Modal */}
       {primaryAgent && (
         <StartTimingModal
-          isLoading={toggleAgentStatus.isPending}
           isOpen={isStartTimingModalOpen}
           onClose={() => setIsStartTimingModalOpen(false)}
           onSelectTiming={(timing) => {
             const immediate = timing === "now";
-
             toggleAgentStatus.mutate({ id: primaryAgent.id, immediate });
             setIsStartTimingModalOpen(false);
           }}
+          isLoading={toggleAgentStatus.isPending}
         />
       )}
 
       {/* Evolve Me Drawer */}
       {primaryAgent && agentDetail && (
         <EvolveMeDrawer
+          isOpen={isEvolveMeOpen}
+          onClose={() => setIsEvolveMeOpen(false)}
           agentId={primaryAgent.id}
           currentBettingPrompt={agentDetail.bettingStrategyPrompt || ""}
           currentTradingPrompt={agentDetail.tradingStrategyPrompt || ""}
-          isOpen={isEvolveMeOpen}
           onApplySuccess={() => setHasPendingStrategyUpdate(true)}
-          onClose={() => setIsEvolveMeOpen(false)}
           onSuccess={() => {
             refetchAgents();
             refetchAgentDetail();
@@ -634,12 +685,25 @@ export default function ArenaPage() {
             onToggle={() => setIsThinkPanelOpen(!isThinkPanelOpen)}
           />
           <ThinkListPanel
-            currentTrenchId={onChainTrenchId}
             isOpen={isThinkPanelOpen}
             onClose={() => setIsThinkPanelOpen(false)}
+            currentTrenchId={onChainTrenchId}
+            turnkeyAddress={primaryAgent?.turnkeyAddress}
           />
         </>
       )}
+
+      {/* Contextual Tips */}
+      <ContextualTip
+        tipId={activeTip}
+        onAction={() => {
+          if (activeTip === "evolve_after_round" || activeTip === "retry_after_loss") {
+            setIsEvolveMeOpen(true);
+          }
+          setActiveTip(null);
+        }}
+      />
+
     </DefaultLayout>
   );
 }
