@@ -1,13 +1,41 @@
-import { Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useSearchParams,
+} from "react-router-dom";
 
 import ArenaPage from "@/pages/arena";
 import MyAgentPage from "@/pages/my-agent";
 import CreateAgentPage from "@/pages/create-agent";
 import { AlphaGuard } from "@/components/auth";
+import { setReferralCode } from "@/lib/referral-code";
+
+function ReferralRedirect() {
+  const [searchParams] = useSearchParams();
+  const ref = searchParams.get("ref");
+  if (ref) {
+    setReferralCode(ref);
+  }
+  return <Navigate replace to="/" />;
+}
 
 function App() {
+  const [searchParams] = useSearchParams();
+
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) {
+      setReferralCode(ref);
+    }
+  }, [searchParams]);
+
   return (
     <Routes>
+      {/* Referral landing — saves code then redirects to home */}
+      <Route path="/join" element={<ReferralRedirect />} />
+
       {/* All routes protected by AlphaGuard - requires auth + whitelist */}
       <Route
         element={

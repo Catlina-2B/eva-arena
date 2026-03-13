@@ -10,6 +10,9 @@ export interface User {
   id: string;
   publicKey: string;
   turnkeyAddress?: string;
+  referralCode?: string;
+  referralTier?: string;
+  referralPoints?: number;
   createdAt: string;
   updatedAt: string;
 }
