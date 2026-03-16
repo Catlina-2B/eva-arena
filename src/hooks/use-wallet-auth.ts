@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount, useWallets } from "@particle-network/connectkit";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { getReferralCode, clearReferralCode } from "@/lib/referral-code";
 import { authApi } from "@/services/api";
 import { useAuthStore } from "@/stores/auth";
 import {
@@ -188,26 +189,31 @@ export function useWalletAuth(
       const base64Message = encodeMessageToBase64(message);
       const base64Signature = encodeSignatureToBase64(signatureResult);
 
-      // 4. Call backend login API
+      // 4. Call backend login API (include referral code if present)
+      const referralCode = getReferralCode() ?? undefined;
       const response = await authApi.login({
         publicKey: address,
         message: base64Message,
         signature: base64Signature,
         chainType: "SOLANA",
+        referralCode,
       });
 
+      if (referralCode) {
+        clearReferralCode();
+      }
+
       // 5. Store tokens and user info
+      const now = new Date().toISOString();
       storeLogin({
         accessToken: response.accessToken,
         refreshToken: response.refreshToken,
         expiresIn: response.expiresIn,
         tokenType: response.tokenType,
         user: {
-          id: response.user.id,
-          publicKey: response.user.publicKey,
-          turnkeyAddress: response.user.turnkeyAddress,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          ...response.user,
+          createdAt: response.user.createdAt ?? now,
+          updatedAt: response.user.updatedAt ?? now,
         },
       });
 

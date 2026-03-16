@@ -18,6 +18,7 @@ export interface LoginDto {
   message: string;
   signature: string;
   chainType?: string;
+  referralCode?: string;
 }
 
 export interface RefreshTokenDto {
@@ -36,8 +37,67 @@ export interface UserDto {
   id: string;
   publicKey: string;
   turnkeyAddress?: string;
+  referralCode?: string;
+  referralTier?: ReferralTier;
+  referralPoints?: number;
   createdAt: string;
   updatedAt: string;
+}
+
+// ============== Referral Types ==============
+
+export type ReferralTier = "NONE" | "SCOUT" | "AMBASSADOR" | "CHAMPION";
+
+export interface ReferralInfoDto {
+  referralCode: string;
+  referralLink: string;
+  communityReferralCode?: string;
+  communityReferralLink?: string;
+  tier: ReferralTier;
+  totalPoints: number;
+  referredCount: number;
+  activatedCount: number;
+  feeSharePct: number;
+}
+
+export interface ReferralStatsDto {
+  totalPoints: number;
+  tier: ReferralTier;
+  referredCount: number;
+  activatedCount: number;
+  retainedCount: number;
+  dailyReferralPoints: number;
+  feeSharePct: number;
+}
+
+export interface ReferredUserDto {
+  id: string;
+  publicKey: string;
+  isActivated: boolean;
+  activatedAt?: string;
+  isRetained: boolean;
+  createdAt: string;
+}
+
+export interface PointsHistoryItemDto {
+  id: number;
+  points: number;
+  type: string;
+  sourceId?: string;
+  createdAt: string;
+}
+
+export interface ReferralLeaderboardItemDto {
+  rank: number;
+  publicKey: string;
+  tier: ReferralTier;
+  totalPoints: number;
+  referredCount: number;
+}
+
+export interface ValidateCodeResponseDto {
+  valid: boolean;
+  codeType?: "personal" | "community" | "community_personal";
 }
 
 // ============== Agent Types ==============

@@ -11,6 +11,7 @@ export { trenchApi } from "./trenches";
 export type { UserTrenchSummaryDto } from "./trenches";
 export { strategyApi } from "./strategies";
 export { priceApi } from "./price";
+export { referralApi } from "./referral";
 export { walletApi } from "./wallet";
 export type {
   WalletTransactionType,

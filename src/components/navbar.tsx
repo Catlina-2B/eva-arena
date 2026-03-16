@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import clsx from "clsx";
 import { useAccount } from "@particle-network/connectkit";
 
 import { EvaLogo } from "@/components/eva-logo";
+import { ReferralDashboard } from "@/components/referral";
 import { WalletConnectButton, WalletInterfaceModal } from "@/components/wallet";
 import { WelcomeOnboardingModal } from "@/components/arena/welcome-onboarding-modal";
 import { DepositModal } from "@/components/agent";
@@ -39,7 +40,21 @@ export function Navbar() {
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  
+  const [isReferralOpen, setIsReferralOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isReferralOpen) return;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsReferralOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isReferralOpen]);
+
   // Get wallet address
   const { address } = useAccount();
 
@@ -81,6 +96,22 @@ export function Navbar() {
 
             {/* Actions */}
             <div className="flex items-center gap-3">
+              {/* Referral Button - Only show when authenticated */}
+              {isAuthenticated && (
+                <button
+                  className="p-2 text-eva-text-dim hover:text-eva-primary transition-colors"
+                  onClick={() => setIsReferralOpen(true)}
+                  title="Referral Program"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <line x1="19" y1="8" x2="19" y2="14" />
+                    <line x1="22" y1="11" x2="16" y2="11" />
+                  </svg>
+                </button>
+              )}
+
               {/* Help Button */}
               <button
                 className="p-2 text-eva-text-dim hover:text-eva-primary transition-colors"
@@ -195,6 +226,19 @@ export function Navbar() {
 
       {/* Help Panel */}
       <HelpPanel isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+
+      {/* Referral Drawer */}
+      {isReferralOpen && (
+        <div className="fixed inset-0 z-[60]">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setIsReferralOpen(false)}
+          />
+          <div className="absolute right-0 top-0 h-full w-full max-w-md bg-eva-darker border-l border-eva-border/20 shadow-2xl animate-slide-in-right">
+            <ReferralDashboard onClose={() => setIsReferralOpen(false)} />
+          </div>
+        </div>
+      )}
     </>
   );
 }
