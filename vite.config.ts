@@ -12,6 +12,11 @@ export default defineConfig({
         target: "https://eva-backend-production-e089.up.railway.app",
         changeOrigin: true,
       },
+      "/_img": {
+        target: "https://eva-agent.s3.ap-southeast-1.amazonaws.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/_img/, ""),
+      },
     },
   },
 });

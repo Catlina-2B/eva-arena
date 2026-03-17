@@ -99,16 +99,10 @@ export function Navbar() {
               {/* Referral Button - Only show when authenticated */}
               {isAuthenticated && (
                 <button
-                  className="p-2 text-eva-text-dim hover:text-eva-primary transition-colors"
+                  className="px-3 py-1.5 text-xs font-mono uppercase tracking-wider rounded border border-eva-secondary/50 text-eva-secondary hover:bg-eva-secondary/10 hover:border-eva-secondary transition-colors"
                   onClick={() => setIsReferralOpen(true)}
-                  title="Referral Program"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <line x1="19" y1="8" x2="19" y2="14" />
-                    <line x1="22" y1="11" x2="16" y2="11" />
-                  </svg>
+                  Referral Rewards
                 </button>
               )}
 

@@ -256,6 +256,7 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
         borderColor: "rgba(0, 255, 136, 0.2)",
         timeVisible: true,
         secondsVisible: false,
+        rightOffset: 2,
         tickMarkFormatter: (time: number) => {
           const date = new Date(time * 1000);
           return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -314,6 +315,7 @@ export function TradingPhaseChart({ round, userTransactions }: TradingPhaseChart
   useEffect(() => {
     if (seriesRef.current && filteredData.length > 0) {
       seriesRef.current.setData(filteredData);
+      chartRef.current?.timeScale().fitContent();
     }
   }, [filteredData]);
 

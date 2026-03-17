@@ -101,7 +101,7 @@ function AIGeneratedButton({
       onClick={onClick}
     >
       <LinkIcon />
-      <span>AI-GENERATED</span>
+      <span>Strategy Builder</span>
     </button>
   );
 }

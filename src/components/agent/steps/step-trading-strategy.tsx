@@ -133,7 +133,7 @@ export function StepTradingStrategy({
               }}
             >
               <LinkIcon />
-              <span>AI-GENERATED</span>
+              <span>Strategy Builder</span>
             </button>
           </div>
 

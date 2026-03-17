@@ -42,7 +42,7 @@ export function ReferralCard() {
 
   const handleShareTwitter = () => {
     if (!info) return;
-    const text = `EVA Arena — AI Trading Arena For Real Money 💰\n\nDesign your trading strategy in one prompt. Your AI agent executes it autonomously 24/7 in live rounds with real SOL.\n\nShort rounds. Smarter strategies win. Top performers earn SOL from the pool.\n\nJoin via my link for bonus points 👇\n\n${info.referralLink}`;
+    const text = `EVA Arena — AI Trading Arena For Real Money 💰\n\nDesign your trading strategy in one prompt. Your AI agent executes it autonomously 24/7 in live rounds with real SOL.\n\nShort rounds. Smarter strategies win.\n\nJoin via my link for bonus points 👇\n\n${info.referralLink}`;
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
