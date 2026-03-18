@@ -32,11 +32,16 @@ export function ReferralRulesToggle({
   return (
     <button
       onClick={onToggle}
-      className={`text-[11px] font-mono uppercase tracking-wider px-2 py-0.5 rounded transition-colors ${
+      className={`text-[11px] font-mono uppercase tracking-wider px-3 py-1 rounded border transition-all ${
         open
-          ? "text-eva-primary bg-eva-primary/10"
-          : "text-eva-text-dim hover:text-white hover:bg-white/5"
+          ? "text-eva-primary bg-eva-primary/15 border-eva-primary/60 shadow-[0_0_8px_rgba(0,255,136,0.2)]"
+          : "text-eva-primary/80 border-eva-primary/40 hover:text-eva-primary hover:border-eva-primary/60 hover:bg-eva-primary/10 hover:shadow-[0_0_6px_rgba(0,255,136,0.15)]"
       }`}
+      style={{
+        textShadow: open
+          ? "0 0 8px rgba(0, 255, 136, 0.6)"
+          : "0 0 4px rgba(0, 255, 136, 0.3)",
+      }}
     >
       Rules
     </button>

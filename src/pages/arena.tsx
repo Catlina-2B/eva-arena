@@ -488,7 +488,35 @@ export default function ArenaPage() {
     }
 
     if (currentRound.phase === "liquidation") {
-      return <RoundSettlement round={currentRound} />;
+      const settlementUser = (() => {
+        const inTop3 = rankings.find((r) => r.isCurrentUser);
+        if (inTop3) {
+          return {
+            rank: inTop3.rank,
+            agentName: inTop3.agentName,
+            agentAvatar: inTop3.agentAvatar,
+            prizeAmount: inTop3.prizeAmount,
+            pnlSol: inTop3.pnlSol,
+          };
+        }
+        if (currentUserRanking) {
+          return {
+            rank: currentUserRanking.rank,
+            agentName: currentUserRanking.agentName,
+            agentAvatar: currentUserRanking.agentAvatar,
+            prizeAmount: currentUserRanking.prizeAmount,
+            pnlSol: currentUserRanking.pnlSol,
+          };
+        }
+        return null;
+      })();
+
+      return (
+        <RoundSettlement
+          round={currentRound}
+          currentUserAgent={settlementUser}
+        />
+      );
     }
 
     return <PreMarketBetting round={currentRound} />;

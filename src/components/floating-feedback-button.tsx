@@ -1,6 +1,6 @@
 import clsx from "clsx";
 
-const FEEDBACK_URL = "https://forms.gle/CuMzubzZ6GiBEHNo8";
+const FEEDBACK_URL = "https://forms.gle/b74VeMyMbdkEocgc6";
 
 export function FloatingFeedbackButton() {
   const handleClick = () => {
@@ -11,31 +11,18 @@ export function FloatingFeedbackButton() {
     <button
       className={clsx(
         "fixed z-50 flex items-center justify-center",
-        "w-12 h-12 rounded-full",
+        "px-4 py-2 rounded-full",
         "bg-eva-darker border-2 border-eva-secondary/60",
         "shadow-lg shadow-eva-secondary/20",
         "hover:border-eva-secondary hover:shadow-eva-secondary/40",
         "transition-all duration-300 ease-out",
         "cursor-pointer",
         "bottom-6 left-4",
+        "text-xs font-mono uppercase tracking-wider text-eva-secondary",
       )}
-      title="Feedback"
       onClick={handleClick}
     >
-      {/* Feedback / Message icon */}
-      <svg
-        className="w-6 h-6 text-eva-secondary"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-        />
-      </svg>
+      Feedback
     </button>
   );
 }

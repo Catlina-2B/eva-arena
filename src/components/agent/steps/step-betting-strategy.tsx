@@ -120,7 +120,7 @@ export function StepBettingStrategy({
               }}
             >
               <LinkIcon />
-              <span>AI-GENERATED</span>
+              <span>Strategy Builder</span>
             </button>
           </div>
 

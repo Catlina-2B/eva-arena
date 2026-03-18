@@ -837,23 +837,10 @@ function AgentInfo({
                   {isWaiting ? "PAUSED" : agent.status}
                 </EvaBadge>
                 <button
-                  className="text-eva-text-dim hover:text-eva-primary transition-colors"
-                  title="Edit Agent"
+                  className="px-3 py-1 text-xs font-mono uppercase tracking-wider rounded border border-eva-primary/40 text-eva-primary hover:bg-eva-primary/10 transition-colors"
                   onClick={onEdit}
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                    />
-                  </svg>
+                  Edit
                 </button>
               </div>
               <div className="flex items-center gap-1 text-xs text-eva-text-dim mt-1">
