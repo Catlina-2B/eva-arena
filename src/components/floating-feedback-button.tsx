@@ -1,6 +1,6 @@
 import clsx from "clsx";
 
-const FEEDBACK_URL = "https://forms.gle/CuMzubzZ6GiBEHNo8";
+const FEEDBACK_URL = "https://forms.gle/b74VeMyMbdkEocgc6";
 
 export function FloatingFeedbackButton() {
   const handleClick = () => {
