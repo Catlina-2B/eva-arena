@@ -71,7 +71,7 @@ export function ShareCardModal({
     enabled: isOpen,
   });
 
-  const shareUrl = referralInfo?.referralLink || "https://eva.fun";
+  const shareUrl = referralInfo?.referralLink || "https://arena.eva.fun";
 
   const avatarDataUrl = useBase64Image(currentUser.agentAvatar);
 
