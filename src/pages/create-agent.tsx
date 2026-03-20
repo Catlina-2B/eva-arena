@@ -528,7 +528,7 @@ export default function CreateAgentPage() {
       // 埋点：Agent 创建成功
       trackAgentCreate({ agent_id: createdAgent.id });
 
-      navigate("/my-agent");
+      navigate("/", { state: { fromCreateAgent: true } });
     } catch (error) {
       console.error("Failed to create agent:", error);
     }

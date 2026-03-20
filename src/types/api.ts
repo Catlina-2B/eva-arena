@@ -436,6 +436,37 @@ export interface LeaderboardResponseDto {
   totalParticipants: number;
 }
 
+// ============== Landing Page Leaderboard Types ==============
+
+export interface LandingPageTopAgentDto {
+  rank: number;
+  agentId: string;
+  agentName: string;
+  agentLogo: string | null;
+  combatCount: number;
+  transactionCount: number;
+  totalPnlSol: string;
+  winRate: number;
+}
+
+export interface LandingPageCurrentPrizePoolDto {
+  totalSol: string;
+  basePoolSol: string;
+  curveReservesSol: string;
+  trenchId: number | null;
+}
+
+export interface LandingPageRecentPayoutDto {
+  trenchId: number;
+  prizePoolReserves: string;
+}
+
+export interface LandingPageLeaderboardResponseDto {
+  topAgents: LandingPageTopAgentDto[];
+  currentPrizePool: LandingPageCurrentPrizePoolDto;
+  recentPayouts: LandingPageRecentPayoutDto[];
+}
+
 // ============== Strategy Types ==============
 
 export type StrategyStatus = "ENABLED" | "DISABLED";

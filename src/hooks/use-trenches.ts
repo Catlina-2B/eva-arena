@@ -28,6 +28,8 @@ export const trenchKeys = {
     [...trenchKeys.detail(id), "transactions"] as const,
   leaderboard: (id: number) =>
     [...trenchKeys.detail(id), "leaderboard"] as const,
+  landingPageLeaderboard: () =>
+    [...trenchKeys.all, "landingPageLeaderboard"] as const,
   summary: (id: number, userAddress?: string) =>
     [...trenchKeys.detail(id), "summary", userAddress] as const,
   pnlTimeline: () => [...trenchKeys.all, "pnlTimeline"] as const,
@@ -140,6 +142,18 @@ export function useLeaderboard(trenchId: number | undefined) {
     queryFn: () => trenchApi.getLeaderboard(trenchId!),
     enabled: !!trenchId,
     staleTime: 0, // Always fetch fresh data
+    refetchInterval: POLLING_INTERVAL,
+  });
+}
+
+/**
+ * Hook for getting landing page leaderboard (Top 10 agents across all combats)
+ */
+export function useLandingPageLeaderboard() {
+  return useQuery({
+    queryKey: trenchKeys.landingPageLeaderboard(),
+    queryFn: () => trenchApi.getLandingPageLeaderboard(),
+    staleTime: 0,
     refetchInterval: POLLING_INTERVAL,
   });
 }
