@@ -2,6 +2,7 @@ import type { ArenaRound, AgentRanking } from "@/types";
 import type { AgentDetailData } from "@/components/arena/agent-detail-modal";
 
 import { useCallback, useMemo, useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import DefaultLayout from "@/layouts/default";
 import {
@@ -66,6 +67,11 @@ export default function ArenaPage() {
   const { user } = useAuthStore();
   const turnkeyAddress = user?.turnkeyAddress;
 
+  // Detect navigation from create-agent page
+  const location = useLocation();
+  const navigateReplace = useNavigate();
+  const fromCreateAgent = (location.state as { fromCreateAgent?: boolean })?.fromCreateAgent === true;
+
   // First visit detection for welcome modal
   const { isFirstVisit, markVisited } = useFirstVisit();
 
@@ -128,6 +134,16 @@ export default function ArenaPage() {
     }
     hadAgentRef.current = hasAgent;
   }, [hasAgent, isTourCompleted, isAuthenticated]);
+
+  // Trigger returning user tour when navigating back from create-agent page
+  useEffect(() => {
+    if (fromCreateAgent && hasAgent && !isTourCompleted && isAuthenticated) {
+      // Clear the navigation state so it won't re-trigger on refresh
+      navigateReplace(".", { replace: true, state: {} });
+      setIsNewUserTourActive(false);
+      setTimeout(() => setIsTourActive(true), 800);
+    }
+  }, [fromCreateAgent, hasAgent, isTourCompleted, isAuthenticated, navigateReplace]);
 
   // Fetch user's buy/sell transactions for chart markers
   // Use the primary agent's turnkey address when available
