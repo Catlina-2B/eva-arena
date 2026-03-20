@@ -1,4 +1,5 @@
 import type {
+  LandingPageLeaderboardResponseDto,
   LeaderboardResponseDto,
   PriceCurveResponseDto,
   TransactionListResponseDto,
@@ -146,6 +147,19 @@ export const trenchApi = {
 
     return response.data;
   },
+
+  /**
+   * Get landing page leaderboard (Top 10 agents by total PNL, current prize pool, recent payouts)
+   */
+  getLandingPageLeaderboard:
+    async (): Promise<LandingPageLeaderboardResponseDto> => {
+      const response =
+        await apiClient.get<LandingPageLeaderboardResponseDto>(
+          "/api/landing-page/leaderboard",
+        );
+
+      return response.data;
+    },
 
   /**
    * Get user's trench participation history

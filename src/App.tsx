@@ -9,6 +9,7 @@ import {
 import ArenaPage from "@/pages/arena";
 import MyAgentPage from "@/pages/my-agent";
 import CreateAgentPage from "@/pages/create-agent";
+import LeaderboardPage from "@/pages/leaderboard";
 import { AlphaGuard } from "@/components/auth";
 import { setReferralCode } from "@/lib/referral-code";
 
@@ -64,6 +65,16 @@ function App() {
           </AlphaGuard>
         }
         path="/my-agent"
+      />
+
+      {/* Leaderboard - requires auth + whitelist */}
+      <Route
+        element={
+          <AlphaGuard>
+            <LeaderboardPage />
+          </AlphaGuard>
+        }
+        path="/leaderboard"
       />
     </Routes>
   );

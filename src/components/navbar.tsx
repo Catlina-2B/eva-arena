@@ -66,6 +66,7 @@ export function Navbar() {
   const navItems = [
     { href: "/", label: "Arena" },
     { href: "/my-agent", label: "My Agent" },
+    { href: "/leaderboard", label: "Leaderboard" },
   ];
 
   return (
