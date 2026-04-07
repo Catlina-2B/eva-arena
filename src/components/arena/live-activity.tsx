@@ -1,6 +1,6 @@
 import type { ActivityItem } from "@/types";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 import { AgentDetailModal, type AgentDetailData } from "./agent-detail-modal";
 
@@ -18,21 +18,30 @@ import { formatSmallNumber } from "@/lib/trench-utils";
 interface LiveActivityProps {
   activities: ActivityItem[];
   trenchId?: number;
+  currentUserAddress?: string;
   onLoadAgentDetail?: (userAddress: string) => Promise<AgentDetailData | null>;
 }
 
 export function LiveActivity({
   activities,
   trenchId,
+  currentUserAddress,
   onLoadAgentDetail,
 }: LiveActivityProps) {
-  // Modal state
   const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(
     null,
   );
   const [agentDetailData, setAgentDetailData] =
     useState<AgentDetailData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showMyTrades, setShowMyTrades] = useState(false);
+
+  const filteredActivities = useMemo(() => {
+    if (!showMyTrades || !currentUserAddress) return activities;
+    return activities.filter(
+      (a) => a.userAddress?.toLowerCase() === currentUserAddress.toLowerCase(),
+    );
+  }, [activities, showMyTrades, currentUserAddress]);
 
   // Handle agent name click
   const handleAgentClick = async (activity: ActivityItem) => {
@@ -64,18 +73,37 @@ export function LiveActivity({
       <EvaCard>
         <EvaCardContent noPadding>
           {/* Header */}
-          <div className="flex items-center px-4 py-3 border-t-2 border-t-eva-secondary">
+          <div className="flex items-center justify-between px-4 py-3 border-t-2 border-t-eva-secondary">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 bg-eva-secondary animate-pulse" />
               <h3 className="text-sm font-semibold tracking-wider uppercase text-eva-text">
                 Live Activity
               </h3>
             </div>
+            {currentUserAddress && (
+              <button
+                className={`text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded border transition-colors ${
+                  showMyTrades
+                    ? "border-eva-primary bg-eva-primary/20 text-eva-primary"
+                    : "border-eva-border/30 text-eva-text-dim hover:text-eva-text hover:border-eva-primary/50"
+                }`}
+                onClick={() => setShowMyTrades((v) => !v)}
+              >
+                My Trades
+              </button>
+            )}
           </div>
 
           {/* Activity list */}
           <div className="max-h-80 overflow-y-auto">
-            {activities.map((activity) => (
+            {filteredActivities.length === 0 && showMyTrades ? (
+              <div className="text-center py-8">
+                <p className="text-eva-text-dim text-xs font-mono">
+                  No trades yet in this round
+                </p>
+              </div>
+            ) : null}
+            {filteredActivities.map((activity) => (
               <ActivityRow
                 key={activity.id}
                 activity={activity}

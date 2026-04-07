@@ -13,6 +13,15 @@ export { strategyApi } from "./strategies";
 export { priceApi } from "./price";
 export { referralApi } from "./referral";
 export { walletApi } from "./wallet";
+export { manualTradeApi } from "./manual-trade";
+export type {
+  ManualTradeResponse,
+  ManualPosition,
+  ManualBalance,
+  ManualHistoryItem,
+  ManualHistoryResponse,
+  ExportStrategyResponse,
+} from "./manual-trade";
 export type {
   WalletTransactionType,
   WalletTransactionStatus,

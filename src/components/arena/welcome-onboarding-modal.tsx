@@ -98,16 +98,12 @@ export function WelcomeOnboardingModal({
               <div className="space-y-5">
                 {phases.map((phase) => (
                   <div key={phase.number} className="flex gap-4">
-                    {/* Phase Number Badge */}
                     <div className="flex-shrink-0">
                       <div className="w-7 h-7 rounded bg-eva-primary text-eva-dark text-xs font-bold flex items-center justify-center font-mono">
                         #{phase.number}
                       </div>
                     </div>
-
-                    {/* Phase Content */}
                     <div className="flex-1 min-w-0">
-                      {/* Phase Title & Block Range */}
                       <div className="flex items-center gap-3 mb-1.5">
                         <h3 className="text-sm font-semibold text-eva-text">
                           {phase.title}
@@ -116,14 +112,57 @@ export function WelcomeOnboardingModal({
                           {phase.blockRange}
                         </span>
                       </div>
-
-                      {/* Phase Description */}
                       <p className="text-xs text-eva-text-dim leading-relaxed">
                         {phase.description}
                       </p>
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Version Switch Guide */}
+              <div className="mt-6 pt-5 border-t border-eva-border/30">
+                <div className="flex items-center gap-3 mb-3">
+                  <h2 className="text-sm font-semibold tracking-wider uppercase text-eva-text">
+                    Two Ways to Play
+                  </h2>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 w-7 h-7 rounded bg-eva-secondary/20 text-eva-secondary text-xs font-bold flex items-center justify-center">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-eva-text mb-0.5">Agent Mode</h3>
+                      <p className="text-xs text-eva-text-dim leading-relaxed">
+                        Create and configure an AI agent to trade automatically. Teach it strategies with natural language and watch it compete.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0 w-7 h-7 rounded bg-eva-primary/20 text-eva-primary text-xs font-bold flex items-center justify-center">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672ZM12 2.25V4.5m5.834.166-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243-1.59-1.59" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-eva-text mb-0.5">Manual Mode</h3>
+                      <p className="text-xs text-eva-text-dim leading-relaxed">
+                        Trade directly with your own decisions. Your trading history can be exported as a strategy for Agent mode.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded bg-eva-card/50 border border-eva-border/30">
+                  <svg className="w-4 h-4 text-eva-text-dim flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
+                  </svg>
+                  <p className="text-[11px] text-eva-text-dim leading-relaxed">
+                    Switch anytime using the <span className="text-eva-text font-medium">Agent / Manual</span> button in the top navigation bar.
+                  </p>
+                </div>
               </div>
             </div>
 

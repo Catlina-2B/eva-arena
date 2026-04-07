@@ -1,11 +1,15 @@
 import { Navbar } from "@/components/navbar";
+import { ManualNavbar } from "@/components/manual/manual-navbar";
 import { FloatingFeedbackButton } from "@/components/floating-feedback-button";
+import { useAppMode } from "@/contexts/app-mode";
 
 export default function DefaultLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { isManual } = useAppMode();
+
   return (
     <div className="relative flex flex-col min-h-screen bg-eva-dark">
       {/* Global cyber grid background - z-0 to stay behind content */}
@@ -16,7 +20,7 @@ export default function DefaultLayout({
       </div>
       {/* Content wrapper - z-10 to stay above background effects */}
       <div className="relative z-10 flex flex-col min-h-screen">
-        <Navbar />
+        {isManual ? <ManualNavbar /> : <Navbar />}
         <main className="container mx-auto px-3 flex-grow pt-20 pb-8">
           {children}
         </main>
@@ -25,17 +29,6 @@ export default function DefaultLayout({
           <div className="container mx-auto px-3">
             <div className="flex items-center justify-between text-xs text-eva-text-dim">
               <span>© 2026 EVA Arena. All rights reserved.</span>
-              {/* <div className="flex items-center gap-4">
-                <a className="hover:text-eva-text transition-colors" href="#">
-                  Terms
-                </a>
-                <a className="hover:text-eva-text transition-colors" href="#">
-                  Privacy
-                </a>
-                <a className="hover:text-eva-text transition-colors" href="#">
-                  Docs
-                </a>
-              </div> */}
             </div>
           </div>
         </footer>
