@@ -291,7 +291,12 @@ export default function ManualArenaPage() {
             />
 
             {isAuthenticated && (
-              <ManualTradingPanel trenchData={trenchData} />
+              <ManualTradingPanel
+                biddingDepositedSol={
+                  leaderboardData?.currentUser?.depositedSol ?? null
+                }
+                trenchData={trenchData}
+              />
             )}
           </div>
         </div>
