@@ -1,3 +1,4 @@
+import type { ArenaPhase } from "@/types";
 import type { TrenchDetailDto } from "@/types/api";
 
 import {
@@ -82,29 +83,6 @@ function sanitizeNonNegativeAmountInput(raw: string): string {
   if (Number.isFinite(n) && n < 0) return "0";
 
   return raw;
-}
-
-/** Sell amount: non-negative number, or percentage like `25` + `%`. */
-function sanitizeSellAmountInput(raw: string): string {
-  if (raw === "") return "";
-  const t = raw.trim().replace(/,/g, ".");
-
-  if (t.includes("%")) {
-    const idx = t.indexOf("%");
-    const numPart = t.slice(0, idx).trim();
-
-    if (numPart === "" || numPart === ".") return numPart + "%";
-    const cleaned = numPart.replace(/[^\d.]/g, "");
-    const dot = cleaned.indexOf(".");
-    const normalized =
-      dot === -1
-        ? cleaned
-        : cleaned.slice(0, dot + 1) + cleaned.slice(dot + 1).replace(/\./g, "");
-
-    return normalized + "%";
-  }
-
-  return sanitizeNonNegativeAmountInput(t);
 }
 
 function usePersistedFourPresets(
@@ -577,15 +555,31 @@ function formatSlippagePercent(bps: number): string {
   return `${t}%`;
 }
 
+/** Align with `trenchToArenaRound` / slot-based phase (not lagging `trench.status`). */
+function arenaPhaseToPanelPhase(
+  p: ArenaPhase,
+): "bidding" | "trading" | "settlement" {
+  if (p === "betting") return "bidding";
+  if (p === "trading") return "trading";
+
+  return "settlement";
+}
+
 interface ManualTradingPanelProps {
   trenchData?: TrenchDetailDto | null;
   /** User's deposited SOL in trench (lamports string); max withdraw during bidding */
   biddingDepositedSol?: string | null;
+  /**
+   * Phase from the same source as the main arena panel (`currentSlot` + block math when available).
+   * Without this, the panel follows `trenchData.status` only and lags behind at phase boundaries.
+   */
+  arenaPhase?: ArenaPhase;
 }
 
 export function ManualTradingPanel({
   trenchData,
   biddingDepositedSol = null,
+  arenaPhase,
 }: ManualTradingPanelProps) {
   const { balance: turnkeyBalance } = useTurnkeyBalanceStore();
 
@@ -613,11 +607,14 @@ export function ManualTradingPanel({
 
   const phase = useMemo(() => {
     if (!trenchData) return "bidding";
+    if (arenaPhase !== undefined) {
+      return arenaPhaseToPanelPhase(arenaPhase);
+    }
     if (trenchData.status === "BIDDING") return "bidding";
     if (trenchData.status === "TRADING") return "trading";
 
     return "settlement";
-  }, [trenchData]);
+  }, [trenchData, arenaPhase]);
 
   const isBidding = phase === "bidding";
   const isTrading = phase === "trading";
@@ -763,17 +760,7 @@ export function ManualTradingPanel({
   );
 
   const handleSellSubmit = useCallback(async () => {
-    const raw = sellTokenAmount.trim();
-
-    if (raw.endsWith("%")) {
-      const p = parseFloat(raw.slice(0, -1));
-
-      if (!Number.isFinite(p) || p <= 0 || p > 100) return;
-      await runSell(`${p}%`, `${p}%`);
-
-      return;
-    }
-    const v = parseFloat(raw);
+    const v = parseFloat(sellTokenAmount.trim());
 
     if (!Number.isFinite(v) || v <= 0) return;
     const capped = tokenBalanceHuman > 0 ? Math.min(v, tokenBalanceHuman) : v;
@@ -814,15 +801,7 @@ export function ManualTradingPanel({
   const hasToken = parseInt(tokenBalance, 10) > 0;
 
   const sellAmountSubmittable = useMemo(() => {
-    const raw = sellTokenAmount.trim();
-
-    if (raw === "") return false;
-    if (raw.endsWith("%")) {
-      const p = parseFloat(raw.slice(0, -1));
-
-      return Number.isFinite(p) && p > 0 && p <= 100;
-    }
-    const v = parseFloat(raw);
+    const v = parseFloat(sellTokenAmount.trim());
 
     return Number.isFinite(v) && v > 0;
   }, [sellTokenAmount]);
@@ -956,10 +935,6 @@ export function ManualTradingPanel({
                   />
                 </AmountShell>
 
-                <div className="text-[11px] text-zinc-500">
-                  Pool bidding · wallet {availableSol.toFixed(4)} SOL
-                </div>
-
                 <button
                   className="w-full rounded-xl bg-emerald-600 py-3.5 text-sm font-semibold text-zinc-950 transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-45"
                   disabled={
@@ -1084,7 +1059,7 @@ export function ManualTradingPanel({
 
                 <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-500">
                   <span className="min-w-0 truncate">
-                    <span className="text-zinc-500">滑点</span>
+                    <span className="text-zinc-500">Slippage</span>
                     <span className="ml-1.5 font-mono text-zinc-300">
                       {formatSlippagePercent(slippageBps)}
                     </span>
@@ -1190,15 +1165,16 @@ export function ManualTradingPanel({
                 <AmountShell
                   disabled={isSubmitting}
                   inputProps={{
+                    max:
+                      tokenBalanceHuman > 0 ? tokenBalanceHuman : undefined,
+                    min: 0,
                     placeholder: "Amount",
-                    type: "text",
-                    inputMode: "decimal",
+                    type: "number",
                     value: sellTokenAmount,
-                    onChange: (e) => {
+                    onChange: (e) =>
                       setSellTokenAmount(
-                        sanitizeSellAmountInput(e.target.value),
-                      );
-                    },
+                        sanitizeNonNegativeAmountInput(e.target.value),
+                      ),
                   }}
                   trailing={trenchMarketUnit}
                 >
@@ -1213,9 +1189,12 @@ export function ManualTradingPanel({
                     tone="rose"
                     onConfirmEdit={quickTokenPercentPresets.confirmEdit}
                     onPick={(pct) => {
-                      const label = formatPresetLabel(pct);
+                      if (tokenBalanceHuman <= 0) return;
+                      const qty = tokenBalanceHuman * (pct / 100);
 
-                      setSellTokenAmount(`${label}%`);
+                      setSellTokenAmount(
+                        formatPresetLabel(Math.min(qty, tokenBalanceHuman)),
+                      );
                     }}
                     onStartEdit={quickTokenPercentPresets.startEdit}
                   />

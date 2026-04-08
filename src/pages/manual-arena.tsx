@@ -21,6 +21,7 @@ import {
   useTrenchSocket,
   useSlotSubscription,
   useTurnkeyBalance,
+  useUserTransactions,
 } from "@/hooks";
 import { useIsAuthenticated } from "@/hooks/use-auth";
 import { useAuthStore } from "@/stores/auth";
@@ -51,6 +52,16 @@ export default function ManualArenaPage() {
     : undefined;
 
   const { data: leaderboardData } = useLeaderboard(trenchId);
+
+  const { data: userBuySellData } = useUserTransactions(
+    trenchId,
+    {
+      userAddress: turnkeyAddress,
+      txType: ["BUY", "SELL"],
+      limit: 100,
+    },
+    { polling: true },
+  );
 
   const { data: transactionsData } = useTrenchTransactions(trenchId, {
     limit: 10,
@@ -215,7 +226,12 @@ export default function ManualArenaPage() {
       if (!currentRound.hasBets) {
         return <RoundSkipped round={currentRound} />;
       }
-      return <TradingPhaseChart round={currentRound} />;
+      return (
+        <TradingPhaseChart
+          round={currentRound}
+          userTransactions={userBuySellData?.transactions}
+        />
+      );
     }
 
     if (currentRound.phase === "liquidation") {
@@ -292,6 +308,7 @@ export default function ManualArenaPage() {
 
             {isAuthenticated && (
               <ManualTradingPanel
+                arenaPhase={currentRound.phase}
                 biddingDepositedSol={
                   leaderboardData?.currentUser?.depositedSol ?? null
                 }

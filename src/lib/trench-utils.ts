@@ -359,18 +359,21 @@ export function getThirdPlaceTokenAmount(
 
 /**
  * Convert TransactionDto array to ActivityItem array
+ * @param options.limit - Max rows after filter (default 10). Use a larger value for full user feeds (e.g. My Trades).
  */
 export function transactionsToActivities(
   transactions: TransactionDto[] | undefined,
+  options?: { limit?: number },
 ): ActivityItem[] {
   if (!transactions) return [];
 
   // Include DEPOSIT, WITHDRAW, BUY, and SELL transaction types
   const validTypes = ["DEPOSIT", "WITHDRAW", "BUY", "SELL"];
+  const limit = options?.limit ?? 10;
 
   return transactions
     .filter((tx) => validTypes.includes(tx.txType))
-    .slice(0, 10)
+    .slice(0, limit)
     .map((tx) => ({
       id: tx.id.toString(),
       type: tx.txType.toLowerCase() as "deposit" | "withdraw" | "buy" | "sell",
