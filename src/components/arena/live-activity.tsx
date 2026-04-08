@@ -12,8 +12,11 @@ import {
   BuyBadge,
   SellBadge,
 } from "@/components/ui";
+import { useUserTransactions } from "@/hooks";
+import { formatSmallNumber, transactionsToActivities } from "@/lib/trench-utils";
 import { formatTimeAgo } from "@/services/mock";
-import { formatSmallNumber } from "@/lib/trench-utils";
+
+const MY_TRADES_FETCH_LIMIT = 200;
 
 interface LiveActivityProps {
   activities: ActivityItem[];
@@ -36,12 +39,28 @@ export function LiveActivity({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showMyTrades, setShowMyTrades] = useState(false);
 
-  const filteredActivities = useMemo(() => {
-    if (!showMyTrades || !currentUserAddress) return activities;
-    return activities.filter(
-      (a) => a.userAddress?.toLowerCase() === currentUserAddress.toLowerCase(),
-    );
-  }, [activities, showMyTrades, currentUserAddress]);
+  const { data: myTradesData, isPending: myTradesPending } = useUserTransactions(
+    trenchId,
+    {
+      userAddress: currentUserAddress,
+      txType: ["DEPOSIT", "WITHDRAW", "BUY", "SELL"],
+      limit: MY_TRADES_FETCH_LIMIT,
+    },
+    { polling: true, enabled: showMyTrades },
+  );
+
+  const myTradesActivities = useMemo(
+    () =>
+      transactionsToActivities(myTradesData?.transactions, {
+        limit: MY_TRADES_FETCH_LIMIT,
+      }),
+    [myTradesData],
+  );
+
+  const displayedActivities = useMemo(() => {
+    if (showMyTrades && currentUserAddress) return myTradesActivities;
+    return activities;
+  }, [showMyTrades, currentUserAddress, myTradesActivities, activities]);
 
   // Handle agent name click
   const handleAgentClick = async (activity: ActivityItem) => {
@@ -96,20 +115,32 @@ export function LiveActivity({
 
           {/* Activity list */}
           <div className="max-h-80 overflow-y-auto">
-            {filteredActivities.length === 0 && showMyTrades ? (
+            {showMyTrades && currentUserAddress && myTradesPending ? (
+              <div className="text-center py-8">
+                <p className="text-eva-text-dim text-xs font-mono">
+                  Loading your activity...
+                </p>
+              </div>
+            ) : null}
+            {showMyTrades &&
+            currentUserAddress &&
+            !myTradesPending &&
+            displayedActivities.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-eva-text-dim text-xs font-mono">
                   No trades yet in this round
                 </p>
               </div>
             ) : null}
-            {filteredActivities.map((activity) => (
-              <ActivityRow
-                key={activity.id}
-                activity={activity}
-                onAgentClick={handleAgentClick}
-              />
-            ))}
+            {!(showMyTrades && currentUserAddress && myTradesPending)
+              ? displayedActivities.map((activity) => (
+                  <ActivityRow
+                    key={activity.id}
+                    activity={activity}
+                    onAgentClick={handleAgentClick}
+                  />
+                ))
+              : null}
           </div>
         </EvaCardContent>
       </EvaCard>

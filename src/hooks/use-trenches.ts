@@ -186,6 +186,7 @@ export function useTrenchSummary(
  * @param params.userAddress - Optional specific user address (e.g., agent's turnkeyAddress)
  * @param options - Additional options
  * @param options.polling - Whether to poll for updates (default: true)
+ * @param options.enabled - When false, query does not run (default: true)
  */
 export function useUserTransactions(
   trenchId: number | undefined,
@@ -197,12 +198,15 @@ export function useUserTransactions(
   },
   options?: {
     polling?: boolean;
+    enabled?: boolean;
   },
 ) {
   const { user } = useAuthStore();
   // Use provided userAddress, or fall back to user's turnkeyAddress
   const userAddress = params?.userAddress ?? user?.turnkeyAddress;
   const polling = options?.polling ?? true;
+  const queryEnabled =
+    (options?.enabled ?? true) && !!trenchId && !!userAddress;
 
   return useQuery({
     queryKey: [
@@ -213,7 +217,7 @@ export function useUserTransactions(
     ],
     queryFn: () =>
       trenchApi.getTransactions(trenchId!, { ...params, userAddress }),
-    enabled: !!trenchId && !!userAddress,
+    enabled: queryEnabled,
     staleTime: polling ? 0 : undefined,
     refetchInterval: polling ? POLLING_INTERVAL : false,
   });

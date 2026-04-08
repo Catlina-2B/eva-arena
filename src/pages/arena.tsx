@@ -599,6 +599,7 @@ export default function ArenaPage() {
             <div data-tour="activity">
               <LiveActivity
                 activities={activities}
+                currentUserAddress={primaryAgent?.turnkeyAddress}
                 trenchId={trenchId}
                 onLoadAgentDetail={handleLoadAgentDetailByUserAddress}
               />
