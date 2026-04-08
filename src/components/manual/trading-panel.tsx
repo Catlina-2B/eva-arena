@@ -1,34 +1,47 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { addToast } from "@heroui/toast";
 
 import {
-  useManualPosition,
   useManualDeposit,
   useManualWithdraw,
   useManualBuy,
   useManualSell,
 } from "@/hooks/use-manual-trade";
+import { useUserPnlTimeline } from "@/hooks";
 import { EvaCard, EvaCardContent } from "@/components/ui/eva-card";
 import { EvaButton } from "@/components/ui/eva-button";
 import { useTurnkeyBalanceStore } from "@/stores/turnkey-balance";
+import type { TrenchDetailDto } from "@/types/api";
 
 const LAMPORTS_PER_SOL = 1_000_000_000;
 const QUICK_PERCENTS = [25, 50, 75, 100] as const;
 
 function formatSol(lamports: string | number): string {
   const n = typeof lamports === "string" ? parseInt(lamports) : lamports;
-  if (isNaN(n)) return "0.000";
+  if (isNaN(n)) return "0.0000";
   return (n / LAMPORTS_PER_SOL).toFixed(4);
 }
 
 function formatToken(raw: string | number): string {
   const n = typeof raw === "string" ? parseInt(raw) : raw;
   if (isNaN(n)) return "0.00";
+  const abs = Math.abs(n / 1_000_000);
+  if (abs >= 1_000_000) return (n / 1_000_000 / 1_000_000).toFixed(2) + "M";
+  if (abs >= 1_000) return (n / 1_000_000 / 1_000).toFixed(2) + "K";
   return (n / 1_000_000).toFixed(2);
 }
 
-export function ManualTradingPanel() {
-  const { data: position } = useManualPosition();
+function formatTokenPercent(raw: string | number): string {
+  const n = typeof raw === "string" ? parseInt(raw) : raw;
+  if (isNaN(n)) return "0.00";
+  return ((n / 1_000_000 / 1_000_000_000) * 100).toFixed(2);
+}
+
+interface ManualTradingPanelProps {
+  trenchData?: TrenchDetailDto | null;
+}
+
+export function ManualTradingPanel({ trenchData }: ManualTradingPanelProps) {
   const { balance: turnkeyBalance } = useTurnkeyBalanceStore();
 
   const deposit = useManualDeposit();
@@ -40,7 +53,13 @@ export function ManualTradingPanel() {
   const [slippageBps, setSlippageBps] = useState(500);
   const [showSlippage, setShowSlippage] = useState(false);
 
-  const phase = position?.phase ?? "bidding";
+  const phase = useMemo(() => {
+    if (!trenchData) return "bidding";
+    if (trenchData.status === "BIDDING") return "bidding";
+    if (trenchData.status === "TRADING") return "trading";
+    return "settlement";
+  }, [trenchData]);
+
   const isBidding = phase === "bidding";
   const isTrading = phase === "trading";
   const isSettlement = phase === "settlement";
@@ -49,12 +68,21 @@ export function ManualTradingPanel() {
 
   const availableSol = turnkeyBalance;
 
+  const { data: pnlTimeline } = useUserPnlTimeline();
+
+  const tokenBalance = trenchData?.tokenBalance ?? "0";
+  const roundPnlRaw = trenchData?.pnlSol ?? "0";
+  const roundPnl = parseInt(roundPnlRaw) / LAMPORTS_PER_SOL;
+
+  const totalPnl = useMemo(() => {
+    if (!pnlTimeline?.timeline?.length) return 0;
+    const last = pnlTimeline.timeline[pnlTimeline.timeline.length - 1];
+    return parseInt(last.pnl) / LAMPORTS_PER_SOL;
+  }, [pnlTimeline]);
+
   const handleQuickPercent = useCallback(
     (pct: number) => {
-      if (isBidding) {
-        const maxSol = Math.max(0, availableSol - 0.015);
-        setAmount(((maxSol * pct) / 100).toFixed(4));
-      } else if (isTrading) {
+      if (isBidding || isTrading) {
         const maxSol = Math.max(0, availableSol - 0.015);
         setAmount(((maxSol * pct) / 100).toFixed(4));
       }
@@ -164,44 +192,60 @@ export function ManualTradingPanel() {
           </span>
         </div>
 
-        {/* Balance Section */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-xs">
-            <span className="text-eva-text-dim">Available SOL</span>
-            <span className="text-eva-text font-mono">
-              {availableSol.toFixed(4)} SOL
-            </span>
+        {/* Balance & PnL Stats */}
+        <div className="bg-eva-dark/50 border border-eva-border rounded-lg p-3">
+          {/* Token + SOL Row */}
+          <div className="flex items-center justify-between mb-3 pb-3 border-b border-eva-border/50">
+            <div className="flex items-center gap-1">
+              <span className="font-mono text-lg font-semibold text-eva-text">
+                {formatToken(tokenBalance)}
+              </span>
+              <span className="text-[10px] text-eva-text-dim uppercase">
+                TOKEN
+              </span>
+              <span className="text-xs font-mono text-purple-400 ml-1">
+                ({formatTokenPercent(tokenBalance)}%)
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="font-mono text-lg font-semibold text-eva-text">
+                {availableSol.toFixed(4)}
+              </span>
+              <span className="text-[10px] text-eva-text-dim uppercase">
+                SOL
+              </span>
+            </div>
           </div>
-          {position && (
-            <>
-              <div className="flex justify-between text-xs">
-                <span className="text-eva-text-dim">Deposited</span>
-                <span className="text-eva-text font-mono">
-                  {formatSol(position.depositedSol)} SOL
-                </span>
+
+          {/* PnL Row */}
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-[10px] text-eva-text-dim uppercase tracking-wider mb-1">
+                Total PNL
               </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-eva-text-dim">Token Balance</span>
-                <span className="text-eva-text font-mono">
-                  {formatToken(position.tokenBalance)}
-                </span>
+              <div
+                className={`font-mono text-xl font-semibold ${
+                  totalPnl >= 0 ? "text-eva-primary" : "text-eva-danger"
+                }`}
+              >
+                {totalPnl >= 0 ? "+" : ""}
+                {totalPnl.toFixed(4)} SOL
               </div>
-              {isTrading && (
-                <div className="flex justify-between text-xs">
-                  <span className="text-eva-text-dim">PnL</span>
-                  <span
-                    className={`font-mono ${
-                      parseInt(position.pnlSol) >= 0
-                        ? "text-eva-success"
-                        : "text-eva-danger"
-                    }`}
-                  >
-                    {formatSol(position.pnlSol)} SOL
-                  </span>
-                </div>
-              )}
-            </>
-          )}
+            </div>
+            <div>
+              <div className="text-[10px] text-eva-text-dim uppercase tracking-wider mb-1 text-right">
+                Round PNL
+              </div>
+              <div
+                className={`font-mono text-xl font-semibold text-right ${
+                  roundPnl >= 0 ? "text-eva-primary" : "text-eva-danger"
+                }`}
+              >
+                {roundPnl >= 0 ? "+" : ""}
+                {roundPnl.toFixed(4)} SOL
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Divider */}
@@ -361,8 +405,7 @@ export function ManualTradingPanel() {
                     className="w-full border-red-500/50 text-red-400 hover:border-red-500 hover:text-red-300"
                     disabled={
                       isSubmitting ||
-                      !position ||
-                      parseInt(position.tokenBalance) <= 0
+                      parseInt(tokenBalance) <= 0
                     }
                     isLoading={sell.isPending}
                     size="sm"
@@ -376,8 +419,7 @@ export function ManualTradingPanel() {
                   className="w-full"
                   disabled={
                     isSubmitting ||
-                    !position ||
-                    parseInt(position.tokenBalance) <= 0
+                    parseInt(tokenBalance) <= 0
                   }
                   isLoading={sell.isPending}
                   size="sm"

@@ -43,7 +43,7 @@ export default function ManualArenaPage() {
     data: trenchData,
     isLoading: isTrenchLoading,
     error: trenchError,
-  } = useCurrentTrench();
+  } = useCurrentTrench({ mode: "MANUAL" });
 
   const trenchId = trenchData?.id;
   const onChainTrenchId = trenchData?.trenchId
@@ -290,7 +290,9 @@ export default function ManualArenaPage() {
               }}
             />
 
-            {isAuthenticated && <ManualTradingPanel />}
+            {isAuthenticated && (
+              <ManualTradingPanel trenchData={trenchData} />
+            )}
           </div>
         </div>
       </div>

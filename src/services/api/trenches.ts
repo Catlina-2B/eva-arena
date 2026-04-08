@@ -52,9 +52,12 @@ export const trenchApi = {
   /**
    * Get current active trench (BIDDING or TRADING status)
    */
-  getCurrentTrench: async (): Promise<TrenchDetailDto | null> => {
+  getCurrentTrench: async (
+    mode?: "AGENT" | "MANUAL",
+  ): Promise<TrenchDetailDto | null> => {
     const response = await apiClient.get<TrenchDetailDto | null>(
       "/api/trenches/current",
+      { params: mode ? { mode } : undefined },
     );
 
     return response.data;

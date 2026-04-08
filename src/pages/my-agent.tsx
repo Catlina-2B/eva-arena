@@ -981,7 +981,7 @@ export default function MyAgentPage() {
   }, [isLoadMoreVisible, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Fetch current trench (one-time, no polling) to determine current batch indicator
-  const { data: currentTrench } = useCurrentTrench({ polling: false });
+  const { data: currentTrench } = useCurrentTrench({ polling: false, mode: "AGENT" });
   const currentTrenchId = currentTrench?.id;
 
   // Fetch user PNL timeline
