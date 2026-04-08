@@ -10,7 +10,10 @@ import ArenaPage from "@/pages/arena";
 import MyAgentPage from "@/pages/my-agent";
 import CreateAgentPage from "@/pages/create-agent";
 import LeaderboardPage from "@/pages/leaderboard";
+import ManualArenaPage from "@/pages/manual-arena";
+import ManualHistoryPage from "@/pages/manual-history";
 import { AlphaGuard } from "@/components/auth";
+import { useAppMode } from "@/contexts/app-mode";
 import { setReferralCode } from "@/lib/referral-code";
 
 function ReferralRedirect() {
@@ -22,22 +25,10 @@ function ReferralRedirect() {
   return <Navigate replace to="/" />;
 }
 
-function App() {
-  const [searchParams] = useSearchParams();
-
-  useEffect(() => {
-    const ref = searchParams.get("ref");
-    if (ref) {
-      setReferralCode(ref);
-    }
-  }, [searchParams]);
-
+function AgentRoutes() {
   return (
     <Routes>
-      {/* Referral landing — saves code then redirects to home */}
       <Route path="/join" element={<ReferralRedirect />} />
-
-      {/* All routes protected by AlphaGuard - requires auth + whitelist */}
       <Route
         element={
           <AlphaGuard>
@@ -46,8 +37,6 @@ function App() {
         }
         path="/"
       />
-
-      {/* Create agent - requires auth + whitelist */}
       <Route
         element={
           <AlphaGuard>
@@ -56,8 +45,6 @@ function App() {
         }
         path="/create-agent"
       />
-
-      {/* My Agent - requires auth + whitelist */}
       <Route
         element={
           <AlphaGuard>
@@ -66,8 +53,6 @@ function App() {
         }
         path="/my-agent"
       />
-
-      {/* Leaderboard - requires auth + whitelist */}
       <Route
         element={
           <AlphaGuard>
@@ -78,6 +63,52 @@ function App() {
       />
     </Routes>
   );
+}
+
+function ManualRoutes() {
+  return (
+    <Routes>
+      <Route path="/join" element={<ReferralRedirect />} />
+      <Route
+        element={
+          <AlphaGuard>
+            <ManualArenaPage />
+          </AlphaGuard>
+        }
+        path="/"
+      />
+      <Route
+        element={
+          <AlphaGuard>
+            <LeaderboardPage />
+          </AlphaGuard>
+        }
+        path="/leaderboard"
+      />
+      <Route
+        element={
+          <AlphaGuard>
+            <ManualHistoryPage />
+          </AlphaGuard>
+        }
+        path="/history"
+      />
+    </Routes>
+  );
+}
+
+function App() {
+  const [searchParams] = useSearchParams();
+  const { isManual } = useAppMode();
+
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) {
+      setReferralCode(ref);
+    }
+  }, [searchParams]);
+
+  return isManual ? <ManualRoutes /> : <AgentRoutes />;
 }
 
 export default App;

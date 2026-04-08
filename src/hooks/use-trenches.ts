@@ -19,7 +19,7 @@ export const trenchKeys = {
   lists: () => [...trenchKeys.all, "list"] as const,
   list: (params?: { status?: TrenchStatus; page?: number; limit?: number }) =>
     [...trenchKeys.lists(), params] as const,
-  current: () => [...trenchKeys.all, "current"] as const,
+  current: (mode?: string) => [...trenchKeys.all, "current", mode] as const,
   details: () => [...trenchKeys.all, "detail"] as const,
   detail: (id: number) => [...trenchKeys.details(), id] as const,
   priceCurve: (id: number, unit?: string) =>
@@ -59,13 +59,17 @@ export function useTrenchList(params?: {
  * @param options - Additional options
  * @param options.polling - Whether to poll for updates (default: true)
  */
-export function useCurrentTrench(options?: { polling?: boolean }) {
+export function useCurrentTrench(options?: {
+  polling?: boolean;
+  mode?: "AGENT" | "MANUAL";
+}) {
   const polling = options?.polling ?? true;
+  const mode = options?.mode;
 
   return useQuery({
-    queryKey: trenchKeys.current(),
-    queryFn: () => trenchApi.getCurrentTrench(),
-    staleTime: polling ? 0 : undefined, // Fresh data when polling, use default staleTime otherwise
+    queryKey: trenchKeys.current(mode),
+    queryFn: () => trenchApi.getCurrentTrench(mode),
+    staleTime: polling ? 0 : undefined,
     refetchInterval: polling ? POLLING_INTERVAL : false,
   });
 }

@@ -7,6 +7,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useHref, useNavigate } from "react-router-dom";
 
 import { ParticleConnectKit } from "@/connectkit";
+import { AppModeProvider } from "@/contexts/app-mode";
 import { queryClient } from "@/lib/query-client";
 import { initAnalytics } from "@/services/analytics";
 
@@ -25,13 +26,15 @@ export function Provider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ParticleConnectKit>
-        <HeroUIProvider navigate={navigate} useHref={useHref}>
-          {children}
-        </HeroUIProvider>
-      </ParticleConnectKit>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    <AppModeProvider>
+      <QueryClientProvider client={queryClient}>
+        <ParticleConnectKit>
+          <HeroUIProvider navigate={navigate} useHref={useHref}>
+            {children}
+          </HeroUIProvider>
+        </ParticleConnectKit>
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
+    </AppModeProvider>
   );
 }

@@ -90,7 +90,7 @@ export default function ArenaPage() {
     data: trenchData,
     isLoading: isTrenchLoading,
     error: trenchError,
-  } = useCurrentTrench();
+  } = useCurrentTrench({ mode: "AGENT" });
 
   // Get trench ID for dependent queries (database primary key for REST APIs)
   const trenchId = trenchData?.id;

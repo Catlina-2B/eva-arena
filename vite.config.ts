@@ -7,6 +7,7 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   plugins: [react(), tsconfigPaths(), tailwindcss()],
   server: {
+    allowedHosts: ["localhost", "manual.localhost"],
     proxy: {
       "/api": {
         target: "https://eva-backend-production-e089.up.railway.app",
